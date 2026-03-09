@@ -653,6 +653,7 @@ function GameProvider({ children }) {
         pendingBet
     ]);
     const lastBotBetAddedRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(0);
+    const screenRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])("entry");
     // Динамика ставок: у роботов botExpiresAt ~15 сек, потом ставка исчезает и список подтягивается; периодически добавляется новая
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const now = Date.now();
@@ -703,6 +704,11 @@ function GameProvider({ children }) {
         }, 1000);
         return ()=>clearInterval(interval);
     }, []);
+    (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
+        screenRef.current = screen;
+    }, [
+        screen
+    ]);
     // Загрузка сохранённых данных (совместимость с будущими версиями: новые поля берутся из дефолтов)
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         const saved = loadSavedState();
@@ -947,8 +953,7 @@ function GameProvider({ children }) {
     }, [
         player.balance
     ]);
-    const BOT_AUTO_ACCEPT_AFTER_MS = 60 * 1000;
-    const MAX_BET_FOR_BOT_AUTO_ACCEPT = 100;
+    const BOT_AUTO_ACCEPT_AFTER_MS = 30 * 1000;
     const createBet = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useCallback"])((amount, duration = "once")=>{
         if (player.balance < amount) return;
         if (betResponseTimeoutRef.current) {
@@ -985,7 +990,7 @@ function GameProvider({ children }) {
         const r = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)];
         const responseId = `resp-${Date.now()}`;
         const hasLivePlayers = Math.random() < 0.7;
-        const delayMs = hasLivePlayers ? 2500 : 60 * 1000;
+        const delayMs = hasLivePlayers ? 2500 : BOT_AUTO_ACCEPT_AFTER_MS;
         betResponseTimeoutRef.current = setTimeout(()=>{
             betResponseTimeoutRef.current = null;
             setBetResponse({
@@ -998,29 +1003,38 @@ function GameProvider({ children }) {
                 amount
             });
         }, delayMs);
-        // Если ставку не приняли в течение 1 минуты и сумма не более 100 — робот подхватывает сам
-        botAutoAcceptTimeoutRef.current = setTimeout(()=>{
-            botAutoAcceptTimeoutRef.current = null;
-            const current = pendingBetRef.current;
-            if (!current || current.id !== id || current.amount > MAX_BET_FOR_BOT_AUTO_ACCEPT) return;
-            if (betResponseTimeoutRef.current) {
-                clearTimeout(betResponseTimeoutRef.current);
-                betResponseTimeoutRef.current = null;
-            }
-            const bot = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)];
-            setOpponent({
-                ...bot,
-                balance: 500,
-                weekWins: Math.floor(bot.wins / 2),
-                weekEarnings: amount * 5
-            });
-            setCurrentBet(amount);
-            setBets((prev)=>prev.filter((b)=>b.id !== id));
-            setPendingBet(null);
-            setBetResponse(null);
-            setTotalRounds(1);
-            setScreen("arena");
-        }, BOT_AUTO_ACCEPT_AFTER_MS);
+        // Через 30 секунд, если ставку не приняли — робот подхватывает сам.
+        const scheduleBotAutoAccept = (delayMs)=>{
+            botAutoAcceptTimeoutRef.current = setTimeout(()=>{
+                const current = pendingBetRef.current;
+                if (!current || current.id !== id) return;
+                const currentScreen = screenRef.current;
+                // Если игрок в этот момент играет — ждём завершения игры.
+                if (currentScreen === "arena" || currentScreen === "matchmaking") {
+                    scheduleBotAutoAccept(10 * 1000);
+                    return;
+                }
+                botAutoAcceptTimeoutRef.current = null;
+                if (betResponseTimeoutRef.current) {
+                    clearTimeout(betResponseTimeoutRef.current);
+                    betResponseTimeoutRef.current = null;
+                }
+                const bot = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)];
+                setOpponent({
+                    ...bot,
+                    balance: 500,
+                    weekWins: Math.floor(bot.wins / 2),
+                    weekEarnings: amount * 5
+                });
+                setCurrentBet(amount);
+                setBets((prev)=>prev.filter((b)=>b.id !== id));
+                setPendingBet(null);
+                setBetResponse(null);
+                setTotalRounds(1);
+                setScreen("arena");
+            }, delayMs);
+        };
+        scheduleBotAutoAccept(BOT_AUTO_ACCEPT_AFTER_MS);
     }, [
         player.balance,
         player.id,
@@ -1055,12 +1069,9 @@ function GameProvider({ children }) {
         player.balance
     ]);
     // Очистка таймера отклика и ожидающей ставки только при переходе на экраны,
-    // где список ставок недоступен (игра, вывод). На menu/bets/bet-select ставка должна оставаться.
+    // где список ставок точно не нужен (например, вывод средств). На menu/bets/bet-select/arena ставка должна оставаться.
     const screensThatClearPendingBet = [
-        "matchmaking",
-        "result",
-        "withdraw",
-        "arena"
+        "withdraw"
     ];
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (screensThatClearPendingBet.includes(screen)) {
@@ -1230,7 +1241,7 @@ function GameProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/lib/game-context.tsx",
-        lineNumber: 877,
+        lineNumber: 898,
         columnNumber: 5
     }, this);
 }
@@ -9491,8 +9502,19 @@ function BetsScreen() {
                                             children: [
                                                 "Сейчас: ",
                                                 (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$format$2d$amount$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["formatAmount"])(pendingBet.amount),
-                                                " голосов. Баланс: ",
-                                                (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$format$2d$amount$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["formatAmount"])(player.balance + pendingBet.amount)
+                                                " голосов.",
+                                                " ",
+                                                (()=>{
+                                                    const raw = parseInt(editAmount || String(pendingBet.amount), 10);
+                                                    const bet = Number.isFinite(raw) && raw > 0 ? raw : pendingBet.amount;
+                                                    const pot = bet * 2;
+                                                    const commissionRate = player.vip ? 0.05 : 0.1;
+                                                    const commission = Math.ceil(pot * commissionRate);
+                                                    const winnings = pot - commission;
+                                                    const earningsIfWin = winnings - bet;
+                                                    const balanceIfWin = player.balance + earningsIfWin;
+                                                    return `Баланс при выигрыше: ${(0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$format$2d$amount$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["formatAmount"])(balanceIfWin)}`;
+                                                })()
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
@@ -9520,14 +9542,14 @@ function BetsScreen() {
                                                     className: "h-4 w-4 mr-1"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 276,
+                                                    lineNumber: 287,
                                                     columnNumber: 19
                                                 }, this),
                                                 "Удалить ставку"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 268,
+                                            lineNumber: 279,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -9542,20 +9564,20 @@ function BetsScreen() {
                                                     className: "h-4 w-4 mr-1"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 287,
+                                                    lineNumber: 298,
                                                     columnNumber: 19
                                                 }, this),
                                                 "Изменить размер"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 279,
+                                            lineNumber: 290,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 267,
+                                    lineNumber: 278,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -9585,19 +9607,19 @@ function BetsScreen() {
                                         className: "h-5 w-5 text-accent"
                                     }, void 0, false, {
                                         fileName: "[project]/components/bets-screen.tsx",
-                                        lineNumber: 301,
+                                        lineNumber: 312,
                                         columnNumber: 15
                                     }, this),
                                     "Недостаточно голосов"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/bets-screen.tsx",
-                                lineNumber: 300,
+                                lineNumber: 311,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 299,
+                            lineNumber: 310,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9609,7 +9631,7 @@ function BetsScreen() {
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 305,
+                            lineNumber: 316,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -9620,7 +9642,7 @@ function BetsScreen() {
                                     children: "Закрыть"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 309,
+                                    lineNumber: 320,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -9633,31 +9655,31 @@ function BetsScreen() {
                                             className: "h-4 w-4 mr-1"
                                         }, void 0, false, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 313,
+                                            lineNumber: 324,
                                             columnNumber: 15
                                         }, this),
                                         "Пополнить баланс"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 312,
+                                    lineNumber: 323,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 308,
+                            lineNumber: 319,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/bets-screen.tsx",
-                    lineNumber: 298,
+                    lineNumber: 309,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/components/bets-screen.tsx",
-                lineNumber: 297,
+                lineNumber: 308,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -9671,12 +9693,12 @@ function BetsScreen() {
                                 children: "Пригласить в игру"
                             }, void 0, false, {
                                 fileName: "[project]/components/bets-screen.tsx",
-                                lineNumber: 324,
+                                lineNumber: 335,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 323,
+                            lineNumber: 334,
                             columnNumber: 11
                         }, this),
                         inviteBet && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -9698,35 +9720,35 @@ function BetsScreen() {
                                                                 letter: inviteBet.creatorAvatar
                                                             }, void 0, false, {
                                                                 fileName: "[project]/components/bets-screen.tsx",
-                                                                lineNumber: 334,
+                                                                lineNumber: 345,
                                                                 columnNumber: 27
                                                             }, this)
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/bets-screen.tsx",
-                                                            lineNumber: 333,
+                                                            lineNumber: 344,
                                                             columnNumber: 25
                                                         }, this)
                                                     }, void 0, false, {
                                                         fileName: "[project]/components/bets-screen.tsx",
-                                                        lineNumber: 332,
+                                                        lineNumber: 343,
                                                         columnNumber: 23
                                                     }, this)
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 331,
+                                                    lineNumber: 342,
                                                     columnNumber: 21
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$player$2d$avatar$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["VipBadgeOnFrame"], {
                                                     size: "md"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 341,
+                                                    lineNumber: 352,
                                                     columnNumber: 21
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 330,
+                                            lineNumber: 341,
                                             columnNumber: 19
                                         }, this) : /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                             className: "w-12 h-12 rounded-xl bg-muted/40 flex items-center justify-center text-lg font-bold border border-border/30 overflow-hidden",
@@ -9735,12 +9757,12 @@ function BetsScreen() {
                                                 letter: inviteBet.creatorAvatar
                                             }, void 0, false, {
                                                 fileName: "[project]/components/bets-screen.tsx",
-                                                lineNumber: 345,
+                                                lineNumber: 356,
                                                 columnNumber: 21
                                             }, this)
                                         }, void 0, false, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 344,
+                                            lineNumber: 355,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9750,7 +9772,7 @@ function BetsScreen() {
                                                     children: inviteBet.creatorName
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 352,
+                                                    lineNumber: 363,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9761,7 +9783,7 @@ function BetsScreen() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 353,
+                                                    lineNumber: 364,
                                                     columnNumber: 19
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9772,19 +9794,19 @@ function BetsScreen() {
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 354,
+                                                    lineNumber: 365,
                                                     columnNumber: 19
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 351,
+                                            lineNumber: 362,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 328,
+                                    lineNumber: 339,
                                     columnNumber: 15
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -9798,14 +9820,14 @@ function BetsScreen() {
                                                     className: "h-4 w-4 mr-1"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 359,
+                                                    lineNumber: 370,
                                                     columnNumber: 19
                                                 }, this),
                                                 "Отклонить"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 358,
+                                            lineNumber: 369,
                                             columnNumber: 17
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -9815,20 +9837,20 @@ function BetsScreen() {
                                                     className: "h-4 w-4 mr-1"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 363,
+                                                    lineNumber: 374,
                                                     columnNumber: 19
                                                 }, this),
                                                 "Пригласить"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 362,
+                                            lineNumber: 373,
                                             columnNumber: 17
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 357,
+                                    lineNumber: 368,
                                     columnNumber: 15
                                 }, this)
                             ]
@@ -9836,12 +9858,12 @@ function BetsScreen() {
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/bets-screen.tsx",
-                    lineNumber: 322,
+                    lineNumber: 333,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/components/bets-screen.tsx",
-                lineNumber: 321,
+                lineNumber: 332,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -9855,12 +9877,12 @@ function BetsScreen() {
                                 children: "Создать ставку"
                             }, void 0, false, {
                                 fileName: "[project]/components/bets-screen.tsx",
-                                lineNumber: 375,
+                                lineNumber: 386,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 374,
+                            lineNumber: 385,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9868,7 +9890,7 @@ function BetsScreen() {
                             children: "Укажите сумму ставки. Другие игроки смогут откликнуться и сыграть с вами."
                         }, void 0, false, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 377,
+                            lineNumber: 388,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9879,7 +9901,7 @@ function BetsScreen() {
                                     children: "Сумма (голоса)"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 381,
+                                    lineNumber: 392,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$input$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Input"], {
@@ -9893,7 +9915,7 @@ function BetsScreen() {
                                     className: "bg-muted/30 border-border"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 382,
+                                    lineNumber: 393,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -9905,14 +9927,14 @@ function BetsScreen() {
                                             children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$format$2d$amount$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["formatAmount"])(player.balance)
                                         }, void 0, false, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 393,
+                                            lineNumber: 404,
                                             columnNumber: 23
                                         }, this),
                                         " голосов"
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 392,
+                                    lineNumber: 403,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9922,7 +9944,7 @@ function BetsScreen() {
                                             children: "Держать ставку"
                                         }, void 0, false, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 396,
+                                            lineNumber: 407,
                                             columnNumber: 15
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -9939,7 +9961,7 @@ function BetsScreen() {
                                                             className: "rounded-full border-border"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/bets-screen.tsx",
-                                                            lineNumber: 399,
+                                                            lineNumber: 410,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -9947,13 +9969,13 @@ function BetsScreen() {
                                                             children: "Разово"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/bets-screen.tsx",
-                                                            lineNumber: 406,
+                                                            lineNumber: 417,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 398,
+                                                    lineNumber: 409,
                                                     columnNumber: 17
                                                 }, this),
                                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("label", {
@@ -9967,7 +9989,7 @@ function BetsScreen() {
                                                             className: "rounded-full border-border"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/bets-screen.tsx",
-                                                            lineNumber: 409,
+                                                            lineNumber: 420,
                                                             columnNumber: 19
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -9975,31 +9997,31 @@ function BetsScreen() {
                                                             children: "В течение часа"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/bets-screen.tsx",
-                                                            lineNumber: 416,
+                                                            lineNumber: 427,
                                                             columnNumber: 19
                                                         }, this)
                                                     ]
                                                 }, void 0, true, {
                                                     fileName: "[project]/components/bets-screen.tsx",
-                                                    lineNumber: 408,
+                                                    lineNumber: 419,
                                                     columnNumber: 17
                                                 }, this)
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 397,
+                                            lineNumber: 408,
                                             columnNumber: 15
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 395,
+                                    lineNumber: 406,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 380,
+                            lineNumber: 391,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -10010,7 +10032,7 @@ function BetsScreen() {
                                     children: "Отмена"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 422,
+                                    lineNumber: 433,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -10019,24 +10041,24 @@ function BetsScreen() {
                                     children: "Создать"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 425,
+                                    lineNumber: 436,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 421,
+                            lineNumber: 432,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/bets-screen.tsx",
-                    lineNumber: 373,
+                    lineNumber: 384,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/components/bets-screen.tsx",
-                lineNumber: 372,
+                lineNumber: 383,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Dialog"], {
@@ -10055,24 +10077,24 @@ function BetsScreen() {
                                             className: "h-4 w-4 text-white"
                                         }, void 0, false, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 441,
+                                            lineNumber: 452,
                                             columnNumber: 17
                                         }, this)
                                     }, void 0, false, {
                                         fileName: "[project]/components/bets-screen.tsx",
-                                        lineNumber: 440,
+                                        lineNumber: 451,
                                         columnNumber: 15
                                     }, this),
                                     "Карта «Лава»"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/bets-screen.tsx",
-                                lineNumber: 439,
+                                lineNumber: 450,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 438,
+                            lineNumber: 449,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -10080,7 +10102,7 @@ function BetsScreen() {
                             children: "Карта уничтожает любую карту соперника. Можно использовать 5 раз. Рекомендуем при турнире."
                         }, void 0, false, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 446,
+                            lineNumber: 457,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -10095,7 +10117,7 @@ function BetsScreen() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 450,
+                                    lineNumber: 461,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -10105,7 +10127,7 @@ function BetsScreen() {
                                             className: "h-4 w-4"
                                         }, void 0, false, {
                                             fileName: "[project]/components/bets-screen.tsx",
-                                            lineNumber: 452,
+                                            lineNumber: 463,
                                             columnNumber: 15
                                         }, this),
                                         " ",
@@ -10114,13 +10136,13 @@ function BetsScreen() {
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 451,
+                                    lineNumber: 462,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 449,
+                            lineNumber: 460,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$dialog$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["DialogFooter"], {
@@ -10131,7 +10153,7 @@ function BetsScreen() {
                                     children: "Закрыть"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 456,
+                                    lineNumber: 467,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$components$2f$ui$2f$button$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Button"], {
@@ -10142,24 +10164,24 @@ function BetsScreen() {
                                     children: "Купить"
                                 }, void 0, false, {
                                     fileName: "[project]/components/bets-screen.tsx",
-                                    lineNumber: 459,
+                                    lineNumber: 470,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/components/bets-screen.tsx",
-                            lineNumber: 455,
+                            lineNumber: 466,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/components/bets-screen.tsx",
-                    lineNumber: 437,
+                    lineNumber: 448,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/components/bets-screen.tsx",
-                lineNumber: 436,
+                lineNumber: 447,
                 columnNumber: 7
             }, this)
         ]

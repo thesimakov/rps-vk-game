@@ -435,6 +435,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     pendingBetRef.current = pendingBet
   }, [pendingBet])
   const lastBotBetAddedRef = useRef(0)
+  const screenRef = useRef<GameScreen>("entry")
 
   // Динамика ставок: у роботов botExpiresAt ~15 сек, потом ставка исчезает и список подтягивается; периодически добавляется новая
   useEffect(() => {
@@ -475,6 +476,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }, 1000)
     return () => clearInterval(interval)
   }, [])
+
+  useEffect(() => {
+    screenRef.current = screen
+  }, [screen])
 
   // Загрузка сохранённых данных (совместимость с будущими версиями: новые поля берутся из дефолтов)
   useEffect(() => {
@@ -671,8 +676,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return true
   }, [player.balance])
 
-  const BOT_AUTO_ACCEPT_AFTER_MS = 60 * 1000
-  const MAX_BET_FOR_BOT_AUTO_ACCEPT = 100
+  const BOT_AUTO_ACCEPT_AFTER_MS = 30 * 1000
 
   const createBet = useCallback(
     (amount: number, duration: BetDuration = "once") => {
@@ -704,7 +708,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const r = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)]
       const responseId = `resp-${Date.now()}`
       const hasLivePlayers = Math.random() < 0.7
-      const delayMs = hasLivePlayers ? 2500 : 60 * 1000
+      const delayMs = hasLivePlayers ? 2500 : BOT_AUTO_ACCEPT_AFTER_MS
       betResponseTimeoutRef.current = setTimeout(() => {
         betResponseTimeoutRef.current = null
         setBetResponse({
@@ -717,24 +721,41 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           amount,
         })
       }, delayMs)
-      // Если ставку не приняли в течение 1 минуты и сумма не более 100 — робот подхватывает сам
-      botAutoAcceptTimeoutRef.current = setTimeout(() => {
-        botAutoAcceptTimeoutRef.current = null
-        const current = pendingBetRef.current
-        if (!current || current.id !== id || current.amount > MAX_BET_FOR_BOT_AUTO_ACCEPT) return
-        if (betResponseTimeoutRef.current) {
-          clearTimeout(betResponseTimeoutRef.current)
-          betResponseTimeoutRef.current = null
-        }
-        const bot = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)]
-        setOpponent({ ...bot, balance: 500, weekWins: Math.floor(bot.wins / 2), weekEarnings: amount * 5 })
-        setCurrentBet(amount)
-        setBets((prev) => prev.filter((b) => b.id !== id))
-        setPendingBet(null)
-        setBetResponse(null)
-        setTotalRounds(1)
-        setScreen("arena")
-      }, BOT_AUTO_ACCEPT_AFTER_MS)
+      // Через 30 секунд, если ставку не приняли — робот подхватывает сам.
+      const scheduleBotAutoAccept = (delayMs: number) => {
+        botAutoAcceptTimeoutRef.current = setTimeout(() => {
+          const current = pendingBetRef.current
+          if (!current || current.id !== id) return
+
+          const currentScreen = screenRef.current
+          // Если игрок в этот момент играет — ждём завершения игры.
+          if (currentScreen === "arena" || currentScreen === "matchmaking") {
+            scheduleBotAutoAccept(10 * 1000)
+            return
+          }
+
+          botAutoAcceptTimeoutRef.current = null
+          if (betResponseTimeoutRef.current) {
+            clearTimeout(betResponseTimeoutRef.current)
+            betResponseTimeoutRef.current = null
+          }
+          const bot = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)]
+          setOpponent({
+            ...bot,
+            balance: 500,
+            weekWins: Math.floor(bot.wins / 2),
+            weekEarnings: amount * 5,
+          })
+          setCurrentBet(amount)
+          setBets((prev) => prev.filter((b) => b.id !== id))
+          setPendingBet(null)
+          setBetResponse(null)
+          setTotalRounds(1)
+          setScreen("arena")
+        }, delayMs)
+      }
+
+      scheduleBotAutoAccept(BOT_AUTO_ACCEPT_AFTER_MS)
     },
     [player.balance, player.id, player.name, player.avatar, player.wins, setScreen, setOpponent, setCurrentBet, setTotalRounds]
   )
@@ -760,8 +781,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   )
 
   // Очистка таймера отклика и ожидающей ставки только при переходе на экраны,
-  // где список ставок недоступен (игра, вывод). На menu/bets/bet-select ставка должна оставаться.
-  const screensThatClearPendingBet: GameScreen[] = ["matchmaking", "result", "withdraw", "arena"]
+  // где список ставок точно не нужен (например, вывод средств). На menu/bets/bet-select/arena ставка должна оставаться.
+  const screensThatClearPendingBet: GameScreen[] = ["withdraw"]
   useEffect(() => {
     if (screensThatClearPendingBet.includes(screen)) {
       if (betResponseTimeoutRef.current) {

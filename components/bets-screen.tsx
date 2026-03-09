@@ -261,7 +261,18 @@ export function BetsScreen() {
                   className="text-lg font-bold tabular-nums"
                 />
                 <p className="text-base text-muted-foreground">
-                  Сейчас: {formatAmount(pendingBet.amount)} голосов. Баланс: {formatAmount(player.balance + pendingBet.amount)}
+                  Сейчас: {formatAmount(pendingBet.amount)} голосов.{" "}
+                  {(() => {
+                    const raw = parseInt(editAmount || String(pendingBet.amount), 10)
+                    const bet = Number.isFinite(raw) && raw > 0 ? raw : pendingBet.amount
+                    const pot = bet * 2
+                    const commissionRate = player.vip ? 0.05 : 0.1
+                    const commission = Math.ceil(pot * commissionRate)
+                    const winnings = pot - commission
+                    const earningsIfWin = winnings - bet
+                    const balanceIfWin = player.balance + earningsIfWin
+                    return `Баланс при выигрыше: ${formatAmount(balanceIfWin)}`
+                  })()}
                 </p>
               </div>
               <DialogFooter className="flex-col sm:flex-row gap-2">
