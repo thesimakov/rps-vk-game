@@ -1,0 +1,9 @@
+{
+  "static_path": "out",
+  "app_id": "ВАШ_APP_ID_ИЗ_НАСТРОЕК_ВК",
+  "endpoints": {
+    "mobile": "index.html",
+    "mvk": "index.html",
+    "web": "index.html"
+  }
+}
