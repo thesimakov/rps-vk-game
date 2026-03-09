@@ -26,6 +26,8 @@ function GameScreen() {
   const { screen, vkUser } = useGame()
   const isEntry = screen === "entry" || (screen === "menu" && !vkUser)
 
+  const isScrollableScreen = !["menu", "entry"].includes(screen)
+
   return (
     <>
       {isEntry && <EntryScreen />}
@@ -109,9 +111,9 @@ function GameLayout() {
 
         <main className="flex-1 flex justify-center">
           <div
-            className={`w-full max-w-md min-h-screen max-h-screen overflow-y-auto px-3 ${
-              showBottomNav ? "pb-20" : ""
-            }`}
+            className={`w-full max-w-md px-3 ${
+              isScrollableScreen ? "min-h-screen max-h-screen overflow-y-auto" : "min-h-screen"
+            } ${showBottomNav ? "pb-20" : ""}`}
           >
             <GameScreen />
           </div>
