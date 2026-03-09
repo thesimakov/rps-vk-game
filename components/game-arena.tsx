@@ -164,6 +164,7 @@ export function GameArena() {
         const commission = Math.ceil(pot * commissionRate)
         const winnings = pot - commission
         const roundEarnings = outcome === "win" ? winnings - currentBet : -currentBet
+        const roundBonus = outcome === "win" ? Math.max(1, Math.round(winnings * 0.1)) : 0
 
         // Для одиночного раунда применяем экономику сразу.
         if (totalRounds === 1) {
@@ -173,6 +174,8 @@ export function GameArena() {
             const commissionInner = Math.ceil(potInner * (isVip ? 0.05 : 0.1))
             const winningsInner = potInner - commissionInner
             const earningsInner = outcome === "win" ? winningsInner - currentBet : -currentBet
+            const bonusInner =
+              outcome === "win" ? Math.max(1, Math.round(winningsInner * 0.1)) : 0
 
             const next = {
               ...p,
@@ -180,7 +183,7 @@ export function GameArena() {
               wins: outcome === "win" ? p.wins + 1 : p.wins,
               losses: outcome === "loss" ? p.losses + 1 : p.losses,
               weekWins: outcome === "win" ? p.weekWins + 1 : p.weekWins,
-              weekEarnings: outcome === "win" ? p.weekEarnings + winningsInner : p.weekEarnings,
+              ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonusInner),
             }
             if (playerMove === "water") {
               next.waterCardUses = Math.max(0, (p.waterCardUses ?? 0) - 1)
@@ -194,6 +197,7 @@ export function GameArena() {
             outcome,
             earnings: roundEarnings,
             bet: currentBet,
+            bonus: roundBonus,
           })
         } else {
           // В мульти-раундовых матчах (3 или 5 ходов) ставка относится ко всему матчу.
@@ -229,20 +233,17 @@ export function GameArena() {
               else if (finalOutcome === "loss") finalEarnings = -currentBet
               else finalEarnings = 0
 
-              setPlayer((p) => {
-                const isVip = p.vip
-                const potInner = currentBet * 2
-                const commissionInner = Math.ceil(potInner * (isVip ? 0.05 : 0.1))
-                const winningsInner = potInner - commissionInner
+              const matchBonus =
+                finalOutcome === "win" ? Math.max(1, Math.round(winningsMatch * 0.1)) : 0
 
+              setPlayer((p) => {
                 const next = {
                   ...p,
                   balance: p.balance + finalEarnings,
                   wins: finalOutcome === "win" ? p.wins + 1 : p.wins,
                   losses: finalOutcome === "loss" ? p.losses + 1 : p.losses,
                   weekWins: finalOutcome === "win" ? p.weekWins + 1 : p.weekWins,
-                  weekEarnings:
-                    finalOutcome === "win" ? p.weekEarnings + winningsInner : p.weekEarnings,
+                  ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + matchBonus),
                 }
                 return next
               })
@@ -253,6 +254,7 @@ export function GameArena() {
                 outcome: finalOutcome,
                 earnings: finalEarnings,
                 bet: currentBet,
+                bonus: matchBonus,
               })
             }
 
@@ -292,6 +294,7 @@ export function GameArena() {
           outcome: "loss",
           earnings: -currentBet,
           bet: currentBet,
+          bonus: 0,
         })
         setScreen("result")
         return

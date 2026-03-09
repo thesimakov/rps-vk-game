@@ -8,16 +8,16 @@ import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
 
 const LEVELS = ["Супер новичок", "Новичок", "Игрок", "Мастер", "Легенда"]
-const LEVEL_STEPS = 10
+const LEVEL_STEPS = 100
 
 const DAILY_REWARDS = [
-  { day: 1, amount: 7, icon: "coin" as const },
-  { day: 2, amount: 7, icon: "coin" as const },
-  { day: 3, amount: 7, icon: "coin" as const },
-  { day: 4, amount: 14, icon: "coin" as const },
-  { day: 5, amount: 1, icon: "gift" as const },
-  { day: 6, amount: 14, icon: "coin" as const },
-  { day: 7, amount: 18, icon: "coin" as const },
+  { day: 1, amount: 100, icon: "coin" as const },
+  { day: 2, amount: 100, icon: "coin" as const },
+  { day: 3, amount: 150, icon: "coin" as const },
+  { day: 4, amount: 150, icon: "coin" as const },
+  { day: 5, amount: 200, icon: "coin" as const },
+  { day: 6, amount: 1, icon: "gift" as const }, // премиум сундук
+  { day: 7, amount: 300, icon: "coin" as const },
 ]
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
@@ -44,10 +44,11 @@ export function MainMenu() {
   const { setScreen, player, setPlayer } = useGame()
   const [now, setNow] = useState(() => Date.now())
 
-  const totalWins = player.wins + player.weekWins
-  const levelIndex = Math.min(Math.floor(totalWins / LEVEL_STEPS), LEVELS.length - 1)
+  const rating = player.ratingPoints ?? 0
+  const levelNumber = Math.floor(rating / LEVEL_STEPS)
+  const levelIndex = Math.min(levelNumber, LEVELS.length - 1)
   const levelName = LEVELS[levelIndex]
-  const progressInLevel = totalWins % LEVEL_STEPS
+  const progressInLevel = rating % LEVEL_STEPS
   const progressDisplay = `${Math.min(progressInLevel, LEVEL_STEPS)}/${LEVEL_STEPS}`
 
   const lastClaimedAt = player.lastDailyGiftClaimedAt
@@ -55,6 +56,13 @@ export function MainMenu() {
   const msUntil = useMemo(() => msUntilNextGift(lastClaimedAt), [lastClaimedAt, now])
   const canClaimGift = msUntil === 0
   const timeUntilText = formatTimeUntil(msUntil)
+
+  // Автоматическое попадание в сезонный турнир после 10 уровня
+  useEffect(() => {
+    if (levelNumber >= 10 && !player.tournamentEntry) {
+      setPlayer((p) => ({ ...p, tournamentEntry: true }))
+    }
+  }, [levelNumber, player.tournamentEntry, setPlayer])
 
   useEffect(() => {
     if (!canClaimGift) {
@@ -66,7 +74,7 @@ export function MainMenu() {
   const handleClaimDaily = () => {
     if (!canClaimGift) return
     const reward = DAILY_REWARDS[dailyIndex]
-    const amount = reward.icon === "coin" ? reward.amount : reward.amount * 10
+    const amount = reward.icon === "coin" ? reward.amount : 0
     setPlayer((p) => ({
       ...p,
       balance: p.balance + amount,
@@ -207,7 +215,11 @@ export function MainMenu() {
                   <Coins className="h-4 w-4 text-amber-400 mb-0.5" />
                 )}
                 <span className="text-[10px] font-bold text-white/90">{r.day} день</span>
-                {!claimed && <span className="text-[10px] text-white/70">{r.amount}</span>}
+                {!claimed && (
+                  <span className="text-[10px] text-white/70">
+                    {r.icon === "gift" ? "сундук" : r.amount}
+                  </span>
+                )}
               </div>
             )
           })}

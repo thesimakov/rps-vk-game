@@ -34,6 +34,8 @@ export interface Player {
   losses: number
   weekWins: number
   weekEarnings: number
+  /** Рейтинговые бонусы (очки), полученные за победы */
+  ratingPoints?: number
   vip: boolean
   /** Осталось матчей с приоритетом поиска (покупка «Быстрый поиск») */
   fastMatchBoosts?: number
@@ -129,6 +131,8 @@ export interface MatchResult {
   outcome: "win" | "loss" | "draw"
   earnings: number
   bet: number
+  /** Бонусные очки рейтинга за матч */
+  bonus: number
 }
 
 interface GameState {
@@ -329,6 +333,7 @@ const DEFAULT_PLAYER: Player = {
   weekWins: 0,
   weekEarnings: 0,
   vip: false,
+  ratingPoints: 0,
 }
 
 function loadSavedState(): {
@@ -371,6 +376,7 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           weekWins: player.weekWins,
           weekEarnings: player.weekEarnings,
           vip: player.vip,
+          ratingPoints: player.ratingPoints,
           fastMatchBoosts: player.fastMatchBoosts,
           victoryAnimation: player.victoryAnimation,
           cardSkin: player.cardSkin,
@@ -582,8 +588,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       name: player.name,
       avatar: player.avatar,
       avatarUrl: player.avatarUrl,
-      wins: player.weekWins,
-      earnings: player.weekEarnings,
+      wins: player.wins,
+      earnings: player.ratingPoints ?? 0,
       vip: player.vip,
       isPlayer: true,
     }
@@ -597,8 +603,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       name: player.name,
       avatar: player.avatar,
       avatarUrl: player.avatarUrl,
-      wins: player.weekWins,
-      earnings: player.weekEarnings,
+      wins: player.wins,
+      earnings: player.ratingPoints ?? 0,
       vip: player.vip,
       isPlayer: true,
     }
@@ -609,7 +615,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const ranked: LeaderboardEntry[] = all.map((e, i) => ({ ...e, rank: i + 1 }))
     setDisplayLeaderboard(ranked)
     setLeaderboardVersion((v) => v + 1)
-  }, [player.id, player.name, player.avatar, player.avatarUrl, player.weekWins, player.weekEarnings, player.vip])
+  }, [player.id, player.name, player.avatar, player.avatarUrl, player.wins, player.ratingPoints, player.vip])
 
   useEffect(() => {
     const playerEntry: Omit<LeaderboardEntry, "rank"> = {
@@ -617,15 +623,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       name: player.name,
       avatar: player.avatar,
       avatarUrl: player.avatarUrl,
-      wins: player.weekWins,
-      earnings: player.weekEarnings,
+      wins: player.wins,
+      earnings: player.ratingPoints ?? 0,
       vip: player.vip,
       isPlayer: true,
     }
     const base = leaderboardDataRef.current.filter((e) => e.id !== player.id)
     const all = [...base, playerEntry].sort((a, b) => b.earnings - a.earnings)
     setDisplayLeaderboard(all.map((e, i) => ({ ...e, rank: i + 1 })))
-  }, [player.weekWins, player.weekEarnings, player.id, player.name, player.avatar, player.avatarUrl, player.vip])
+  }, [player.wins, player.ratingPoints, player.id, player.name, player.avatar, player.avatarUrl, player.vip])
 
   useEffect(() => {
     const t = setInterval(updateLeaderboardData, LEADERBOARD_UPDATE_MS)
@@ -640,7 +646,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const rankTrendRef = useRef<{ rank: number; earnings: number } | null>(null)
   const [rankTrend, setRankTrend] = useState<"up" | "down" | null>(null)
   useEffect(() => {
-    const earnings = player.weekEarnings
+    const earnings = player.ratingPoints ?? 0
     const prev = rankTrendRef.current
     if (prev === null) {
       rankTrendRef.current = { rank: playerRank, earnings }
@@ -651,7 +657,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     else if (playerRank > prev.rank || earnings < prev.earnings) setRankTrend("down")
     else setRankTrend(null)
     rankTrendRef.current = { rank: playerRank, earnings }
-  }, [playerRank, player.weekEarnings])
+  }, [playerRank, player.ratingPoints])
 
   const purchaseRankBoost = useCallback(() => {
     const cost = 250
@@ -660,7 +666,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setPlayer((p) => ({
       ...p,
       balance: p.balance - cost,
-      weekEarnings: p.weekEarnings + bonus,
+      ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonus),
     }))
     return true
   }, [player.balance])

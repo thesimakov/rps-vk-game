@@ -2,7 +2,7 @@
 
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Trophy, Crown, Coins, Medal } from "lucide-react"
+import { ArrowLeft, Trophy, Crown, Medal } from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 
 function getMedalStyle(rank: number) {
@@ -57,6 +57,11 @@ export function LeaderboardScreen() {
 
       {/* Leaderboard */}
       <div className="w-full max-w-md flex flex-col gap-2">
+        {/* Заголовок столбцов */}
+        <div className="flex items-center justify-between px-2 text-[10px] uppercase tracking-wide text-muted-foreground">
+          <span>Игрок</span>
+          <span>Бонусы</span>
+        </div>
         {top10.map((entry) => (
           <div
             key={entry.id}
@@ -140,10 +145,11 @@ export function LeaderboardScreen() {
               </span>
             </div>
 
-            {/* Earnings */}
-            <div className="flex items-center gap-1">
-              <Coins className="h-3.5 w-3.5 text-accent" />
-              <span className="text-base font-bold text-accent tabular-nums">{formatAmount(entry.earnings)}</span>
+            {/* Бонусы (значение) */}
+            <div className="flex items-center justify-end gap-1">
+              <span className="text-base font-bold text-accent tabular-nums">
+                {entry.earnings}
+              </span>
             </div>
           </div>
         ))}

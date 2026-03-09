@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import { useGame } from "@/lib/game-context"
-import { formatAmount } from "@/lib/format-amount"
 import { AvatarImageOrLetter, VipBadgeOnFrame } from "@/components/player-avatar"
 import { Trophy, Crown, ArrowUp, ArrowDown } from "lucide-react"
 
@@ -23,7 +22,7 @@ export function WeeklyRanking() {
   const playerEntry = leaderboard.find((e) => e.isPlayer)
   const rankLabel = playerRank >= 1000 ? `${Math.floor(playerRank / 1000)}K` : String(playerRank)
   const winsLabel = playerEntry ? playerEntry.wins : player.weekWins
-  const earningsLabel = playerEntry ? playerEntry.earnings : player.weekEarnings
+  const earningsLabel = playerEntry ? playerEntry.earnings : player.ratingPoints ?? 0
   const canBuyBoost = player.balance >= 250
 
   useEffect(() => {
@@ -92,6 +91,16 @@ export function WeeklyRanking() {
 
       <div className="h-px bg-border/30" />
 
+      {/* Заголовок столбцов */}
+      <div className="flex items-center justify-between px-1 pb-1">
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+          Игрок
+        </span>
+        <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
+          Бонусы
+        </span>
+      </div>
+
       {/* Список с перетаскиванием для прокрутки и плавной анимацией при смене данных */}
       <div
         ref={scrollRef}
@@ -153,13 +162,13 @@ export function WeeklyRanking() {
                   </span>
                   {entry.vip && <Crown className="h-3 w-3 text-accent flex-shrink-0" />}
                 </div>
-                <span className="text-[10px] text-muted-foreground transition-all duration-300">
-                  {entry.wins} {"побед"}
-                </span>
+              <span className="text-[10px] text-muted-foreground transition-all duration-300">
+                {entry.wins} {"побед"}
+              </span>
               </div>
 
               <span className="text-base font-bold text-accent tabular-nums flex-shrink-0 transition-all duration-300">
-                {formatAmount(entry.earnings)}
+                {entry.earnings}
               </span>
             </div>
           ))}
@@ -194,8 +203,8 @@ export function WeeklyRanking() {
               {winsLabel} {winsLabel === 1 ? "победа" : winsLabel >= 2 && winsLabel <= 4 ? "победы" : "побед"}
             </span>
           </div>
-            <span className="text-base font-extrabold text-accent tabular-nums flex-shrink-0 transition-all duration-300">
-            {formatAmount(earningsLabel)}
+          <span className="text-base font-extrabold text-accent tabular-nums flex-shrink-0 transition-all duration-300">
+            {earningsLabel}
           </span>
         </div>
       </div>

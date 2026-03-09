@@ -99,6 +99,7 @@ export function ResultScreen() {
   if (!lastResult) return null
 
   const bankAmount = lastResult.bet * 2
+  const totalRating = player.ratingPoints ?? 0
 
   const playerMoveInfo = lastResult.playerMove ? MOVE_LABELS[lastResult.playerMove] : { icon: "?", label: "?" }
   const opponentMoveInfo = lastResult.opponentMove ? MOVE_LABELS[lastResult.opponentMove] : { icon: "?", label: "?" }
@@ -158,29 +159,49 @@ export function ResultScreen() {
         </div>
       )}
 
-      {/* Верхняя панель: БАНК | РАУНД — закреплена сверху */}
+      {/* Верхняя панель: БАНК | БОНУСЫ | РАУНД — закреплена сверху */}
       <div className="sticky top-0 z-10 w-full px-4 py-3 bg-background/85 backdrop-blur-md border-b border-border/30 shrink-0">
         <div className="flex items-center justify-between w-full max-w-md mx-auto">
-        <div className="flex items-center gap-2">
-          <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
-          <div className="flex flex-col">
-            <span className="text-base font-bold text-white/90 uppercase tracking-wider">Банк</span>
-            <span className="text-base font-bold text-amber-400 tabular-nums leading-tight">
-              {formatAmount(bankAmount)} <span className="text-white/70 font-medium text-base">голосов</span>
+          {/* Банк */}
+          <div className="flex items-center gap-2">
+            <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
+            <div className="flex flex-col">
+              <span className="text-base font-bold text-white/90 uppercase tracking-wider">Банк</span>
+              <span className="text-base font-bold text-amber-400 tabular-nums leading-tight">
+                {formatAmount(bankAmount)} <span className="text-white/70 font-medium text-base">голосов</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Бонусы рейтинга */}
+          <div className="flex flex-col items-center gap-0.5">
+            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70">
+              Бонусы
             </span>
+            <div className="relative px-3 py-1 rounded-full border border-amber-400/50 bg-amber-500/20 min-w-[72px] flex items-center justify-center">
+              <span className="text-sm font-bold text-amber-200 tabular-nums">
+                {formatAmount(totalRating)}
+              </span>
+              {isWin && lastResult.bonus > 0 && (
+                <span className="result-bonus-fly text-xs font-bold text-emerald-300 tabular-nums">
+                  +{formatAmount(lastResult.bonus)}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-red-400 flex-shrink-0" />
-          <span className="text-base font-bold text-white uppercase tracking-widest">
-            Раунд {totalRounds} из {totalRounds}
-          </span>
-          <div className="flex gap-0.5">
-            {Array.from({ length: totalRounds }).map((_, i) => (
-              <Heart key={i} className="h-5 w-5 flex-shrink-0 text-white/25" />
-            ))}
+
+          {/* Раунд */}
+          <div className="flex items-center gap-2">
+            <Zap className="h-5 w-5 text-red-400 flex-shrink-0" />
+            <span className="text-base font-bold text-white uppercase tracking-widest">
+              Раунд {totalRounds} из {totalRounds}
+            </span>
+            <div className="flex gap-0.5">
+              {Array.from({ length: totalRounds }).map((_, i) => (
+                <Heart key={i} className="h-5 w-5 flex-shrink-0 text-white/25" />
+              ))}
+            </div>
           </div>
-        </div>
         </div>
       </div>
 
