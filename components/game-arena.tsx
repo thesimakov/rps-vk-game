@@ -3,7 +3,7 @@
 import { useGame, type Move } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Coins, Timer, Zap, Heart } from "lucide-react"
+import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 
 const BASE_MOVES: { key: Move; label: string; icon: string; color: string }[] = [
@@ -80,6 +80,9 @@ export function GameArena() {
   const [phase, setPhase] = useState<Phase>("choosing")
   /** Номер текущего раунда (1-based). Растёт только после победы или поражения. */
   const [roundCount, setRoundCount] = useState(1)
+  /** Локальный счёт в матче (раунды): соперник : игрок */
+  const [opponentScore, setOpponentScore] = useState(0)
+  const [playerScore, setPlayerScore] = useState(0)
   const [drawMessage, setDrawMessage] = useState(false)
   /** Подсказка что произошло в раунде (победа/поражение) — для 3 и 5 раундов */
   const [roundHintMessage, setRoundHintMessage] = useState<string | null>(null)
@@ -141,6 +144,13 @@ export function GameArena() {
 
         // Подсказка что произошло (для мультираунда)
         setRoundHintMessage(getOutcomePhrase(playerMove, oppMove, outcome))
+
+        // Обновляем локальный счёт матча по раундам
+        if (outcome === "win") {
+          setPlayerScore((prev) => prev + 1)
+        } else if (outcome === "loss") {
+          setOpponentScore((prev) => prev + 1)
+        }
 
         // Победа или поражение: обновляем баланс и статистику
         const pot = currentBet * 2
@@ -334,6 +344,14 @@ export function GameArena() {
                 <span className={`text-2xl font-black tabular-nums text-white`}>{timeLeft}</span>
               </div>
             </div>
+          </div>
+          {/* Табло счёта раундов: соперник : игрок, стрелки обозначают игроков */}
+          <div className="mt-1 flex items-center gap-3">
+            <ChevronUp className="h-4 w-4 text-red-300" aria-label="Соперник" />
+            <span className="text-lg font-black text-white tabular-nums">
+              {opponentScore} : {playerScore}
+            </span>
+            <ChevronDown className="h-4 w-4 text-emerald-300" aria-label="Вы" />
           </div>
           {drawMessage && (
             <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
