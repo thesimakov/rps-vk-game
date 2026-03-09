@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef } from "react"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, showWallPostBox } from "@/lib/vk-bridge"
+import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, showWallPostBox, joinVKGroup } from "@/lib/vk-bridge"
 import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X } from "lucide-react"
 
 const INVITED_SLOTS = 4
 const INVITE_REWARD = 100
 const WALL_POST_REWARD = 100
+const GROUP_SUB_REWARD = 40
 
 interface ShopItem {
   id: string
@@ -200,16 +201,19 @@ function normalizeInvitedSlots(
 export function ShopScreen() {
   const { setScreen, player, setPlayer, lavaCardStock, purchaseLavaCard, purchaseWaterCard } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
+  const [customTopUp, setCustomTopUp] = useState("")
   const [openingChest, setOpeningChest] = useState<{ type: ChestType; prizes: ChestPrize[] } | null>(null)
   const [chestPhase, setChestPhase] = useState<"fly" | "open" | "reward" | "collect">("fly")
   const [inviteLoading, setInviteLoading] = useState(false)
   const [wallPostLoading, setWallPostLoading] = useState(false)
+  const [groupSubLoading, setGroupSubLoading] = useState(false)
   const confettiRef = useRef<HTMLDivElement>(null)
 
   const invitedSlots = normalizeInvitedSlots(player.invitedFriends)
   const invitedCount = invitedSlots.filter(Boolean).length
   const canClaimInviteReward = invitedCount >= INVITED_SLOTS && !player.invitedRewardClaimed
   const canClaimWallPostReward = !player.wallPostRewardClaimed
+  const canClaimGroupReward = !player.groupSubscribedRewardClaimed
 
   useEffect(() => {
     if (!openingChest) return
@@ -316,6 +320,23 @@ export function ShopScreen() {
     }
   }
 
+  const handleGroupSubscribe = async () => {
+    if (!canClaimGroupReward) return
+    setGroupSubLoading(true)
+    try {
+      const ok = await joinVKGroup()
+      if (ok) {
+        setPlayer((p) => ({
+          ...p,
+          balance: p.balance + GROUP_SUB_REWARD,
+          groupSubscribedRewardClaimed: true,
+        }))
+      }
+    } finally {
+      setGroupSubLoading(false)
+    }
+  }
+
   const handleBuy = (item: ShopItem) => {
     if (player.balance < item.price) return
 
@@ -413,6 +434,32 @@ export function ShopScreen() {
               {topUpLoading === pack.amount ? "..." : pack.label}
             </button>
           ))}
+          {/* Кнопка "Другое" с произвольной суммой */}
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              min={1}
+              max={10000}
+              inputMode="numeric"
+              pattern="[0-9]*"
+              value={customTopUp}
+              onChange={(e) => setCustomTopUp(e.target.value.replace(/[^\d]/g, ""))}
+              className="w-24 px-2 py-1.5 rounded-xl bg-background/80 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground"
+              placeholder="Сумма"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const val = Number(customTopUp)
+                if (!Number.isFinite(val) || val <= 0) return
+                handleTopUp(val)
+              }}
+              disabled={topUpLoading !== null || !customTopUp || Number(customTopUp) <= 0}
+              className="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
+            >
+              Другое
+            </button>
+          </div>
         </div>
       </div>
 
@@ -430,7 +477,7 @@ export function ShopScreen() {
             Откройте приложение в ВКонтакте, чтобы выбирать друзей и приглашать.
           </p>
         )}
-        <div className="grid grid-cols-2 gap-2 mb-3">
+        <div className="grid grid-cols-4 gap-2 mb-3">
           {invitedSlots.map((friend, index) => (
             <div
               key={index}
@@ -515,6 +562,37 @@ export function ShopScreen() {
         >
           <Share2 className="h-4 w-4" />
           {wallPostLoading ? "Публикация…" : player.wallPostRewardClaimed ? "Награда получена" : `Опубликовать и получить ${WALL_POST_REWARD} голосов`}
+        </button>
+      </div>
+
+      {/* 40 голосов за подписку на группу ВК */}
+      <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <UserPlus className="h-5 w-5 text-secondary" />
+          <span className="font-bold text-base text-foreground">
+            Подпишитесь в нашу группу ВК и получите {GROUP_SUB_REWARD} голосов
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          Нажмите «Подписаться» — мы автоматически подпишем вас на группу ВКонтакте и начислим награду один раз.
+        </p>
+        {!isVKEnvironment() && (
+          <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+            Откройте приложение во ВКонтакте, чтобы подписаться на группу.
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={handleGroupSubscribe}
+          disabled={!canClaimGroupReward || groupSubLoading || !isVKEnvironment()}
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-secondary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+        >
+          <Share2 className="h-4 w-4" />
+          {groupSubLoading
+            ? "Подписка…"
+            : player.groupSubscribedRewardClaimed
+              ? "Награда получена"
+              : `Подписаться и получить ${GROUP_SUB_REWARD} голосов`}
         </button>
       </div>
 

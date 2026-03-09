@@ -722,7 +722,8 @@ const DEFAULT_PLAYER = {
     weekEarnings: 0,
     vip: false,
     ratingPoints: 0,
-    totalPurchases: 0
+    totalPurchases: 0,
+    groupSubscribedRewardClaimed: false
 };
 function loadSavedState() {
     if ("TURBOPACK compile-time falsy", 0) //TURBOPACK unreachable
@@ -783,6 +784,7 @@ function saveState(player, withdrawState, lavaCardStock) {
                 invitedFriends: player.invitedFriends,
                 invitedRewardClaimed: player.invitedRewardClaimed,
                 wallPostRewardClaimed: player.wallPostRewardClaimed,
+                groupSubscribedRewardClaimed: player.groupSubscribedRewardClaimed,
                 lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
                 dailyRewardIndex: player.dailyRewardIndex
             },
@@ -1577,7 +1579,7 @@ function GameProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/lib/game-context.tsx",
-        lineNumber: 911,
+        lineNumber: 915,
         columnNumber: 5
     }, this);
 }

@@ -11,6 +11,8 @@ __turbopack_context__.s([
     ()=>initVKBridge,
     "isVKEnvironment",
     ()=>isVKEnvironment,
+    "joinVKGroup",
+    ()=>joinVKGroup,
     "purchaseVKVoices",
     ()=>purchaseVKVoices,
     "requestWithdraw",
@@ -76,6 +78,13 @@ async function showFriendsPicker() {
     if ("TURBOPACK compile-time truthy", 1) return null;
     //TURBOPACK unreachable
     ;
+}
+async function joinVKGroup() {
+    if ("TURBOPACK compile-time truthy", 1) return false;
+    //TURBOPACK unreachable
+    ;
+    const rawId = undefined;
+    const groupId = undefined;
 }
 async function showInviteBox() {
     if ("TURBOPACK compile-time truthy", 1) return false;
@@ -604,7 +613,8 @@ const DEFAULT_PLAYER = {
     weekEarnings: 0,
     vip: false,
     ratingPoints: 0,
-    totalPurchases: 0
+    totalPurchases: 0,
+    groupSubscribedRewardClaimed: false
 };
 function loadSavedState() {
     if ("TURBOPACK compile-time truthy", 1) return null;
@@ -1242,7 +1252,7 @@ function GameProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/lib/game-context.tsx",
-        lineNumber: 911,
+        lineNumber: 915,
         columnNumber: 5
     }, this);
 }
@@ -1840,13 +1850,13 @@ function MainMenu() {
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "grid grid-cols-7 gap-1",
+                        className: "flex gap-1 overflow-x-auto py-1",
                         children: DAILY_REWARDS.map((r, i)=>{
                             const claimed = i < dailyIndex;
                             const isCurrent = i === dailyIndex;
                             const isAvailable = isCurrent && canClaimGift;
                             return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                                className: `flex flex-col items-center p-1.5 rounded-xl border text-center ${claimed ? "bg-emerald-500/20 border-emerald-400/40" : isAvailable ? "bg-amber-400/20 border-amber-400/50" : "bg-white/5 border-white/15"}`,
+                                className: `flex flex-col items-center min-w-[64px] px-2 py-1.5 rounded-xl border text-center ${claimed ? "bg-emerald-500/20 border-emerald-400/40" : isAvailable ? "bg-amber-400/20 border-amber-400/50" : "bg-white/5 border-white/15"}`,
                                 children: [
                                     claimed ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$check$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Check$3e$__["Check"], {
                                         className: "h-4 w-4 text-emerald-400 mb-0.5"
@@ -5876,6 +5886,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lu
 const INVITED_SLOTS = 4;
 const INVITE_REWARD = 100;
 const WALL_POST_REWARD = 100;
+const GROUP_SUB_REWARD = 40;
 const SHOP_ITEMS = [
     {
         id: "vip",
@@ -5886,7 +5897,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 29,
+            lineNumber: 30,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "premium",
@@ -5901,7 +5912,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 38,
+            lineNumber: 39,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "boost",
@@ -5916,7 +5927,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 47,
+            lineNumber: 48,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "chest",
@@ -5931,7 +5942,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 56,
+            lineNumber: 57,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "chest",
@@ -5946,7 +5957,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 65,
+            lineNumber: 66,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "cosmetic",
@@ -5961,7 +5972,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 74,
+            lineNumber: 75,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "cosmetic",
@@ -5976,7 +5987,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 83,
+            lineNumber: 84,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "cosmetic",
@@ -5991,7 +6002,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 92,
+            lineNumber: 93,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "cosmetic",
@@ -6006,7 +6017,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 101,
+            lineNumber: 102,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "tournament",
@@ -6021,7 +6032,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 110,
+            lineNumber: 111,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "special",
@@ -6036,7 +6047,7 @@ const SHOP_ITEMS = [
             className: "h-5 w-5"
         }, void 0, false, {
             fileName: "[project]/components/shop-screen.tsx",
-            lineNumber: 119,
+            lineNumber: 120,
             columnNumber: 11
         }, ("TURBOPACK compile-time value", void 0)),
         category: "special",
@@ -6163,15 +6174,18 @@ const VOICE_PACKS = [
 function ShopScreen() {
     const { setScreen, player, setPlayer, lavaCardStock, purchaseLavaCard, purchaseWaterCard } = (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$game$2d$context$2e$tsx__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useGame"])();
     const [topUpLoading, setTopUpLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
+    const [customTopUp, setCustomTopUp] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("");
     const [openingChest, setOpeningChest] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(null);
     const [chestPhase, setChestPhase] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])("fly");
     const [inviteLoading, setInviteLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const [wallPostLoading, setWallPostLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
+    const [groupSubLoading, setGroupSubLoading] = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useState"])(false);
     const confettiRef = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useRef"])(null);
     const invitedSlots = normalizeInvitedSlots(player.invitedFriends);
     const invitedCount = invitedSlots.filter(Boolean).length;
     const canClaimInviteReward = invitedCount >= INVITED_SLOTS && !player.invitedRewardClaimed;
     const canClaimWallPostReward = !player.wallPostRewardClaimed;
+    const canClaimGroupReward = !player.groupSubscribedRewardClaimed;
     (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["useEffect"])(()=>{
         if (!openingChest) return;
         setChestPhase("fly");
@@ -6300,6 +6314,22 @@ function ShopScreen() {
             setWallPostLoading(false);
         }
     };
+    const handleGroupSubscribe = async ()=>{
+        if (!canClaimGroupReward) return;
+        setGroupSubLoading(true);
+        try {
+            const ok = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$vk$2d$bridge$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["joinVKGroup"])();
+            if (ok) {
+                setPlayer((p)=>({
+                        ...p,
+                        balance: p.balance + GROUP_SUB_REWARD,
+                        groupSubscribedRewardClaimed: true
+                    }));
+            }
+        } finally{
+            setGroupSubLoading(false);
+        }
+    };
     const handleBuy = (item)=>{
         if (player.balance < item.price) return;
         if (item.id === "lava-card") {
@@ -6370,12 +6400,12 @@ function ShopScreen() {
                             className: "h-5 w-5"
                         }, void 0, false, {
                             fileName: "[project]/components/shop-screen.tsx",
-                            lineNumber: 379,
+                            lineNumber: 400,
                             columnNumber: 11
                         }, this)
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 374,
+                        lineNumber: 395,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("h1", {
@@ -6383,7 +6413,7 @@ function ShopScreen() {
                         children: "Магазин"
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 381,
+                        lineNumber: 402,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6393,7 +6423,7 @@ function ShopScreen() {
                                 className: "h-3.5 w-3.5 text-accent"
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 385,
+                                lineNumber: 406,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6401,19 +6431,19 @@ function ShopScreen() {
                                 children: (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$format$2d$amount$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["formatAmount"])(player.balance)
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 386,
+                                lineNumber: 407,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 384,
+                        lineNumber: 405,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/shop-screen.tsx",
-                lineNumber: 373,
+                lineNumber: 394,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6426,7 +6456,7 @@ function ShopScreen() {
                                 className: "h-5 w-5 text-primary"
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 393,
+                                lineNumber: 414,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6434,13 +6464,13 @@ function ShopScreen() {
                                 children: "Пополнить баланс (ВК голоса)"
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 394,
+                                lineNumber: 415,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 392,
+                        lineNumber: 413,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6448,7 +6478,7 @@ function ShopScreen() {
                         children: "Оплата через ВКонтакте — списание голосов с вашего аккаунта."
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 396,
+                        lineNumber: 417,
                         columnNumber: 9
                     }, this),
                     !(0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$vk$2d$bridge$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["isVKEnvironment"])() && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6456,39 +6486,80 @@ function ShopScreen() {
                         children: "Для пополнения откройте приложение в ВКонтакте."
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 400,
+                        lineNumber: 421,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                         className: "flex flex-wrap gap-2",
-                        children: VOICE_PACKS.map((pack)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
-                                onClick: ()=>handleTopUp(pack.amount),
-                                disabled: topUpLoading !== null,
-                                className: "flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50",
+                        children: [
+                            VOICE_PACKS.map((pack)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                    onClick: ()=>handleTopUp(pack.amount),
+                                    disabled: topUpLoading !== null,
+                                    className: "flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50",
+                                    children: [
+                                        /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$coins$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Coins$3e$__["Coins"], {
+                                            className: "h-4 w-4"
+                                        }, void 0, false, {
+                                            fileName: "[project]/components/shop-screen.tsx",
+                                            lineNumber: 433,
+                                            columnNumber: 15
+                                        }, this),
+                                        topUpLoading === pack.amount ? "..." : pack.label
+                                    ]
+                                }, pack.amount, true, {
+                                    fileName: "[project]/components/shop-screen.tsx",
+                                    lineNumber: 427,
+                                    columnNumber: 13
+                                }, this)),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                                className: "flex items-center gap-1",
                                 children: [
-                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$coins$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Coins$3e$__["Coins"], {
-                                        className: "h-4 w-4"
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("input", {
+                                        type: "number",
+                                        min: 1,
+                                        max: 10000,
+                                        inputMode: "numeric",
+                                        pattern: "[0-9]*",
+                                        value: customTopUp,
+                                        onChange: (e)=>setCustomTopUp(e.target.value.replace(/[^\d]/g, "")),
+                                        className: "w-24 px-2 py-1.5 rounded-xl bg-background/80 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground",
+                                        placeholder: "Сумма"
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 412,
-                                        columnNumber: 15
+                                        lineNumber: 439,
+                                        columnNumber: 13
                                     }, this),
-                                    topUpLoading === pack.amount ? "..." : pack.label
+                                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                                        type: "button",
+                                        onClick: ()=>{
+                                            const val = Number(customTopUp);
+                                            if (!Number.isFinite(val) || val <= 0) return;
+                                            handleTopUp(val);
+                                        },
+                                        disabled: topUpLoading !== null || !customTopUp || Number(customTopUp) <= 0,
+                                        className: "px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold transition-all active:scale-95 disabled:opacity-50",
+                                        children: "Другое"
+                                    }, void 0, false, {
+                                        fileName: "[project]/components/shop-screen.tsx",
+                                        lineNumber: 450,
+                                        columnNumber: 13
+                                    }, this)
                                 ]
-                            }, pack.amount, true, {
+                            }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 406,
-                                columnNumber: 13
-                            }, this))
-                    }, void 0, false, {
+                                lineNumber: 438,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 404,
+                        lineNumber: 425,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/shop-screen.tsx",
-                lineNumber: 391,
+                lineNumber: 412,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6501,7 +6572,7 @@ function ShopScreen() {
                                 className: "h-5 w-5 text-primary"
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 422,
+                                lineNumber: 469,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6513,13 +6584,13 @@ function ShopScreen() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 423,
+                                lineNumber: 470,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 421,
+                        lineNumber: 468,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6527,7 +6598,7 @@ function ShopScreen() {
                         children: "Выберите друзей, пригласите их в игру. Когда они примут приглашение — появятся в ячейках. За 4 принявших приглашение — награда."
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 425,
+                        lineNumber: 472,
                         columnNumber: 9
                     }, this),
                     !(0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$vk$2d$bridge$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["isVKEnvironment"])() && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6535,11 +6606,11 @@ function ShopScreen() {
                         children: "Откройте приложение в ВКонтакте, чтобы выбирать друзей и приглашать."
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 429,
+                        lineNumber: 476,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-                        className: "grid grid-cols-2 gap-2 mb-3",
+                        className: "grid grid-cols-4 gap-2 mb-3",
                         children: invitedSlots.map((friend, index)=>/*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
                                 className: "rounded-xl border border-border/40 bg-muted/20 p-2 min-h-[72px] flex flex-col items-center justify-center",
                                 children: friend ? /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["Fragment"], {
@@ -6550,7 +6621,7 @@ function ShopScreen() {
                                             className: "w-10 h-10 rounded-full object-cover mb-1"
                                         }, void 0, false, {
                                             fileName: "[project]/components/shop-screen.tsx",
-                                            lineNumber: 441,
+                                            lineNumber: 488,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6562,7 +6633,7 @@ function ShopScreen() {
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/shop-screen.tsx",
-                                            lineNumber: 446,
+                                            lineNumber: 493,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -6575,14 +6646,14 @@ function ShopScreen() {
                                                     className: "h-3 w-3"
                                                 }, void 0, false, {
                                                     fileName: "[project]/components/shop-screen.tsx",
-                                                    lineNumber: 455,
+                                                    lineNumber: 502,
                                                     columnNumber: 21
                                                 }, this),
                                                 "Удалить"
                                             ]
                                         }, void 0, true, {
                                             fileName: "[project]/components/shop-screen.tsx",
-                                            lineNumber: 449,
+                                            lineNumber: 496,
                                             columnNumber: 19
                                         }, this)
                                     ]
@@ -6596,7 +6667,7 @@ function ShopScreen() {
                                             className: "h-6 w-6"
                                         }, void 0, false, {
                                             fileName: "[project]/components/shop-screen.tsx",
-                                            lineNumber: 466,
+                                            lineNumber: 513,
                                             columnNumber: 19
                                         }, this),
                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6604,23 +6675,23 @@ function ShopScreen() {
                                             children: "Выбрать друга"
                                         }, void 0, false, {
                                             fileName: "[project]/components/shop-screen.tsx",
-                                            lineNumber: 467,
+                                            lineNumber: 514,
                                             columnNumber: 19
                                         }, this)
                                     ]
                                 }, void 0, true, {
                                     fileName: "[project]/components/shop-screen.tsx",
-                                    lineNumber: 460,
+                                    lineNumber: 507,
                                     columnNumber: 17
                                 }, this)
                             }, index, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 435,
+                                lineNumber: 482,
                                 columnNumber: 13
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 433,
+                        lineNumber: 480,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6636,14 +6707,14 @@ function ShopScreen() {
                                         className: "h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 480,
+                                        lineNumber: 527,
                                         columnNumber: 13
                                     }, this),
                                     "Пригласить"
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 474,
+                                lineNumber: 521,
                                 columnNumber: 11
                             }, this),
                             canClaimInviteReward && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -6655,7 +6726,7 @@ function ShopScreen() {
                                         className: "h-4 w-4"
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 489,
+                                        lineNumber: 536,
                                         columnNumber: 15
                                     }, this),
                                     "Получить ",
@@ -6664,19 +6735,19 @@ function ShopScreen() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 484,
+                                lineNumber: 531,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 473,
+                        lineNumber: 520,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/shop-screen.tsx",
-                lineNumber: 420,
+                lineNumber: 467,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6689,7 +6760,7 @@ function ShopScreen() {
                                 className: "h-5 w-5 text-secondary"
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 499,
+                                lineNumber: 546,
                                 columnNumber: 11
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6701,13 +6772,13 @@ function ShopScreen() {
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 500,
+                                lineNumber: 547,
                                 columnNumber: 11
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 498,
+                        lineNumber: 545,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6719,7 +6790,7 @@ function ShopScreen() {
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 502,
+                        lineNumber: 549,
                         columnNumber: 9
                     }, this),
                     !(0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$vk$2d$bridge$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["isVKEnvironment"])() && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6727,7 +6798,7 @@ function ShopScreen() {
                         children: "Откройте приложение в ВКонтакте, чтобы опубликовать пост на стене."
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 506,
+                        lineNumber: 553,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -6740,20 +6811,93 @@ function ShopScreen() {
                                 className: "h-4 w-4"
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 516,
+                                lineNumber: 563,
                                 columnNumber: 11
                             }, this),
                             wallPostLoading ? "Публикация…" : player.wallPostRewardClaimed ? "Награда получена" : `Опубликовать и получить ${WALL_POST_REWARD} голосов`
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 510,
+                        lineNumber: 557,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/shop-screen.tsx",
-                lineNumber: 497,
+                lineNumber: 544,
+                columnNumber: 7
+            }, this),
+            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                className: "w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4",
+                children: [
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+                        className: "flex items-center gap-2 mb-3",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$user$2d$plus$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__UserPlus$3e$__["UserPlus"], {
+                                className: "h-5 w-5 text-secondary"
+                            }, void 0, false, {
+                                fileName: "[project]/components/shop-screen.tsx",
+                                lineNumber: 571,
+                                columnNumber: 11
+                            }, this),
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
+                                className: "font-bold text-base text-foreground",
+                                children: [
+                                    "Подпишитесь в нашу группу ВК и получите ",
+                                    GROUP_SUB_REWARD,
+                                    " голосов"
+                                ]
+                            }, void 0, true, {
+                                fileName: "[project]/components/shop-screen.tsx",
+                                lineNumber: 572,
+                                columnNumber: 11
+                            }, this)
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/components/shop-screen.tsx",
+                        lineNumber: 570,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        className: "text-xs text-muted-foreground mb-3",
+                        children: "Нажмите «Подписаться» — мы автоматически подпишем вас на группу ВКонтакте и начислим награду один раз."
+                    }, void 0, false, {
+                        fileName: "[project]/components/shop-screen.tsx",
+                        lineNumber: 576,
+                        columnNumber: 9
+                    }, this),
+                    !(0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$vk$2d$bridge$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["isVKEnvironment"])() && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
+                        className: "text-xs text-amber-600 dark:text-amber-400 mb-2",
+                        children: "Откройте приложение во ВКонтакте, чтобы подписаться на группу."
+                    }, void 0, false, {
+                        fileName: "[project]/components/shop-screen.tsx",
+                        lineNumber: 580,
+                        columnNumber: 11
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
+                        type: "button",
+                        onClick: handleGroupSubscribe,
+                        disabled: !canClaimGroupReward || groupSubLoading || !(0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$vk$2d$bridge$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["isVKEnvironment"])(),
+                        className: "flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-secondary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50",
+                        children: [
+                            /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$lucide$2d$react$40$0$2e$564$2e$0_react$40$19$2e$2$2e$4$2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$share$2d$2$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__$3c$export__default__as__Share2$3e$__["Share2"], {
+                                className: "h-4 w-4"
+                            }, void 0, false, {
+                                fileName: "[project]/components/shop-screen.tsx",
+                                lineNumber: 590,
+                                columnNumber: 11
+                            }, this),
+                            groupSubLoading ? "Подписка…" : player.groupSubscribedRewardClaimed ? "Награда получена" : `Подписаться и получить ${GROUP_SUB_REWARD} голосов`
+                        ]
+                    }, void 0, true, {
+                        fileName: "[project]/components/shop-screen.tsx",
+                        lineNumber: 584,
+                        columnNumber: 9
+                    }, this)
+                ]
+            }, void 0, true, {
+                fileName: "[project]/components/shop-screen.tsx",
+                lineNumber: 569,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6771,7 +6915,7 @@ function ShopScreen() {
                                 children: item.icon
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 544,
+                                lineNumber: 622,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6782,7 +6926,7 @@ function ShopScreen() {
                                         children: item.name
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 548,
+                                        lineNumber: 626,
                                         columnNumber: 17
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6790,7 +6934,7 @@ function ShopScreen() {
                                         children: item.description
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 549,
+                                        lineNumber: 627,
                                         columnNumber: 17
                                     }, this),
                                     item.id === "lava-card" && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("p", {
@@ -6802,13 +6946,13 @@ function ShopScreen() {
                                         ]
                                     }, void 0, true, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 551,
+                                        lineNumber: 629,
                                         columnNumber: 19
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 547,
+                                lineNumber: 625,
                                 columnNumber: 15
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -6821,7 +6965,7 @@ function ShopScreen() {
                                             className: "h-3 w-3"
                                         }, void 0, false, {
                                             fileName: "[project]/components/shop-screen.tsx",
-                                            lineNumber: 565,
+                                            lineNumber: 643,
                                             columnNumber: 21
                                         }, this),
                                         (0, __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$format$2d$amount$2e$ts__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["formatAmount"])(item.price)
@@ -6829,19 +6973,19 @@ function ShopScreen() {
                                 }, void 0, true)
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 554,
+                                lineNumber: 632,
                                 columnNumber: 15
                             }, this)
                         ]
                     }, item.id, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 540,
+                        lineNumber: 618,
                         columnNumber: 13
                     }, this);
                 })
             }, void 0, false, {
                 fileName: "[project]/components/shop-screen.tsx",
-                lineNumber: 522,
+                lineNumber: 600,
                 columnNumber: 7
             }, this),
             openingChest && /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6870,12 +7014,12 @@ function ShopScreen() {
                                 }
                             }, i, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 585,
+                                lineNumber: 663,
                                 columnNumber: 17
                             }, this))
                     }, void 0, false, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 582,
+                        lineNumber: 660,
                         columnNumber: 11
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6889,17 +7033,17 @@ function ShopScreen() {
                                         className: `w-14 h-14 ${chestPhase === "open" ? "rotate-12 scale-110" : ""} transition-transform duration-500`
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 617,
+                                        lineNumber: 695,
                                         columnNumber: 17
                                     }, this)
                                 }, void 0, false, {
                                     fileName: "[project]/components/shop-screen.tsx",
-                                    lineNumber: 610,
+                                    lineNumber: 688,
                                     columnNumber: 15
                                 }, this)
                             }, void 0, false, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 601,
+                                lineNumber: 679,
                                 columnNumber: 13
                             }, this),
                             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -6915,7 +7059,7 @@ function ShopScreen() {
                                                             className: "w-6 h-6 text-accent shrink-0"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shop-screen.tsx",
-                                                            lineNumber: 635,
+                                                            lineNumber: 713,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6927,7 +7071,7 @@ function ShopScreen() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/shop-screen.tsx",
-                                                            lineNumber: 636,
+                                                            lineNumber: 714,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
@@ -6937,7 +7081,7 @@ function ShopScreen() {
                                                             className: "w-6 h-6 text-secondary shrink-0"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shop-screen.tsx",
-                                                            lineNumber: 640,
+                                                            lineNumber: 718,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6948,7 +7092,7 @@ function ShopScreen() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/shop-screen.tsx",
-                                                            lineNumber: 641,
+                                                            lineNumber: 719,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
@@ -6958,7 +7102,7 @@ function ShopScreen() {
                                                             className: "w-6 h-6 text-primary shrink-0"
                                                         }, void 0, false, {
                                                             fileName: "[project]/components/shop-screen.tsx",
-                                                            lineNumber: 645,
+                                                            lineNumber: 723,
                                                             columnNumber: 25
                                                         }, this),
                                                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("span", {
@@ -6969,19 +7113,19 @@ function ShopScreen() {
                                                             ]
                                                         }, void 0, true, {
                                                             fileName: "[project]/components/shop-screen.tsx",
-                                                            lineNumber: 646,
+                                                            lineNumber: 724,
                                                             columnNumber: 25
                                                         }, this)
                                                     ]
                                                 }, void 0, true)
                                             }, i, false, {
                                                 fileName: "[project]/components/shop-screen.tsx",
-                                                lineNumber: 629,
+                                                lineNumber: 707,
                                                 columnNumber: 19
                                             }, this))
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 627,
+                                        lineNumber: 705,
                                         columnNumber: 15
                                     }, this),
                                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$1$2e$6_react$2d$dom$40$19$2e$2$2e$4_react$40$19$2e$2$2e$4_$5f$react$40$19$2e$2$2e$4$2f$node_modules$2f$next$2f$dist$2f$server$2f$route$2d$modules$2f$app$2d$page$2f$vendored$2f$ssr$2f$react$2d$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$ssr$5d$__$28$ecmascript$29$__["jsxDEV"])("button", {
@@ -6990,31 +7134,31 @@ function ShopScreen() {
                                         children: "Собрать"
                                     }, void 0, false, {
                                         fileName: "[project]/components/shop-screen.tsx",
-                                        lineNumber: 652,
+                                        lineNumber: 730,
                                         columnNumber: 15
                                     }, this)
                                 ]
                             }, void 0, true, {
                                 fileName: "[project]/components/shop-screen.tsx",
-                                lineNumber: 622,
+                                lineNumber: 700,
                                 columnNumber: 13
                             }, this)
                         ]
                     }, void 0, true, {
                         fileName: "[project]/components/shop-screen.tsx",
-                        lineNumber: 599,
+                        lineNumber: 677,
                         columnNumber: 11
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/components/shop-screen.tsx",
-                lineNumber: 577,
+                lineNumber: 655,
                 columnNumber: 9
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/components/shop-screen.tsx",
-        lineNumber: 371,
+        lineNumber: 392,
         columnNumber: 5
     }, this);
 }

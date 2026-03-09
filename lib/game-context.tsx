@@ -61,6 +61,8 @@ export interface Player {
   invitedRewardClaimed?: boolean
   /** Награда 100 голосов за пост «расскажи друзьям» уже получена */
   wallPostRewardClaimed?: boolean
+  /** Награда за подписку на группу ВК уже получена */
+  groupSubscribedRewardClaimed?: boolean
   /** Время последнего получения ежедневного подарка (timestamp). Следующий доступен через 24 ч. */
   lastDailyGiftClaimedAt?: number
   /** Индекс текущего дня в цепочке ежедневных наград (0..6). */
@@ -346,6 +348,7 @@ const DEFAULT_PLAYER: Player = {
   vip: false,
   ratingPoints: 0,
   totalPurchases: 0,
+  groupSubscribedRewardClaimed: false,
 }
 
 function loadSavedState(): {
@@ -401,6 +404,7 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           invitedFriends: player.invitedFriends,
           invitedRewardClaimed: player.invitedRewardClaimed,
           wallPostRewardClaimed: player.wallPostRewardClaimed,
+          groupSubscribedRewardClaimed: player.groupSubscribedRewardClaimed,
           lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
           dailyRewardIndex: player.dailyRewardIndex,
         },

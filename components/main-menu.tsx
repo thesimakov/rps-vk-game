@@ -191,7 +191,7 @@ export function MainMenu() {
             </span>
           )}
         </div>
-        <div className="grid grid-cols-7 gap-1">
+        <div className="flex gap-1 overflow-x-auto py-1">
           {DAILY_REWARDS.map((r, i) => {
             const claimed = i < dailyIndex
             const isCurrent = i === dailyIndex
@@ -199,7 +199,7 @@ export function MainMenu() {
             return (
               <div
                 key={r.day}
-                className={`flex flex-col items-center p-1.5 rounded-xl border text-center ${
+                className={`flex flex-col items-center min-w-[64px] px-2 py-1.5 rounded-xl border text-center ${
                   claimed
                     ? "bg-emerald-500/20 border-emerald-400/40"
                     : isAvailable

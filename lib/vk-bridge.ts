@@ -133,6 +133,27 @@ export async function showFriendsPicker(): Promise<VKFriend[] | null> {
 }
 
 /**
+ * Подписка на группу ВК (VKWebAppJoinGroup).
+ * ID группы берём из переменной окружения NEXT_PUBLIC_VK_GROUP_ID.
+ */
+export async function joinVKGroup(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  if (!bridgeReady) return true // dev-окружение: считаем, что подписка прошла
+
+  const rawId = process.env.NEXT_PUBLIC_VK_GROUP_ID
+  const groupId = rawId ? Number(rawId) : NaN
+  if (!Number.isFinite(groupId) || groupId <= 0) return false
+
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+    await vkBridge.default.send("VKWebAppJoinGroup", { group_id: groupId })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Открывает стандартное окно приглашения друзей в приложение (VKWebAppShowInviteBox).
  */
 export async function showInviteBox(): Promise<boolean> {
