@@ -112,12 +112,13 @@
     justify-content: center;
     border-radius: 18px;
     border: 2px solid #c38f4a;
-    background:
+    background-image:
       radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
-      url("/card-back.png");
-    background-size: cover;
+      var(--card-back-image, url("/card-back.png"));
+    background-size: auto, auto, cover;
     background-position: center;
+    background-repeat: no-repeat;
     box-shadow:
       0 4px 0 rgba(0,0,0,0.35),
       0 8px 16px rgba(0,0,0,0.4);
@@ -131,12 +132,13 @@
 
   /* Рубашка для колоды (если нужна отдельно) */
   .card-medieval-back {
-    background:
+    background-image:
       radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
-      url("/card-back.png");
-    background-size: cover;
+      var(--card-back-image, url("/card-back.png"));
+    background-size: auto, auto, cover;
     background-position: center;
+    background-repeat: no-repeat;
     border-color: #c38f4a;
   }
 
@@ -156,21 +158,21 @@
 
   /* Лицевая сторона «Камень» */
   .card-medieval-rock {
-    background: url("/card-rock.png");
+    background-image: var(--card-rock-image, url("/card-rock.png"));
     background-size: cover;
     background-position: center;
   }
 
   /* Лицевая сторона «Бумага» */
   .card-medieval-paper {
-    background: url("/card-paper.png");
+    background-image: var(--card-paper-image, url("/card-paper.png"));
     background-size: cover;
     background-position: center;
   }
 
   /* Лицевая сторона «Ножницы» */
   .card-medieval-scissors {
-    background: url("/card-scissors.png");
+    background-image: var(--card-scissors-image, url("/card-scissors.png"));
     background-size: cover;
     background-position: center;
   }

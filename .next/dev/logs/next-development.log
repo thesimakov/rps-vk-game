@@ -57,3 +57,176 @@
 [00:49:52.123] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
 [00:49:52.123] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
 [00:49:52.123] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773076436953} /_vercel/insights/view
+[01:05:48.559] Server  LOG     ✓ Compiled in 173ms
+[01:06:04.143] Server  LOG     ✓ Compiled in 229ms
+[01:06:29.095] Server  LOG     ✓ Compiled in 422ms
+[01:06:29.480] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:06:41.480] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:08:37.203] Server  ERROR   ⨯ ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+[01:08:37.481] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:08:38.121] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:08:38.221] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:08:38.796] Browser ERROR   uncaughtError: Error: ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+
+
+[01:08:38.986] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:08:38.986] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:08:38.986] Browser ERROR   ./app/globals.css:6956:7
+Parsing CSS source code failed
+  6954 |     background: radial-gradient(circle at 15% 10%, rgba(255,255,255,0.65) 0, transparent 40%),
+  6955 |       radial-gradient(circle at 85% 90%, rgba(255,255,255,0.4) 0, transparent 35%),
+> 6956 |       url(var(--card-back-path, "/card-back.png"));
+       |       ^
+  6957 |     background-size: cover;
+  6958 |     background-position: center;
+  6959 |     box-shadow: 0 4px 0 rgba(0,0,0,0.35),
+
+Unexpected token BadUrl("var(--card-back-path, \"/card-back.png\"")
+
+Import trace:
+  Client Component Browser:
+    ./app/globals.css [Client Component Browser]
+    ./app/layout.tsx [Server Component]
+[01:09:08.515] Server  LOG     ✓ Compiled in 210ms
+[01:09:08.921] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[01:09:09.481] Browser LOG     %c[Vercel Web Analytics]%c Debug mode is enabled by default in development. No requests will be sent to the server. color: rgb(120, 120, 120) color: inherit
+[01:09:09.481] Browser LOG     %c[Vercel Web Analytics]%c Running queued event color: rgb(120, 120, 120) color: inherit pageview {"path":"/","route":"/"}
+[01:09:09.481] Browser LOG     %c[Vercel Web Analytics]%c [view] http://localhost:3000/ color: rgb(120, 120, 120) color: inherit {"dp":"/","o":"http://localhost:3000/","sdkn":"@vercel/analytics/next","sdkv":"1.6.1","sv":"0.1.3","ts":1773077593940} /_vercel/insights/view
+[01:09:21.030] Server  LOG     ✓ Compiled in 211ms

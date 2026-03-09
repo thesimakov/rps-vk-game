@@ -2,6 +2,7 @@
 
 import { GameProvider, useGame } from "@/lib/game-context"
 import { useState } from "react"
+import type { CSSProperties } from "react"
 import { showFriendsPicker } from "@/lib/vk-bridge"
 import { MainMenu } from "@/components/main-menu"
 import { BetSelect } from "@/components/bet-select"
@@ -131,9 +132,20 @@ function GameLayout() {
 }
 
 export default function Page() {
+  const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
+  const makeUrl = (file: string) => `url("${basePath}${file}")`
+  const styleVars: CSSProperties = {
+    "--card-back-image": makeUrl("/card-back.png"),
+    "--card-rock-image": makeUrl("/card-rock.png"),
+    "--card-paper-image": makeUrl("/card-paper.png"),
+    "--card-scissors-image": makeUrl("/card-scissors.png"),
+  }
+
   return (
     <GameProvider>
-      <GameLayout />
+      <div style={styleVars}>
+        <GameLayout />
+      </div>
     </GameProvider>
   )
 }

@@ -154,10 +154,6 @@
     --text-3xl--line-height: calc(2.25 / 1.875);
     --text-4xl: 2.25rem;
     --text-4xl--line-height: calc(2.5 / 2.25);
-    --text-5xl: 3rem;
-    --text-5xl--line-height: 1;
-    --text-6xl: 3.75rem;
-    --text-6xl--line-height: 1;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
@@ -501,14 +497,10 @@
   }
 
   .card-medieval {
-    background-color: #0000;
-    background-image: radial-gradient(circle at 15% 10%, #ffffffa6 0, #0000 40%), radial-gradient(circle at 85% 90%, #fff6 0, #0000 35%), url("/card-back.png");
+    background-image: radial-gradient(circle at 15% 10%, #ffffffa6 0, transparent 40%), radial-gradient(circle at 85% 90%, #fff6 0, transparent 35%), var(--card-back-image, url("/card-back.png"));
     background-position: center;
-    background-repeat: repeat, repeat, repeat;
-    background-size: cover;
-    background-attachment: scroll, scroll, scroll;
-    background-origin: padding-box, padding-box, padding-box;
-    background-clip: border-box, border-box, border-box;
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
     border: 2px solid #c38f4a;
     border-radius: 18px;
     justify-content: center;
@@ -524,14 +516,10 @@
   }
 
   .card-medieval-back {
-    background-color: #0000;
-    background-image: radial-gradient(circle at 15% 10%, #ffffffa6 0, #0000 40%), radial-gradient(circle at 85% 90%, #fff6 0, #0000 35%), url("/card-back.png");
+    background-image: radial-gradient(circle at 15% 10%, #ffffffa6 0, transparent 40%), radial-gradient(circle at 85% 90%, #fff6 0, transparent 35%), var(--card-back-image, url("/card-back.png"));
     background-position: center;
-    background-repeat: repeat, repeat, repeat;
-    background-size: cover;
-    background-attachment: scroll, scroll, scroll;
-    background-origin: padding-box, padding-box, padding-box;
-    background-clip: border-box, border-box, border-box;
+    background-repeat: no-repeat;
+    background-size: auto, auto, cover;
     border-color: #c38f4a;
   }
 
@@ -546,15 +534,21 @@
   }
 
   .card-medieval-rock {
-    background: url("/card-rock.png") center / cover;
+    background-image: var(--card-rock-image, url("/card-rock.png"));
+    background-position: center;
+    background-size: cover;
   }
 
   .card-medieval-paper {
-    background: url("/card-paper.png") center / cover;
+    background-image: var(--card-paper-image, url("/card-paper.png"));
+    background-position: center;
+    background-size: cover;
   }
 
   .card-medieval-scissors {
-    background: url("/card-scissors.png") center / cover;
+    background-image: var(--card-scissors-image, url("/card-scissors.png"));
+    background-position: center;
+    background-size: cover;
   }
 
   .card-medieval-opponent {
@@ -1045,7 +1039,7 @@
     font-size: 1rem;
     display: inline-flex;
     position: absolute;
-    top: 40%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     box-shadow: 0 4px 10px #0f172ae6;
@@ -3154,16 +3148,6 @@
     }
   }
 
-  .border-sky-500\/40 {
-    border-color: #00a5ef66;
-  }
-
-  @supports (color: color-mix(in lab, red, red)) {
-    .border-sky-500\/40 {
-      border-color: color-mix(in oklab, var(--color-sky-500) 40%, transparent);
-    }
-  }
-
   .border-sky-500\/50 {
     border-color: #00a5ef80;
   }
@@ -4180,11 +4164,6 @@
     line-height: var(--tw-leading, var(--text-3xl--line-height));
   }
 
-  .text-5xl {
-    font-size: var(--text-5xl);
-    line-height: var(--tw-leading, var(--text-5xl--line-height));
-  }
-
   .text-base {
     font-size: var(--text-base);
     line-height: var(--tw-leading, var(--text-base--line-height));
@@ -4229,18 +4208,6 @@
 
   .text-\[11px\] {
     font-size: 11px;
-  }
-
-  .text-\[12px\] {
-    font-size: 12px;
-  }
-
-  .text-\[16px\] {
-    font-size: 16px;
-  }
-
-  .text-\[18px\] {
-    font-size: 18px;
   }
 
   .leading-none {
@@ -4340,15 +4307,6 @@
 
   .whitespace-nowrap {
     white-space: nowrap;
-  }
-
-  .text-\[\#1f1a14\] {
-    color: #1f1a14;
-  }
-
-  .text-\[\#1f1a14\]\/60 {
-    color: #1f1a1499;
-    color: lab(9.70244% 1.61289 5.04637 / .6);
   }
 
   .text-accent {
@@ -7404,13 +7362,6 @@
     .sm\:text-4xl {
       font-size: var(--text-4xl);
       line-height: var(--tw-leading, var(--text-4xl--line-height));
-    }
-  }
-
-  @media (min-width: 40rem) {
-    .sm\:text-6xl {
-      font-size: var(--text-6xl);
-      line-height: var(--tw-leading, var(--text-6xl--line-height));
     }
   }
 
