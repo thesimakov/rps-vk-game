@@ -107,6 +107,7 @@ export function ResultScreen() {
   const rounds = lastResult.rounds ?? []
   const playerRoundsWon = rounds.filter((r) => r.outcome === "win").length
   const opponentRoundsWon = rounds.filter((r) => r.outcome === "loss").length
+  const isFiveRoundMatch = totalRounds === 5 && rounds.length === 5
 
   return (
     <div className="flex flex-col min-h-screen relative arena-bg">
@@ -270,14 +271,20 @@ export function ResultScreen() {
               <span className="font-bold text-red-300">{opponentRoundsWon}</span>
             </span>
           </div>
-          {/* Ряд карт игрока и соперника с центром-счётом как в макете */}
-          <div className="mt-1 flex items-center justify-center gap-4 w-full">
+          {/* Ряд карт игрока и соперника с центром-счётом как в макете (компактные карты, чтобы влезали на мобилку) */}
+          <div className="mt-1 flex items-center justify-center gap-3 w-full">
             {/* Карты игрока слева */}
-            <div className="flex items-center gap-1">
+            <div
+              className={
+                isFiveRoundMatch
+                  ? "flex items-center justify-between max-w-[260px] w-full"
+                  : "flex items-center gap-1"
+              }
+            >
               {rounds.map((r, idx) => (
                 <div
                   key={`p-row-${r.round}-${idx}`}
-                  className={`w-10 h-14 card-medieval ${
+                  className={`w-8 h-12 sm:w-10 sm:h-14 card-medieval ${
                     r.playerMove === "rock"
                       ? "card-medieval-rock"
                       : r.playerMove === "paper"
@@ -291,18 +298,24 @@ export function ResultScreen() {
             </div>
 
             {/* Счёт посередине */}
-            <span className="text-lg font-extrabold text-white">
+            <span className="text-base sm:text-lg font-extrabold text-white">
               <span className="text-emerald-300">{playerRoundsWon}</span>
               <span className="mx-1">:</span>
               <span className="text-red-400">{opponentRoundsWon}</span>
             </span>
 
             {/* Карты соперника справа */}
-            <div className="flex items-center gap-1">
+            <div
+              className={
+                isFiveRoundMatch
+                  ? "flex items-center justify-between max-w-[260px] w-full"
+                  : "flex items-center gap-1"
+              }
+            >
               {rounds.map((r, idx) => (
                 <div
                   key={`o-row-${r.round}-${idx}`}
-                  className={`w-10 h-14 card-medieval card-medieval-opponent ${
+                  className={`w-8 h-12 sm:w-10 sm:h-14 card-medieval card-medieval-opponent ${
                     r.opponentMove === "rock"
                       ? "card-medieval-rock"
                       : r.opponentMove === "paper"

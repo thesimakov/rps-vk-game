@@ -54,6 +54,7 @@ function GameLayout() {
   const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
 
   const showLowBalanceHint = vkUser != null && player.balance < 50 && !hideLowBalanceHint
+  const isScrollableScreen = !["menu", "entry"].includes(screen)
 
   const handleLowBalanceInvite = async () => {
     try {

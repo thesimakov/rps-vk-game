@@ -2032,6 +2032,10 @@
     max-width: 200px;
   }
 
+  .max-w-\[260px\] {
+    max-width: 260px;
+  }
+
   .max-w-\[calc\(100\%-2rem\)\] {
     max-width: calc(100% - 2rem);
   }
@@ -7292,8 +7296,20 @@
   }
 
   @media (min-width: 40rem) {
+    .sm\:h-14 {
+      height: calc(var(--spacing) * 14);
+    }
+  }
+
+  @media (min-width: 40rem) {
     .sm\:h-44 {
       height: calc(var(--spacing) * 44);
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .sm\:w-10 {
+      width: calc(var(--spacing) * 10);
     }
   }
 
@@ -7399,6 +7415,13 @@
     .sm\:text-base {
       font-size: var(--text-base);
       line-height: var(--tw-leading, var(--text-base--line-height));
+    }
+  }
+
+  @media (min-width: 40rem) {
+    .sm\:text-lg {
+      font-size: var(--text-lg);
+      line-height: var(--tw-leading, var(--text-lg--line-height));
     }
   }
 
