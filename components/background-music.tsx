@@ -4,7 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react"
 import { Volume2, VolumeX } from "lucide-react"
 
 const STORAGE_KEY = "rps_bg_music"
-const MUSIC_SRC = "/bg-music.mp3"
+// Учитываем basePath (GitHub Pages /rps-vk-game)
+const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
+const MUSIC_SRC = `${BASE_PATH}/bg-music.mp3`
 
 export function BackgroundMusic() {
   const [enabled, setEnabled] = useState(false)
