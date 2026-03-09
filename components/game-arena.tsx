@@ -83,8 +83,6 @@ export function GameArena() {
   /** Локальный счёт в матче (раунды): соперник : игрок */
   const [opponentScore, setOpponentScore] = useState(0)
   const [playerScore, setPlayerScore] = useState(0)
-  /** Суммарный заработок за матч по раундам (для экрана результата) */
-  const [matchEarnings, setMatchEarnings] = useState(0)
   const [drawMessage, setDrawMessage] = useState(false)
   /** Подсказка что произошло в раунде (победа/поражение) — для 3 и 5 раундов */
   const [roundHintMessage, setRoundHintMessage] = useState<string | null>(null)
@@ -160,38 +158,53 @@ export function GameArena() {
           setOpponentScore((prev) => prev + 1)
         }
 
-        // Победа или поражение: обновляем баланс и статистику
+        // Экономика раунда: банк = ставка × 2, комиссия 10% (VIP: 5%).
         const pot = currentBet * 2
-        const commission = Math.ceil(pot * (player.vip ? 0.05 : 0.1))
+        const commissionRate = player.vip ? 0.05 : 0.1
+        const commission = Math.ceil(pot * commissionRate)
         const winnings = pot - commission
-        const earnings = outcome === "win" ? winnings - currentBet : -currentBet
+        const roundEarnings = outcome === "win" ? winnings - currentBet : -currentBet
 
-        // Суммарный заработок за весь матч (по раундам)
-        const totalEarnings = matchEarnings + earnings
-        setMatchEarnings(totalEarnings)
+        // Для одиночного раунда применяем экономику сразу.
+        if (totalRounds === 1) {
+          setPlayer((p) => {
+            const isVip = p.vip
+            const potInner = currentBet * 2
+            const commissionInner = Math.ceil(potInner * (isVip ? 0.05 : 0.1))
+            const winningsInner = potInner - commissionInner
+            const earningsInner = outcome === "win" ? winningsInner - currentBet : -currentBet
 
-        setPlayer((p) => {
-          const next = {
-            ...p,
-            balance: p.balance + earnings,
-            wins: outcome === "win" ? p.wins + 1 : p.wins,
-            losses: outcome === "loss" ? p.losses + 1 : p.losses,
-            weekWins: outcome === "win" ? p.weekWins + 1 : p.weekWins,
-            weekEarnings: outcome === "win" ? p.weekEarnings + winnings : p.weekEarnings,
-          }
+            const next = {
+              ...p,
+              balance: p.balance + earningsInner,
+              wins: outcome === "win" ? p.wins + 1 : p.wins,
+              losses: outcome === "loss" ? p.losses + 1 : p.losses,
+              weekWins: outcome === "win" ? p.weekWins + 1 : p.weekWins,
+              weekEarnings: outcome === "win" ? p.weekEarnings + winningsInner : p.weekEarnings,
+            }
+            if (playerMove === "water") {
+              next.waterCardUses = Math.max(0, (p.waterCardUses ?? 0) - 1)
+            }
+            return next
+          })
+
+          setLastResult({
+            playerMove,
+            opponentMove: oppMove,
+            outcome,
+            earnings: roundEarnings,
+            bet: currentBet,
+          })
+        } else {
+          // В мульти-раундовых матчах (3 или 5 ходов) ставка относится ко всему матчу.
+          // Здесь обновляем только использование карты «Вода», без изменения баланса и статистики.
           if (playerMove === "water") {
-            next.waterCardUses = Math.max(0, (p.waterCardUses ?? 0) - 1)
+            setPlayer((p) => ({
+              ...p,
+              waterCardUses: Math.max(0, (p.waterCardUses ?? 0) - 1),
+            }))
           }
-          return next
-        })
-
-        setLastResult({
-          playerMove,
-          opponentMove: oppMove,
-          outcome,
-          earnings,
-          bet: currentBet,
-        })
+        }
 
         setPhase("resolved")
 
@@ -199,18 +212,49 @@ export function GameArena() {
           setRoundHintMessage(null)
           const nextRound = roundCount + 1
           if (nextRound > totalRounds) {
-            // Матч завершён: считаем итог по очкам, а не только по последнему раунду
-            let finalOutcome: "win" | "loss" | "draw" = "draw"
-            if (playerScoreAfter > opponentScoreAfter) finalOutcome = "win"
-            else if (playerScoreAfter < opponentScoreAfter) finalOutcome = "loss"
+            // Матч завершён.
+            if (totalRounds > 1) {
+              // Для матчей на 3 и 5 раундов: считаем итог по очкам и применяем экономику один раз за матч.
+              let finalOutcome: "win" | "loss" | "draw" = "draw"
+              if (playerScoreAfter > opponentScoreAfter) finalOutcome = "win"
+              else if (playerScoreAfter < opponentScoreAfter) finalOutcome = "loss"
 
-            setLastResult({
-              playerMove,
-              opponentMove: oppMove,
-              outcome: finalOutcome,
-              earnings: totalEarnings,
-              bet: currentBet,
-            })
+              // Экономика матча: ставка относится ко всему матчу, а не к каждому раунду.
+              const potMatch = currentBet * 2
+              const commissionMatch = Math.ceil(potMatch * (player.vip ? 0.05 : 0.1))
+              const winningsMatch = potMatch - commissionMatch
+
+              let finalEarnings = 0
+              if (finalOutcome === "win") finalEarnings = winningsMatch - currentBet
+              else if (finalOutcome === "loss") finalEarnings = -currentBet
+              else finalEarnings = 0
+
+              setPlayer((p) => {
+                const isVip = p.vip
+                const potInner = currentBet * 2
+                const commissionInner = Math.ceil(potInner * (isVip ? 0.05 : 0.1))
+                const winningsInner = potInner - commissionInner
+
+                const next = {
+                  ...p,
+                  balance: p.balance + finalEarnings,
+                  wins: finalOutcome === "win" ? p.wins + 1 : p.wins,
+                  losses: finalOutcome === "loss" ? p.losses + 1 : p.losses,
+                  weekWins: finalOutcome === "win" ? p.weekWins + 1 : p.weekWins,
+                  weekEarnings:
+                    finalOutcome === "win" ? p.weekEarnings + winningsInner : p.weekEarnings,
+                }
+                return next
+              })
+
+              setLastResult({
+                playerMove,
+                opponentMove: oppMove,
+                outcome: finalOutcome,
+                earnings: finalEarnings,
+                bet: currentBet,
+              })
+            }
 
             setScreen("result")
           } else {
