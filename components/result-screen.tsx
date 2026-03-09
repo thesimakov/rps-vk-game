@@ -303,19 +303,31 @@ export function ResultScreen() {
         </>
       )}
 
-      {/* Выигрыш: +73 голосов в овале — появление и лёгкое свечение при победе */}
-      <div
-        className={`result-earnings-in flex items-center justify-center gap-2 rounded-full border-2 border-amber-400/60 bg-amber-500/20 px-5 py-2.5 mb-8 w-fit mx-auto ${lastResult.earnings > 0 ? "result-earnings-win" : ""}`}
-        style={{ animationDelay: "0.65s" }}
-      >
-        <Coins className="h-5 w-5 text-amber-400" />
-        <span
-          className={`text-base font-bold tabular-nums ${
-            lastResult.earnings > 0 ? "text-amber-400" : lastResult.earnings < 0 ? "text-red-400" : "text-amber-400"
+      {/* Итог матча: сколько голосов выиграно / проиграно */}
+      <div className="flex flex-col items-center mb-8 gap-1">
+        <div
+          className={`result-earnings-in flex items-center justify-center gap-2 rounded-full border-2 border-amber-400/60 bg-amber-500/20 px-5 py-2.5 w-fit mx-auto ${
+            lastResult.earnings > 0 ? "result-earnings-win" : ""
           }`}
+          style={{ animationDelay: "0.65s" }}
         >
-          {lastResult.earnings > 0 ? "+" : ""}{formatAmount(lastResult.earnings)} голосов
-        </span>
+          <Coins className="h-5 w-5 text-amber-400" />
+          <span
+            className={`text-base font-bold tabular-nums ${
+              lastResult.earnings > 0 ? "text-amber-400" : lastResult.earnings < 0 ? "text-red-400" : "text-amber-400"
+            }`}
+          >
+            {lastResult.earnings > 0 ? "+" : ""}
+            {formatAmount(lastResult.earnings)} голосов
+          </span>
+        </div>
+        <p className="text-xs text-white/70">
+          {lastResult.earnings > 0
+            ? `Вы выиграли ${formatAmount(lastResult.earnings)} голосов`
+            : lastResult.earnings < 0
+              ? `Вы проиграли ${formatAmount(Math.abs(lastResult.earnings))} голосов`
+              : "Ничья — баланс не изменился"}
+        </p>
       </div>
 
       {/* Кнопки: Реванш, Закончить игру — появление снизу каскадом */}
