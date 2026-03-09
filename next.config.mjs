@@ -3,11 +3,27 @@ import { fileURLToPath } from "url"
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+function normalizeBasePath(value) {
+  if (!value) return ""
+  const v = value.trim()
+  if (!v || v === "/") return ""
+  const withLeading = v.startsWith("/") ? v : `/${v}`
+  return withLeading.endsWith("/") ? withLeading.slice(0, -1) : withLeading
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // В dev нужен нормальный роутинг и dev-сервер.
   // Для VK Hosting/статического деплоя включаем export только в production build.
   ...(process.env.NODE_ENV === "production" ? { output: "export" } : {}),
+  ...(process.env.NODE_ENV === "production" &&
+  normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH)
+    ? {
+        basePath: normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH),
+        assetPrefix: normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH),
+        trailingSlash: true,
+      }
+    : {}),
   typescript: {
     ignoreBuildErrors: true,
   },
