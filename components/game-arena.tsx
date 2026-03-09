@@ -464,10 +464,25 @@ export function GameArena() {
         </div>
       </div>
 
-      {/* Центр: таймер и подсказки (счёт раундов вынесен наверх) */}
+      {/* Центр: таймер, реакции и подсказки + локальный счёт раундов */}
       <div className="flex flex-col items-center justify-center gap-2 my-4 w-full max-w-md mx-auto">
         <div className="flex flex-col items-center justify-center gap-2">
-          <div className="relative">
+          {/* Таймер и иконки-реакции по бокам */}
+          <div className="flex items-center justify-center gap-4">
+            {/* Левая реакция */}
+            <button
+              type="button"
+              onClick={() => sendSticker("🤔")}
+              disabled={!canSpamStickers}
+              className={`h-9 w-9 rounded-full border border-slate-500/60 bg-slate-800/80 flex items-center justify-center text-lg transition-all ${
+                canSpamStickers ? "active:scale-90 hover:bg-slate-700" : "opacity-40 cursor-not-allowed"
+              }`}
+            >
+              🤔
+            </button>
+
+            {/* Сам таймер */}
+            <div className="relative">
             <div className="absolute inset-0 bg-sky-500/30 rounded-full blur-xl scale-110" />
             <div className="relative w-20 h-20 rounded-full bg-sky-600/40 border-2 border-sky-400/50 flex items-center justify-center">
               <svg className="absolute w-20 h-20 -rotate-90" viewBox="0 0 80 80">
@@ -487,25 +502,52 @@ export function GameArena() {
                 <span className={`text-2xl font-black tabular-nums text-white`}>{timeLeft}</span>
               </div>
             </div>
-            {/* Облако стикеров, вылетающих из центра таймера */}
-            <div className="pointer-events-none absolute inset-0">
-              {stickers.map((s, index) => (
-                <span
-                  key={s.id}
-                  className="sticker-bubble"
-                  style={{
-                    animationDelay: `${index * 0.05}s`,
-                    ["--dx" as string]: `${s.dx}px`,
-                    ["--dy" as string]: `${s.dy}px`,
-                    ["--dur" as string]: `${s.dur}s`,
-                  }}
+              {/* Облако стикеров, вылетающих из центра таймера */}
+              <div className="pointer-events-none absolute inset-0">
+                {stickers.map((s, index) => (
+                  <span
+                    key={s.id}
+                    className="sticker-bubble"
+                    style={{
+                      animationDelay: `${index * 0.05}s`,
+                      ["--dx" as string]: `${s.dx}px`,
+                      ["--dy" as string]: `${s.dy}px`,
+                      ["--dur" as string]: `${s.dur}s`,
+                    }}
+                  >
+                    {s.emoji}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Правые реакции */}
+            <div className="flex flex-col items-center gap-2">
+              {["👀", "🔥"].map((emoji) => (
+                <button
+                  key={emoji}
+                  type="button"
+                  onClick={() => sendSticker(emoji)}
+                  disabled={!canSpamStickers}
+                  className={`h-9 w-9 rounded-full border border-slate-500/60 bg-slate-800/80 flex items-center justify-center text-lg transition-all ${
+                    canSpamStickers ? "active:scale-90 hover:bg-slate-700" : "opacity-40 cursor-not-allowed"
+                  }`}
                 >
-                  {s.emoji}
-                </span>
+                  {emoji}
+                </button>
               ))}
             </div>
           </div>
-          {/* Счёт перенесён в верхний блок */}
+          {/* Локальный счёт раундов: соперник : игрок, стрелки обозначают игроков */}
+          {totalRounds > 1 && (
+            <div className="mt-2 flex items-center gap-3">
+              <ChevronUp className="h-4 w-4 text-red-300" aria-label="Соперник" />
+              <span className="text-lg font-black text-white tabular-nums">
+                {opponentScore} : {playerScore}
+              </span>
+              <ChevronDown className="h-4 w-4 text-emerald-300" aria-label="Вы" />
+            </div>
+          )}
           {drawMessage && (
             <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
           )}
@@ -518,22 +560,6 @@ export function GameArena() {
               {roundHintMessage}
             </p>
           )}
-        </div>
-        {/* Панель стикеров для психологического давления */}
-        <div className="mt-3 flex items-center gap-2">
-          {["🤔", "👀", "🔥"].map((emoji) => (
-            <button
-              key={emoji}
-              type="button"
-              onClick={() => sendSticker(emoji)}
-              disabled={!canSpamStickers}
-              className={`h-9 w-9 rounded-full border border-slate-500/60 bg-slate-800/80 flex items-center justify-center text-lg transition-all ${
-                canSpamStickers ? "active:scale-90 hover:bg-slate-700" : "opacity-40 cursor-not-allowed"
-              }`}
-            >
-              {emoji}
-            </button>
-          ))}
         </div>
       </div>
 

@@ -105,6 +105,8 @@ export function ResultScreen() {
   const opponentMoveInfo = lastResult.opponentMove ? MOVE_LABELS[lastResult.opponentMove] : { icon: "?", label: "?" }
   const opponentData = opponent ?? { name: "Соперник", avatar: "?", avatarUrl: "" }
   const rounds = lastResult.rounds ?? []
+  const playerRoundsWon = rounds.filter((r) => r.outcome === "win").length
+  const opponentRoundsWon = rounds.filter((r) => r.outcome === "loss").length
 
   return (
     <div className="flex flex-col min-h-screen relative arena-bg">
@@ -160,23 +162,28 @@ export function ResultScreen() {
         </div>
       )}
 
-      {/* Верхняя панель: БАНК | БОНУСЫ | РАУНД — закреплена сверху */}
+      {/* Верхняя панель: БАНК | БОНУСЫ | РАУНД — как на арене, закреплена сверху */}
       <div className="sticky top-0 z-10 w-full px-4 py-3 bg-background/85 backdrop-blur-md border-b border-border/30 shrink-0">
         <div className="flex items-center justify-between w-full max-w-md mx-auto">
           {/* Банк */}
-          <div className="flex items-center gap-2">
-            <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
-            <div className="flex flex-col">
-              <span className="text-base font-bold text-white/90 uppercase tracking-wider">Банк</span>
-              <span className="text-base font-bold text-amber-400 tabular-nums leading-tight">
-                {formatAmount(bankAmount)} <span className="text-white/70 font-medium text-base">голосов</span>
+          <div className="flex flex-col">
+            <span className="text-base font-semibold text-white/95 uppercase tracking-wider">
+              Банк
+            </span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
+              <span className="text-xl font-extrabold text-amber-400 tabular-nums leading-none">
+                {formatAmount(bankAmount)}
               </span>
             </div>
+            <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
+              голосов
+            </span>
           </div>
 
           {/* Бонусы рейтинга */}
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-[10px] font-semibold uppercase tracking-wide text-white/70">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
               Бонусы
             </span>
             <div className="relative px-3 py-1 rounded-full border border-amber-400/50 bg-amber-500/20 min-w-[72px] flex items-center justify-center">
@@ -192,12 +199,11 @@ export function ResultScreen() {
           </div>
 
           {/* Раунд */}
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-red-400 flex-shrink-0" />
-            <span className="text-base font-bold text-white uppercase tracking-widest">
+          <div className="flex flex-col items-end">
+            <span className="text-base font-semibold text-white uppercase tracking-widest leading-none">
               Раунд {totalRounds} из {totalRounds}
             </span>
-            <div className="flex gap-0.5">
+            <div className="mt-1 flex gap-1">
               {Array.from({ length: totalRounds }).map((_, i) => (
                 <Heart key={i} className="h-5 w-5 flex-shrink-0 text-white/25" />
               ))}
@@ -231,16 +237,16 @@ export function ResultScreen() {
         <>
       {/* Исход: ПОБЕДА / ПОРАЖЕНИЕ / НИЧЬЯ с иконкой — анимация появления и пульс */}
       <div className="flex flex-col items-center mb-6">
-        <div className="result-title-in flex items-center gap-2" style={{ animationDelay: "0.15s" }}>
+        <div className="result-title-in flex flex-col items-center gap-3" style={{ animationDelay: "0.15s" }}>
           {isWin ? (
-            <Trophy className={`result-icon-in h-8 w-8 text-sky-400 ${"result-icon-win-pulse"}`} style={{ animationDelay: "0.2s" }} />
+            <Trophy className={`result-icon-in h-12 w-12 text-sky-400 ${"result-icon-win-pulse"}`} style={{ animationDelay: "0.2s" }} />
           ) : isDraw ? (
-            <Minus className="result-icon-in h-8 w-8 text-amber-400" style={{ animationDelay: "0.2s" }} />
+            <Minus className="result-icon-in h-12 w-12 text-amber-400" style={{ animationDelay: "0.2s" }} />
           ) : (
-            <Skull className={`result-icon-in h-8 w-8 text-red-400 ${"result-icon-lose-pulse"}`} style={{ animationDelay: "0.2s" }} />
+            <Skull className={`result-icon-in h-12 w-12 text-red-400 ${"result-icon-lose-pulse"}`} style={{ animationDelay: "0.2s" }} />
           )}
           <h1
-            className={`result-title-in text-base font-black uppercase tracking-wide ${
+            className={`result-title-in text-3xl sm:text-4xl font-black uppercase tracking-wide text-center ${
               isWin ? "text-sky-300" : isDraw ? "text-amber-400" : "text-red-400"
             }`}
             style={{ animationDelay: "0.25s" }}
@@ -250,81 +256,64 @@ export function ResultScreen() {
         </div>
       </div>
 
-      {/* История всех ходов в матче: наложенные мини-карты игрока и соперника */}
+      {/* История всех ходов в матче: ряды карт игрока и соперника + счёт матча */}
       {rounds.length > 1 && (
         <div className="flex flex-col items-center gap-2 mb-3 w-full max-w-md mx-auto">
-          <span className="text-[10px] uppercase tracking-wide text-white/60">
-            Все ходы в матче
-          </span>
-          <div className="flex items-center justify-center gap-6 w-full">
-            {/*
-              Для визуала «как в примере» показываем не более 5 последних ходов
-              и кладём их плотной стопкой с сильным поворотом.
-            */}
-            {(() => {
-              const maxShown = 5
-              const visibleRounds = rounds.slice(-maxShown)
-              const baseIndex = visibleRounds.length - 1
-              return (
-                <>
-                  {/* Стопка карт игрока */}
-                  <div className="relative h-20 w-32">
-                    {visibleRounds.map((r, idx) => {
-                      const rel = idx - baseIndex // последний ход сверху
-                      const offsetX = rel * 6
-                      const offsetY = Math.abs(rel) * 3
-                      const rotate = rel * 8
-                      return (
-                        <div
-                          key={`p-${r.round}-${idx}`}
-                          className={`absolute left-1/2 bottom-0 -translate-x-1/2 w-16 h-20 card-medieval ${
-                            r.playerMove === "rock"
-                              ? "card-medieval-rock"
-                              : r.playerMove === "paper"
-                              ? "card-medieval-paper"
-                              : r.playerMove === "scissors"
-                              ? "card-medieval-scissors"
-                              : ""
-                          }`}
-                          style={{
-                            transform: `translate(${offsetX}px, ${-offsetY}px) rotate(${rotate}deg)`,
-                            zIndex: 10 + idx,
-                          }}
-                        />
-                      )
-                    })}
-                  </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-[10px] uppercase tracking-wide text-white/60">
+              Все ходы в матче
+            </span>
+            <span className="text-[10px] text-white/70">
+              Счёт матча:{" "}
+              <span className="font-bold text-emerald-300">{playerRoundsWon}</span>
+              {" : "}
+              <span className="font-bold text-red-300">{opponentRoundsWon}</span>
+            </span>
+          </div>
+          {/* Ряд карт игрока и соперника с центром-счётом как в макете */}
+          <div className="mt-1 flex items-center justify-center gap-4 w-full">
+            {/* Карты игрока слева */}
+            <div className="flex items-center gap-1">
+              {rounds.map((r, idx) => (
+                <div
+                  key={`p-row-${r.round}-${idx}`}
+                  className={`w-10 h-14 card-medieval ${
+                    r.playerMove === "rock"
+                      ? "card-medieval-rock"
+                      : r.playerMove === "paper"
+                      ? "card-medieval-paper"
+                      : r.playerMove === "scissors"
+                      ? "card-medieval-scissors"
+                      : ""
+                  }`}
+                />
+              ))}
+            </div>
 
-                  {/* Стопка карт соперника */}
-                  <div className="relative h-20 w-32">
-                    {visibleRounds.map((r, idx) => {
-                      const rel = idx - baseIndex
-                      const offsetX = rel * -6
-                      const offsetY = Math.abs(rel) * 3
-                      const rotate = rel * -8
-                      return (
-                        <div
-                          key={`o-${r.round}-${idx}`}
-                          className={`absolute left-1/2 bottom-0 -translate-x-1/2 w-16 h-20 card-medieval card-medieval-opponent ${
-                            r.opponentMove === "rock"
-                              ? "card-medieval-rock"
-                              : r.opponentMove === "paper"
-                              ? "card-medieval-paper"
-                              : r.opponentMove === "scissors"
-                              ? "card-medieval-scissors"
-                              : ""
-                          }`}
-                          style={{
-                            transform: `translate(${offsetX}px, ${-offsetY}px) rotate(${rotate}deg)`,
-                            zIndex: 10 + idx,
-                          }}
-                        />
-                      )
-                    })}
-                  </div>
-                </>
-              )
-            })()}
+            {/* Счёт посередине */}
+            <span className="text-lg font-extrabold text-white">
+              <span className="text-emerald-300">{playerRoundsWon}</span>
+              <span className="mx-1">:</span>
+              <span className="text-red-400">{opponentRoundsWon}</span>
+            </span>
+
+            {/* Карты соперника справа */}
+            <div className="flex items-center gap-1">
+              {rounds.map((r, idx) => (
+                <div
+                  key={`o-row-${r.round}-${idx}`}
+                  className={`w-10 h-14 card-medieval card-medieval-opponent ${
+                    r.opponentMove === "rock"
+                      ? "card-medieval-rock"
+                      : r.opponentMove === "paper"
+                      ? "card-medieval-paper"
+                      : r.opponentMove === "scissors"
+                      ? "card-medieval-scissors"
+                      : ""
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
