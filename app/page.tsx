@@ -62,8 +62,10 @@ function GameLayout() {
           </aside>
         )}
 
-        <main className={`flex-1 ${showBottomNav ? "pb-20" : ""}`}>
-          <GameScreen />
+        <main className="flex-1">
+          <div className={`min-h-screen max-h-screen overflow-y-auto ${showBottomNav ? "pb-20" : ""}`}>
+            <GameScreen />
+          </div>
         </main>
 
         {showRightSidebar && (
