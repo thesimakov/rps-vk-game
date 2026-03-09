@@ -1231,12 +1231,6 @@ function GameProvider({ children }) {
                 amount,
                 createdAt: now
             });
-            setPlayer({
-                "GameProvider.useCallback[createBet]": (p)=>({
-                        ...p,
-                        balance: p.balance - amount
-                    })
-            }["GameProvider.useCallback[createBet]"]);
             const expiresAt = duration === "1h" ? now + 60 * 60 * 1000 : undefined;
             const myBet = {
                 id,
@@ -1329,13 +1323,7 @@ function GameProvider({ children }) {
             if (!pendingBet || newAmount < MIN_BET_AMOUNT) return false;
             const diff = newAmount - pendingBet.amount;
             if (diff === 0) return true;
-            if (diff > 0 && player.balance < diff) return false;
-            setPlayer({
-                "GameProvider.useCallback[updatePendingBetAmount]": (p)=>({
-                        ...p,
-                        balance: p.balance - diff
-                    })
-            }["GameProvider.useCallback[updatePendingBetAmount]"]);
+            if (diff > 0 && player.balance < newAmount) return false;
             setPendingBet({
                 "GameProvider.useCallback[updatePendingBetAmount]": (p)=>p ? {
                         ...p,
@@ -1376,12 +1364,6 @@ function GameProvider({ children }) {
                     botAutoAcceptTimeoutRef.current = null;
                 }
                 if (pendingBet) {
-                    setPlayer({
-                        "GameProvider.useEffect": (p)=>({
-                                ...p,
-                                balance: p.balance + pendingBet.amount
-                            })
-                    }["GameProvider.useEffect"]);
                     setBets({
                         "GameProvider.useEffect": (prev)=>prev.filter({
                                 "GameProvider.useEffect": (b)=>b.id !== pendingBet.id
@@ -1460,12 +1442,6 @@ function GameProvider({ children }) {
                 clearTimeout(botAutoAcceptTimeoutRef.current);
                 botAutoAcceptTimeoutRef.current = null;
             }
-            setPlayer({
-                "GameProvider.useCallback[declineBetResponse]": (p)=>({
-                        ...p,
-                        balance: p.balance + betResponse.amount
-                    })
-            }["GameProvider.useCallback[declineBetResponse]"]);
             setBetResponse(null);
             setPendingBet(null);
         }
@@ -1479,12 +1455,6 @@ function GameProvider({ children }) {
                 botAutoAcceptTimeoutRef.current = null;
             }
             if (pendingBet) {
-                setPlayer({
-                    "GameProvider.useCallback[clearPendingBet]": (p)=>({
-                            ...p,
-                            balance: p.balance + pendingBet.amount
-                        })
-                }["GameProvider.useCallback[clearPendingBet]"]);
                 setBets({
                     "GameProvider.useCallback[clearPendingBet]": (prev)=>prev.filter({
                             "GameProvider.useCallback[clearPendingBet]": (b)=>b.id !== pendingBet.id
@@ -1588,7 +1558,7 @@ function GameProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/lib/game-context.tsx",
-        lineNumber: 876,
+        lineNumber: 871,
         columnNumber: 5
     }, this);
 }

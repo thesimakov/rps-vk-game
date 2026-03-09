@@ -682,7 +682,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       const now = Date.now()
       const id = `pending-${now}`
       setPendingBet({ id, amount, createdAt: now })
-      setPlayer((p) => ({ ...p, balance: p.balance - amount }))
       const expiresAt = duration === "1h" ? now + 60 * 60 * 1000 : undefined
       const myBet: BetEntry = {
         id,
@@ -744,8 +743,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (!pendingBet || newAmount < MIN_BET_AMOUNT) return false
       const diff = newAmount - pendingBet.amount
       if (diff === 0) return true
-      if (diff > 0 && player.balance < diff) return false
-      setPlayer((p) => ({ ...p, balance: p.balance - diff }))
+      if (diff > 0 && player.balance < newAmount) return false
       setPendingBet((p) => (p ? { ...p, amount: newAmount } : null))
       setBets((prev) =>
         prev.map((b) => (b.id === pendingBet.id ? { ...b, amount: newAmount } : b))
@@ -769,7 +767,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         botAutoAcceptTimeoutRef.current = null
       }
       if (pendingBet) {
-        setPlayer((p) => ({ ...p, balance: p.balance + pendingBet.amount }))
         setBets((prev) => prev.filter((b) => b.id !== pendingBet.id))
         setPendingBet(null)
         setBetResponse(null)
@@ -824,7 +821,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(botAutoAcceptTimeoutRef.current)
       botAutoAcceptTimeoutRef.current = null
     }
-    setPlayer((p) => ({ ...p, balance: p.balance + betResponse!.amount }))
     setBetResponse(null)
     setPendingBet(null)
   }, [betResponse])
@@ -835,7 +831,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       botAutoAcceptTimeoutRef.current = null
     }
     if (pendingBet) {
-      setPlayer((p) => ({ ...p, balance: p.balance + pendingBet.amount }))
       setBets((prev) => prev.filter((b) => b.id !== pendingBet.id))
     }
     setPendingBet(null)

@@ -965,10 +965,6 @@ function GameProvider({ children }) {
             amount,
             createdAt: now
         });
-        setPlayer((p)=>({
-                ...p,
-                balance: p.balance - amount
-            }));
         const expiresAt = duration === "1h" ? now + 60 * 60 * 1000 : undefined;
         const myBet = {
             id,
@@ -1043,11 +1039,7 @@ function GameProvider({ children }) {
         if (!pendingBet || newAmount < MIN_BET_AMOUNT) return false;
         const diff = newAmount - pendingBet.amount;
         if (diff === 0) return true;
-        if (diff > 0 && player.balance < diff) return false;
-        setPlayer((p)=>({
-                ...p,
-                balance: p.balance - diff
-            }));
+        if (diff > 0 && player.balance < newAmount) return false;
         setPendingBet((p)=>p ? {
                 ...p,
                 amount: newAmount
@@ -1080,10 +1072,6 @@ function GameProvider({ children }) {
                 botAutoAcceptTimeoutRef.current = null;
             }
             if (pendingBet) {
-                setPlayer((p)=>({
-                        ...p,
-                        balance: p.balance + pendingBet.amount
-                    }));
                 setBets((prev)=>prev.filter((b)=>b.id !== pendingBet.id));
                 setPendingBet(null);
                 setBetResponse(null);
@@ -1146,10 +1134,6 @@ function GameProvider({ children }) {
             clearTimeout(botAutoAcceptTimeoutRef.current);
             botAutoAcceptTimeoutRef.current = null;
         }
-        setPlayer((p)=>({
-                ...p,
-                balance: p.balance + betResponse.amount
-            }));
         setBetResponse(null);
         setPendingBet(null);
     }, [
@@ -1161,10 +1145,6 @@ function GameProvider({ children }) {
             botAutoAcceptTimeoutRef.current = null;
         }
         if (pendingBet) {
-            setPlayer((p)=>({
-                    ...p,
-                    balance: p.balance + pendingBet.amount
-                }));
             setBets((prev)=>prev.filter((b)=>b.id !== pendingBet.id));
         }
         setPendingBet(null);
@@ -1249,7 +1229,7 @@ function GameProvider({ children }) {
         children: children
     }, void 0, false, {
         fileName: "[project]/lib/game-context.tsx",
-        lineNumber: 876,
+        lineNumber: 871,
         columnNumber: 5
     }, this);
 }
