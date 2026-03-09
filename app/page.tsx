@@ -1,6 +1,8 @@
 "use client"
 
 import { GameProvider, useGame } from "@/lib/game-context"
+import { useState } from "react"
+import { showFriendsPicker } from "@/lib/vk-bridge"
 import { MainMenu } from "@/components/main-menu"
 import { BetSelect } from "@/components/bet-select"
 import { Matchmaking } from "@/components/matchmaking"
@@ -41,17 +43,59 @@ function GameScreen() {
 }
 
 function GameLayout() {
-  const { screen, vkUser } = useGame()
+  const { screen, vkUser, player, setPlayer } = useGame()
   const hideNav = ["matchmaking", "result", "withdraw", "entry"].includes(screen)
   const showLeftSidebar = !hideNav && screen !== "bets" && screen !== "withdraw" && vkUser != null
   const showRightSidebar = !hideNav && vkUser != null
   const showBottomNav = !hideNav && vkUser != null
+  const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
+
+  const showLowBalanceHint = vkUser != null && player.balance < 50 && !hideLowBalanceHint
+
+  const handleLowBalanceInvite = async () => {
+    try {
+      const users = await showFriendsPicker()
+      if (users && users.length) {
+        const reward = users.length * 10
+        setPlayer((p) => ({ ...p, balance: p.balance + reward }))
+        setHideLowBalanceHint(true)
+      }
+    } catch {
+      // игнорируем ошибки VK Bridge
+    }
+  }
 
   return (
     <div className="relative min-h-screen">
       <ParticlesBg />
       <BetResponseDialog />
       <BackgroundMusic />
+
+      {showLowBalanceHint && (
+        <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center">
+          <div className="pointer-events-auto max-w-md mx-auto rounded-2xl bg-slate-900/95 border border-amber-400/60 px-4 py-3 shadow-xl flex items-center gap-3">
+            <div className="flex-1">
+              <p className="text-xs sm:text-sm text-white/90 leading-snug">
+                Добавь друга, получи за него 10 голосов. Чем больше друзей зашли, тем больше голосов получи.
+              </p>
+              <button
+                type="button"
+                onClick={handleLowBalanceInvite}
+                className="mt-2 inline-flex items-center justify-center rounded-full bg-amber-400 text-amber-950 px-3 py-1 text-[11px] font-bold uppercase tracking-wide hover:bg-amber-300 transition-colors"
+              >
+                Добавить друзей
+              </button>
+            </div>
+            <button
+              type="button"
+              className="ml-2 text-xs text-amber-300 hover:text-amber-100"
+              onClick={() => setHideLowBalanceHint(true)}
+            >
+              Закрыть
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="relative z-10 flex min-h-screen">
         {showLeftSidebar && (

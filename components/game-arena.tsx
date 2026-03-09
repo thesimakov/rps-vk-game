@@ -1,6 +1,6 @@
 "use client"
 
-import { useGame, type Move } from "@/lib/game-context"
+import { useGame, type Move, type MatchRoundSummary } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown } from "lucide-react"
@@ -89,6 +89,10 @@ export function GameArena() {
   /** Показать карту соперника с небольшой задержкой после выбора игрока */
   const [showOpponentCard, setShowOpponentCard] = useState(false)
 
+  /** История раундов в матче для экрана результата */
+  const [roundsHistory, setRoundsHistory] = useState<MatchRoundSummary[]>([])
+  const roundsHistoryRef = useRef<MatchRoundSummary[]>([])
+
   // Ref to prevent double-resolution
   const resolvedRef = useRef(false)
   // Refs for timeouts — очищаем при размонтировании, чтобы не вызывать setState после unmount
@@ -100,6 +104,9 @@ export function GameArena() {
   }, [])
 
   useEffect(() => {
+    // При входе на арену сбрасываем историю раундов и таймеры
+    roundsHistoryRef.current = []
+    setRoundsHistory([])
     return clearTimers
   }, [clearTimers])
 
@@ -157,6 +164,17 @@ export function GameArena() {
           opponentScoreAfter += 1
           setOpponentScore((prev) => prev + 1)
         }
+
+        // Сохраняем раунд в историю для экрана результата
+        const historyEntry: MatchRoundSummary = {
+          round: roundCount,
+          playerMove,
+          opponentMove: oppMove,
+          outcome,
+        }
+        const nextHistory = [...roundsHistoryRef.current, historyEntry]
+        roundsHistoryRef.current = nextHistory
+        setRoundsHistory(nextHistory)
 
         // Экономика раунда: банк = ставка × 2, комиссия 10% (VIP: 5%).
         const pot = currentBet * 2
@@ -255,6 +273,7 @@ export function GameArena() {
                 earnings: finalEarnings,
                 bet: currentBet,
                 bonus: matchBonus,
+                rounds: roundsHistoryRef.current,
               })
             }
 
@@ -381,14 +400,20 @@ export function GameArena() {
           className={`card-flip-wrap w-28 h-36 ${phase !== "choosing" && opponentMove && showOpponentCard ? "flipped" : ""}`}
         >
           <div className="card-flip-inner w-full h-full">
-            <div className="card-flip-front card-medieval card-medieval-back">
-              <span className="card-symbol-icon text-5xl text-[#1f1a14]/60 animate-pulse">?</span>
-            </div>
-            <div className="card-flip-back card-medieval card-medieval-opponent">
-              <span className="card-symbol-icon text-5xl">
-                {opponentMove ? MOVES.find((m) => m.key === opponentMove)?.icon : "?"}
-              </span>
-            </div>
+            {/* Лицевая сторона (пока соперник не открыл карту): просто рубашка */}
+            <div className="card-flip-front card-medieval card-medieval-back" />
+            {/* Обратная сторона: та же карта, что и у игрока (камень/бумага/ножницы) */}
+            <div
+              className={`card-flip-back card-medieval card-medieval-opponent ${
+                opponentMove === "rock"
+                  ? "card-medieval-rock"
+                  : opponentMove === "paper"
+                  ? "card-medieval-paper"
+                  : opponentMove === "scissors"
+                  ? "card-medieval-scissors"
+                  : ""
+              }`}
+            />
           </div>
         </div>
       </div>
@@ -456,12 +481,24 @@ export function GameArena() {
               }`}
             >
               <div
-                className={`card-medieval w-20 h-28 flex flex-col items-center justify-center gap-0 ${
-                  isSelected ? "card-medieval-selected" : player.cardSkin === "gold" ? "card-medieval-selected" : move.key === "scissors" ? "card-medieval-scissors" : move.key === "water" ? "border-sky-500/40" : ""
+                className={`card-medieval w-20 h-28 flex flex-col items-center justify-end pb-1.5 ${
+                  move.key === "rock"
+                    ? "card-medieval-rock"
+                    : move.key === "paper"
+                    ? "card-medieval-paper"
+                    : move.key === "scissors"
+                    ? "card-medieval-scissors"
+                    : ""
+                } ${isSelected || player.cardSkin === "gold" ? "card-medieval-selected" : ""} ${
+                  move.key === "water" ? "border-sky-500/60" : ""
                 }`}
               >
-                <span className="card-symbol-icon text-3xl">{move.icon}</span>
-                <span className="text-[9px] font-bold text-[#1f1a14] mt-0.5 uppercase tracking-wide">{move.label}</span>
+                {move.key === "water" && (
+                  <span className="card-symbol-icon text-3xl mb-0.5">{move.icon}</span>
+                )}
+                <span className="text-[9px] font-bold text-white drop-shadow-md mt-0.5 uppercase tracking-wide">
+                  {move.label}
+                </span>
               </div>
             </button>
           )

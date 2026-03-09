@@ -125,6 +125,13 @@ export interface BetResponse {
   amount: number
 }
 
+export interface MatchRoundSummary {
+  round: number
+  playerMove: Move
+  opponentMove: Move
+  outcome: "win" | "loss" | "draw"
+}
+
 export interface MatchResult {
   playerMove: Move | null
   opponentMove: Move | null
@@ -133,6 +140,8 @@ export interface MatchResult {
   bet: number
   /** Бонусные очки рейтинга за матч */
   bonus: number
+  /** Все раунды матча (для отображения истории ходов на экране результата) */
+  rounds?: MatchRoundSummary[]
 }
 
 interface GameState {

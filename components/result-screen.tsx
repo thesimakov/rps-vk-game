@@ -104,6 +104,7 @@ export function ResultScreen() {
   const playerMoveInfo = lastResult.playerMove ? MOVE_LABELS[lastResult.playerMove] : { icon: "?", label: "?" }
   const opponentMoveInfo = lastResult.opponentMove ? MOVE_LABELS[lastResult.opponentMove] : { icon: "?", label: "?" }
   const opponentData = opponent ?? { name: "Соперник", avatar: "?", avatarUrl: "" }
+  const rounds = lastResult.rounds ?? []
 
   return (
     <div className="flex flex-col min-h-screen relative arena-bg">
@@ -205,7 +206,7 @@ export function ResultScreen() {
         </div>
       </div>
 
-      {/* Контент по центру: исход, карты (или «Кто-то уснул»), награда, кнопки */}
+      {/* Контент по центру: исход, карты (или «Кто-то уснул»), история раундов, награда, кнопки */}
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-6">
       {isAsleep ? (
         /* Блок «Кто-то уснул» вместо поражения: луна, солнце, Z z z */
@@ -249,17 +250,99 @@ export function ResultScreen() {
         </div>
       </div>
 
-      {/* Две карты в стиле средневековья: игрок слева, соперник справа — выезд с боков */}
+      {/* История всех ходов в матче: наложенные мини-карты игрока и соперника */}
+      {rounds.length > 1 && (
+        <div className="flex flex-col items-center gap-2 mb-3 w-full max-w-md mx-auto">
+          <span className="text-[10px] uppercase tracking-wide text-white/60">
+            Все ходы в матче
+          </span>
+          <div className="flex items-center justify-center gap-6 w-full">
+            {/*
+              Для визуала «как в примере» показываем не более 5 последних ходов
+              и кладём их плотной стопкой с сильным поворотом.
+            */}
+            {(() => {
+              const maxShown = 5
+              const visibleRounds = rounds.slice(-maxShown)
+              const baseIndex = visibleRounds.length - 1
+              return (
+                <>
+                  {/* Стопка карт игрока */}
+                  <div className="relative h-20 w-32">
+                    {visibleRounds.map((r, idx) => {
+                      const rel = idx - baseIndex // последний ход сверху
+                      const offsetX = rel * 6
+                      const offsetY = Math.abs(rel) * 3
+                      const rotate = rel * 8
+                      return (
+                        <div
+                          key={`p-${r.round}-${idx}`}
+                          className={`absolute left-1/2 bottom-0 -translate-x-1/2 w-16 h-20 card-medieval ${
+                            r.playerMove === "rock"
+                              ? "card-medieval-rock"
+                              : r.playerMove === "paper"
+                              ? "card-medieval-paper"
+                              : r.playerMove === "scissors"
+                              ? "card-medieval-scissors"
+                              : ""
+                          }`}
+                          style={{
+                            transform: `translate(${offsetX}px, ${-offsetY}px) rotate(${rotate}deg)`,
+                            zIndex: 10 + idx,
+                          }}
+                        />
+                      )
+                    })}
+                  </div>
+
+                  {/* Стопка карт соперника */}
+                  <div className="relative h-20 w-32">
+                    {visibleRounds.map((r, idx) => {
+                      const rel = idx - baseIndex
+                      const offsetX = rel * -6
+                      const offsetY = Math.abs(rel) * 3
+                      const rotate = rel * -8
+                      return (
+                        <div
+                          key={`o-${r.round}-${idx}`}
+                          className={`absolute left-1/2 bottom-0 -translate-x-1/2 w-16 h-20 card-medieval card-medieval-opponent ${
+                            r.opponentMove === "rock"
+                              ? "card-medieval-rock"
+                              : r.opponentMove === "paper"
+                              ? "card-medieval-paper"
+                              : r.opponentMove === "scissors"
+                              ? "card-medieval-scissors"
+                              : ""
+                          }`}
+                          style={{
+                            transform: `translate(${offsetX}px, ${-offsetY}px) rotate(${rotate}deg)`,
+                            zIndex: 10 + idx,
+                          }}
+                        />
+                      )
+                    })}
+                  </div>
+                </>
+              )
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* Две основные карты в стиле средневековья: игрок слева, соперник справа — выезд с боков */}
       <div className="flex items-end justify-center gap-3 sm:gap-6 w-full max-w-md mx-auto mb-4">
         <div className="result-card-left flex flex-col items-center gap-3" style={{ animationDelay: "0.35s" }}>
           <div
             className={`card-medieval w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0 ${
-              player.cardSkin === "gold" ? "card-medieval-selected" : ""
-            }`}
-          >
-            <span className="card-symbol-icon text-5xl sm:text-6xl">{playerMoveInfo.icon}</span>
-            <span className="text-base font-bold text-[#1f1a14] mt-1 uppercase tracking-wide">{playerMoveInfo.label}</span>
-          </div>
+              lastResult.playerMove === "rock"
+                ? "card-medieval-rock"
+                : lastResult.playerMove === "paper"
+                ? "card-medieval-paper"
+                : lastResult.playerMove === "scissors"
+                ? "card-medieval-scissors"
+                : ""
+            } ${player.cardSkin === "gold" ? "card-medieval-selected" : ""}`}
+          />
           {player.avatarFrame === "gold" ? (
             <div className="relative inline-flex flex-shrink-0">
               <div className="gold-frame-outer w-16 h-16">
@@ -301,10 +384,17 @@ export function ResultScreen() {
         </div>
 
         <div className="result-card-right flex flex-col items-center gap-3" style={{ animationDelay: "0.4s" }}>
-          <div className="card-medieval card-medieval-opponent w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0">
-            <span className="card-symbol-icon text-5xl sm:text-6xl">{opponentMoveInfo.icon}</span>
-            <span className="text-base font-bold text-[#1f1a14] mt-1 uppercase tracking-wide">{opponentMoveInfo.label}</span>
-          </div>
+          <div
+            className={`card-medieval card-medieval-opponent w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0 ${
+              lastResult.opponentMove === "rock"
+                ? "card-medieval-rock"
+                : lastResult.opponentMove === "paper"
+                ? "card-medieval-paper"
+                : lastResult.opponentMove === "scissors"
+                ? "card-medieval-scissors"
+                : ""
+            }`}
+          />
           {opponentData.vip ? (
             <div className="relative inline-flex flex-shrink-0">
               <div className="vip-frame-outer w-16 h-16">
