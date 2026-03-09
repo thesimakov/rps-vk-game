@@ -873,19 +873,19 @@
   }
 
   .card-medieval-rock {
-    background-image: var(--card-rock-image, url("/card-rock.png"));
+    background-image: var(--card-rock-image, url("/card-rock.webp"));
     background-position: center;
     background-size: cover;
   }
 
   .card-medieval-paper {
-    background-image: var(--card-paper-image, url("/card-paper.png"));
+    background-image: var(--card-paper-image, url("/card-paper.webp"));
     background-position: center;
     background-size: cover;
   }
 
   .card-medieval-scissors {
-    background-image: var(--card-scissors-image, url("/card-scissors.png"));
+    background-image: var(--card-scissors-image, url("/card-scissors.webp"));
     background-position: center;
     background-size: cover;
   }

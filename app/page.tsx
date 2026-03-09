@@ -135,10 +135,10 @@ export default function Page() {
   const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
   const makeUrl = (file: string) => `url("${basePath}${file}")`
   const styleVars: CSSProperties = {
-    "--card-back-image": makeUrl("/card-back.png"),
-    "--card-rock-image": makeUrl("/card-rock.png"),
-    "--card-paper-image": makeUrl("/card-paper.png"),
-    "--card-scissors-image": makeUrl("/card-scissors.png"),
+    "--card-back-image": makeUrl("/card-back.webp"),
+    "--card-rock-image": makeUrl("/card-rock.webp"),
+    "--card-paper-image": makeUrl("/card-paper.webp"),
+    "--card-scissors-image": makeUrl("/card-scissors.webp"),
   }
 
   return (
