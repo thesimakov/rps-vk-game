@@ -83,6 +83,8 @@ export function GameArena() {
   /** Локальный счёт в матче (раунды): соперник : игрок */
   const [opponentScore, setOpponentScore] = useState(0)
   const [playerScore, setPlayerScore] = useState(0)
+  /** Суммарный заработок за матч по раундам (для экрана результата) */
+  const [matchEarnings, setMatchEarnings] = useState(0)
   const [drawMessage, setDrawMessage] = useState(false)
   /** Подсказка что произошло в раунде (победа/поражение) — для 3 и 5 раундов */
   const [roundHintMessage, setRoundHintMessage] = useState<string | null>(null)
@@ -127,6 +129,10 @@ export function GameArena() {
         setPhase("revealing")
         const outcome = getOutcome(playerMove, oppMove)
 
+        // Счёт после этого раунда (до обновления стейта), нужен для итогового результата матча
+        let playerScoreAfter = playerScore
+        let opponentScoreAfter = opponentScore
+
         if (outcome === "draw") {
           setDrawMessage(true)
           const drawTimer = setTimeout(() => {
@@ -147,8 +153,10 @@ export function GameArena() {
 
         // Обновляем локальный счёт матча по раундам
         if (outcome === "win") {
+          playerScoreAfter += 1
           setPlayerScore((prev) => prev + 1)
         } else if (outcome === "loss") {
+          opponentScoreAfter += 1
           setOpponentScore((prev) => prev + 1)
         }
 
@@ -157,6 +165,10 @@ export function GameArena() {
         const commission = Math.ceil(pot * (player.vip ? 0.05 : 0.1))
         const winnings = pot - commission
         const earnings = outcome === "win" ? winnings - currentBet : -currentBet
+
+        // Суммарный заработок за весь матч (по раундам)
+        const totalEarnings = matchEarnings + earnings
+        setMatchEarnings(totalEarnings)
 
         setPlayer((p) => {
           const next = {
@@ -187,6 +199,19 @@ export function GameArena() {
           setRoundHintMessage(null)
           const nextRound = roundCount + 1
           if (nextRound > totalRounds) {
+            // Матч завершён: считаем итог по очкам, а не только по последнему раунду
+            let finalOutcome: "win" | "loss" | "draw" = "draw"
+            if (playerScoreAfter > opponentScoreAfter) finalOutcome = "win"
+            else if (playerScoreAfter < opponentScoreAfter) finalOutcome = "loss"
+
+            setLastResult({
+              playerMove,
+              opponentMove: oppMove,
+              outcome: finalOutcome,
+              earnings: totalEarnings,
+              bet: currentBet,
+            })
+
             setScreen("result")
           } else {
             setRoundCount(nextRound)
