@@ -93,6 +93,10 @@ export function GameArena() {
   const [roundsHistory, setRoundsHistory] = useState<MatchRoundSummary[]>([])
   const roundsHistoryRef = useRef<MatchRoundSummary[]>([])
 
+  /** Наклейки/смайлики, которые игрок кидает сопернику во время таймера */
+  const [stickers, setStickers] = useState<{ id: number; emoji: string; dx: number; dy: number; dur: number }[]>([])
+  const stickerIdRef = useRef(1)
+
   // Ref to prevent double-resolution
   const resolvedRef = useRef(false)
   // Refs for timeouts — очищаем при размонтировании, чтобы не вызывать setState после unmount
@@ -107,8 +111,27 @@ export function GameArena() {
     // При входе на арену сбрасываем историю раундов и таймеры
     roundsHistoryRef.current = []
     setRoundsHistory([])
+    setStickers([])
     return clearTimers
   }, [clearTimers])
+
+  const canSpamStickers = phase === "choosing" && timeLeft > 0
+
+  const sendSticker = (emoji: string) => {
+    if (!canSpamStickers) return
+    const id = stickerIdRef.current++
+    // Случайное направление и расстояние от таймера (центр арены)
+    const angle = Math.random() * Math.PI * 2
+    const distance = 80 + Math.random() * 100 // 80–180px — разлёт шире
+    const dx = Math.cos(angle) * distance
+    const dy = -Math.abs(Math.sin(angle) * distance) // летят чуть вверх
+    const dur = 1.3 + Math.random() * 0.7 // 1.3–2.0s
+    const sticker = { id, emoji, dx, dy, dur }
+    setStickers((prev) => [...prev, sticker])
+    setTimeout(() => {
+      setStickers((prev) => prev.filter((s) => s.id !== id))
+    }, 1300)
+  }
 
   const resolveRound = useCallback(
     (playerMove: Move) => {
@@ -339,29 +362,52 @@ export function GameArena() {
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
-      {/* Верхняя панель: БАНК (монета + голоса) | РАУНД N | сердца (красные заполненные, серые пустые) */}
-      <div className="flex items-center justify-between w-full max-w-md mx-auto mb-5">
-        <div className="flex items-center gap-2">
-          <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
+      {/* Верхняя панель как в макете: БАНК | БОНУСЫ | РАУНД + сердечки */}
+      <div className="w-full max-w-md mx-auto mb-5">
+        <div className="flex items-start justify-between gap-4">
+          {/* Банк */}
           <div className="flex flex-col">
-            <span className="text-base font-bold text-white/90 uppercase tracking-wider">Банк</span>
-            <span className="text-base font-bold text-amber-400 tabular-nums leading-tight">
-              {formatAmount(bankAmount)} <span className="text-white/70 font-medium text-base">голосов</span>
+            <span className="text-base font-semibold text-white/95 uppercase tracking-wider">
+              Банк
+            </span>
+            <div className="mt-1 flex items-baseline gap-2">
+              <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
+              <span className="text-xl font-extrabold text-amber-400 tabular-nums leading-none">
+                {formatAmount(bankAmount)}
+              </span>
+            </div>
+            <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
+              голосов
             </span>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Zap className="h-5 w-5 text-red-400 flex-shrink-0" />
-          <span className="text-base font-bold text-white uppercase tracking-widest">
-            Раунд {roundCount}{totalRounds > 1 ? ` из ${totalRounds}` : ""}
-          </span>
-          <div className="flex gap-0.5">
-            {Array.from({ length: totalRounds }).map((_, i) => (
-              <Heart
-                key={i}
-                className={`h-5 w-5 flex-shrink-0 ${i < movesLeft ? "fill-red-500 text-red-500" : "text-white/25"}`}
-              />
-            ))}
+
+          {/* Бонусы */}
+          <div className="flex flex-col items-center">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-white/70">
+              Бонусы
+            </span>
+            <div className="mt-1 px-4 py-1 rounded-full border border-amber-400/70 bg-amber-500/20">
+              <span className="text-sm font-bold text-amber-200 tabular-nums">
+                {formatAmount(player.ratingPoints ?? 0)}
+              </span>
+            </div>
+          </div>
+
+          {/* Раунд + сердечки */}
+          <div className="flex flex-col items-end">
+            <span className="text-base font-semibold text-white uppercase tracking-widest leading-none">
+              Раунд {roundCount} из {totalRounds}
+            </span>
+            <div className="mt-1 flex gap-1">
+              {Array.from({ length: totalRounds }).map((_, i) => (
+                <Heart
+                  key={i}
+                  className={`h-5 w-5 flex-shrink-0 ${
+                    i < movesLeft ? "fill-red-500 text-red-500" : "text-white/25"
+                  }`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>
@@ -441,15 +487,25 @@ export function GameArena() {
                 <span className={`text-2xl font-black tabular-nums text-white`}>{timeLeft}</span>
               </div>
             </div>
+            {/* Облако стикеров, вылетающих из центра таймера */}
+            <div className="pointer-events-none absolute inset-0">
+              {stickers.map((s, index) => (
+                <span
+                  key={s.id}
+                  className="sticker-bubble"
+                  style={{
+                    animationDelay: `${index * 0.05}s`,
+                    ["--dx" as string]: `${s.dx}px`,
+                    ["--dy" as string]: `${s.dy}px`,
+                    ["--dur" as string]: `${s.dur}s`,
+                  }}
+                >
+                  {s.emoji}
+                </span>
+              ))}
+            </div>
           </div>
-          {/* Табло счёта раундов: соперник : игрок, стрелки обозначают игроков */}
-          <div className="mt-1 flex items-center gap-3">
-            <ChevronUp className="h-4 w-4 text-red-300" aria-label="Соперник" />
-            <span className="text-lg font-black text-white tabular-nums">
-              {opponentScore} : {playerScore}
-            </span>
-            <ChevronDown className="h-4 w-4 text-emerald-300" aria-label="Вы" />
-          </div>
+          {/* Счёт перенесён в верхний блок */}
           {drawMessage && (
             <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
           )}
@@ -462,6 +518,22 @@ export function GameArena() {
               {roundHintMessage}
             </p>
           )}
+        </div>
+        {/* Панель стикеров для психологического давления */}
+        <div className="mt-3 flex items-center gap-2">
+          {["🤔", "👀", "🔥"].map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => sendSticker(emoji)}
+              disabled={!canSpamStickers}
+              className={`h-9 w-9 rounded-full border border-slate-500/60 bg-slate-800/80 flex items-center justify-center text-lg transition-all ${
+                canSpamStickers ? "active:scale-90 hover:bg-slate-700" : "opacity-40 cursor-not-allowed"
+              }`}
+            >
+              {emoji}
+            </button>
+          ))}
         </div>
       </div>
 

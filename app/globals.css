@@ -557,4 +557,44 @@
     50% { opacity: 1; transform: scale(1.08); }
   }
 
+  /* Пузырьки стикеров в бою (🤔👀🔥) */
+  .sticker-bubble {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    padding: 0.1rem 0.3rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.7);
+    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.9);
+    font-size: 1rem;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    animation:
+      sticker-pop 0.18s ease-out,
+      sticker-float var(--dur, 1.6s) cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+  @keyframes sticker-pop {
+    0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  }
+  @keyframes sticker-float {
+    0% {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    70% {
+      opacity: 1;
+      transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -30px))) scale(1.02);
+    }
+    100% {
+      opacity: 0;
+      transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -30px))) scale(0.9);
+    }
+  }
+
 }

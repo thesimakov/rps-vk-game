@@ -7,7 +7,7 @@ export function EntryScreen() {
   const { setScreen, loginWithVK } = useGame()
 
   return (
-    <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 arena-bg">
+    <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 bg-transparent">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         <div className="text-center space-y-2">
           <h1 className="text-base font-black text-white uppercase tracking-wide">

@@ -244,7 +244,11 @@ export function ShopScreen() {
       const success = await purchaseVKVoices(amount)
       // В продакшене баланс должен обновляться после подтверждения платежа на бэкенде (см. docs/VK_INTEGRATION.md)
       if (success) {
-        setPlayer((p) => ({ ...p, balance: p.balance + amount }))
+        setPlayer((p) => ({
+          ...p,
+          balance: p.balance + amount,
+          totalPurchases: (p.totalPurchases ?? 0) + amount,
+        }))
       }
     } finally {
       setTopUpLoading(null)

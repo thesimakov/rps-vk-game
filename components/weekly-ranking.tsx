@@ -24,6 +24,7 @@ export function WeeklyRanking() {
   const winsLabel = playerEntry ? playerEntry.wins : player.weekWins
   const earningsLabel = playerEntry ? playerEntry.earnings : player.ratingPoints ?? 0
   const canBuyBoost = player.balance >= 250
+  const seasonBank = Math.floor(((player.totalPurchases ?? 0) * 0.1))
 
   useEffect(() => {
     const el = scrollRef.current
@@ -79,6 +80,33 @@ export function WeeklyRanking() {
 
   return (
     <div className="flex flex-col h-full py-4 px-3 gap-3">
+      {/* Турнир сезона */}
+      <div className="rounded-2xl border border-amber-400/40 bg-card/40 px-3 py-2.5 flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Crown className="h-4 w-4 text-amber-300" />
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-200">
+              Турнир сезона
+            </span>
+          </div>
+          <button
+            type="button"
+            disabled
+            className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-400/20 text-amber-200 border border-amber-400/50 cursor-default"
+          >
+            Скоро
+          </button>
+        </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            Банк
+          </span>
+          <span className="text-sm font-extrabold text-amber-300 tabular-nums">
+            {seasonBank} голосов
+          </span>
+        </div>
+      </div>
+
       <button
         onClick={() => setScreen("leaderboard")}
         className="flex items-center gap-2 px-2 py-1 hover:opacity-80 transition-opacity cursor-pointer"

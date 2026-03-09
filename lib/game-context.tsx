@@ -36,6 +36,8 @@ export interface Player {
   weekEarnings: number
   /** Рейтинговые бонусы (очки), полученные за победы */
   ratingPoints?: number
+  /** Суммарные покупки голосов за всё время (для банка турнира сезона) */
+  totalPurchases?: number
   vip: boolean
   /** Осталось матчей с приоритетом поиска (покупка «Быстрый поиск») */
   fastMatchBoosts?: number
@@ -329,7 +331,7 @@ const LEADERBOARD_UPDATE_MS = 30 * 1000
 
 /** Сохранение в localStorage: версия для совместимости при будущих обновлениях */
 const SAVE_STORAGE_KEY = "rps_vk_save"
-const SAVE_VERSION = 1
+const SAVE_VERSION = 2
 
 const DEFAULT_PLAYER: Player = {
   id: "player1",
@@ -343,6 +345,7 @@ const DEFAULT_PLAYER: Player = {
   weekEarnings: 0,
   vip: false,
   ratingPoints: 0,
+  totalPurchases: 0,
 }
 
 function loadSavedState(): {
@@ -386,6 +389,7 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           weekEarnings: player.weekEarnings,
           vip: player.vip,
           ratingPoints: player.ratingPoints,
+          totalPurchases: player.totalPurchases,
           fastMatchBoosts: player.fastMatchBoosts,
           victoryAnimation: player.victoryAnimation,
           cardSkin: player.cardSkin,

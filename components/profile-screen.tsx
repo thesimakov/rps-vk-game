@@ -161,19 +161,34 @@ export function ProfileScreen() {
         )}
       </div>
 
-      {/* Balance + Rank */}
-      <div className="w-full max-w-md flex gap-3 mb-4">
-        <div className="flex-1 bg-card/50 backdrop-blur-sm border border-accent/20 rounded-2xl p-4 flex items-center gap-3">
-          <Coins className="h-5 w-5 text-accent" />
-          <div>
-            <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(player.balance)}</span>
-            <p className="text-base text-muted-foreground font-medium uppercase">голосов</p>
-          </div>
+      {/* Balance + Bonuses + Rank */}
+      <div className="w-full max-w-md grid grid-cols-3 gap-3 mb-4">
+        <div className="bg-card/50 backdrop-blur-sm border border-accent/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
+          <Coins className="h-5 w-5 text-accent mb-1" />
+          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+            голоса
+          </span>
+          <span className="mt-1 text-lg font-extrabold text-accent tabular-nums">
+            {formatAmount(player.balance)}
+          </span>
         </div>
-        <div className="w-28 bg-card/50 backdrop-blur-sm border border-primary/20 rounded-2xl p-4 flex flex-col items-center justify-center">
-          <Medal className="h-4 w-4 text-primary mb-1" />
-          <span className="text-xl font-extrabold text-primary">#{playerRank}</span>
-          <p className="text-[10px] text-muted-foreground font-medium uppercase">рейтинг</p>
+        <div className="bg-card/50 backdrop-blur-sm border border-amber-400/40 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
+          <Coins className="h-5 w-5 text-amber-300 mb-1" />
+          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+            бонусы
+          </span>
+          <span className="mt-1 text-lg font-extrabold text-amber-200 tabular-nums">
+            {formatAmount(player.ratingPoints ?? 0)}
+          </span>
+        </div>
+        <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
+          <Medal className="h-5 w-5 text-primary mb-1" />
+          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+            рейтинг
+          </span>
+          <span className="mt-1 text-lg font-extrabold text-primary tabular-nums">
+            #{playerRank}
+          </span>
         </div>
       </div>
 
