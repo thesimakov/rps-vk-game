@@ -694,8 +694,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Фолбэк для dev-режима вне ВК и без настроенного OAuth — мок-авторизация через getVKUser.
-    await loginWithVKBridge()
+    // В продакшене без корректной настройки OAuth/мини-приложения — не даём войти "в обход" ВК.
+    if (process.env.NODE_ENV !== "production") {
+      await loginWithVKBridge()
+      return
+    }
+
+    // eslint-disable-next-line no-alert
+    if (typeof window !== "undefined") {
+      window.alert("Авторизация через ВК не настроена. Проверьте переменные окружения VK_APP_ID и редирект.")
+    }
   }, [loginWithVKBridge])
 
   const logoutWithVK = useCallback(() => {
