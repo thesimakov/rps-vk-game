@@ -125,6 +125,13 @@
     position: relative;
     overflow: hidden;
   }
+  .card-set-ancient {
+    /* Пути задаются через styleVars с учётом basePath */
+    --card-back-image: var(--card-ancient-back-image, var(--card-back-image));
+    --card-rock-image: var(--card-ancient-rock-image, var(--card-rock-image));
+    --card-scissors-image: var(--card-ancient-scissors-image, var(--card-scissors-image));
+    --card-paper-image: var(--card-ancient-paper-image, var(--card-paper-image));
+  }
   .card-medieval::before,
   .card-medieval::after {
     content: none;

@@ -292,7 +292,7 @@ export function ResultScreen() {
                       : r.playerMove === "scissors"
                       ? "card-medieval-scissors"
                       : ""
-                  }`}
+                  } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                 />
               ))}
             </div>
@@ -323,7 +323,7 @@ export function ResultScreen() {
                       : r.opponentMove === "scissors"
                       ? "card-medieval-scissors"
                       : ""
-                  }`}
+                  } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                 />
               ))}
             </div>
@@ -343,7 +343,9 @@ export function ResultScreen() {
                 : lastResult.playerMove === "scissors"
                 ? "card-medieval-scissors"
                 : ""
-            } ${player.cardSkin === "gold" ? "card-medieval-selected" : ""}`}
+            } ${player.cardSkin === "gold" ? "card-medieval-selected" : ""} ${
+              player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""
+            }`}
           />
           {player.avatarFrame === "gold" ? (
             <div className="relative inline-flex flex-shrink-0">
@@ -395,7 +397,7 @@ export function ResultScreen() {
                 : lastResult.opponentMove === "scissors"
                 ? "card-medieval-scissors"
                 : ""
-            }`}
+            } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
           />
           {opponentData.vip ? (
             <div className="relative inline-flex flex-shrink-0">

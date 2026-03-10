@@ -228,6 +228,36 @@ export function ProfileScreen() {
         </div>
       </div>
 
+      {/* Тема карт */}
+      {player.hasAncientDeck && (
+        <div className="w-full max-w-md bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Тема карт
+              </span>
+              <span className="block text-sm text-foreground font-medium">
+                Выберите оформление карт в боях
+              </span>
+            </div>
+            <select
+              value={player.cardDeck === "ancient-rus" ? "ancient-rus" : "classic"}
+              onChange={(e) => {
+                const val = e.target.value
+                setPlayer((p) => ({
+                  ...p,
+                  cardDeck: val === "ancient-rus" ? "ancient-rus" : undefined,
+                }))
+              }}
+              className="ml-2 px-3 py-2 rounded-xl bg-card border border-border/50 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+            >
+              <option value="classic">Классические карты</option>
+              <option value="ancient-rus">Древняя Русь</option>
+            </select>
+          </div>
+        </div>
+      )}
+
       {/* Вывод — только при балансе от 200 голосов, не более 10 000 в день (на экране вывода) */}
       {canWithdraw && (
         <button

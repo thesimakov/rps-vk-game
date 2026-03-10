@@ -46,6 +46,10 @@ export interface Player {
   victoryAnimation?: string
   /** Скин карт: "gold" и т.д. */
   cardSkin?: string
+  /** Набор карт: "ancient-rus" и т.д. */
+  cardDeck?: "ancient-rus"
+  /** Купленные наборы карт (для сохранения доступа к темам) */
+  hasAncientDeck?: boolean
   /** Рамка аватара: "neon" и т.д. */
   avatarFrame?: string
   /** Участие в турнире дня */
@@ -56,6 +60,8 @@ export interface Player {
   lavaCardUses?: number
   /** Карта «Вода»: осталось использований (3 за покупку). Побеждает камень, проигрывает бумаге, ничья с ножницами. */
   waterCardUses?: number
+  /** Таймер в бою +10 секунд до указанного времени (timestamp, ms) */
+  extraTimerUntil?: number
   /** Приглашённые друзья (до 4 слотов). Когда друг принимает приглашение — появляется в ячейке. */
   invitedFriends?: Array<{ id: number; first_name: string; last_name: string; photo_200: string } | null>
   /** Награда 100 голосов за 4 приглашённых друга уже получена */
@@ -366,6 +372,9 @@ const DEFAULT_PLAYER: Player = {
   ratingPoints: 0,
   totalPurchases: 0,
   groupSubscribedRewardClaimed: false,
+  cardDeck: undefined,
+  hasAncientDeck: false,
+  extraTimerUntil: undefined,
 }
 
 function loadSavedState(): {
@@ -413,6 +422,8 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           fastMatchBoosts: player.fastMatchBoosts,
           victoryAnimation: player.victoryAnimation,
           cardSkin: player.cardSkin,
+          cardDeck: player.cardDeck,
+          hasAncientDeck: player.hasAncientDeck,
           avatarFrame: player.avatarFrame,
           tournamentEntry: player.tournamentEntry,
           hideVkAvatar: player.hideVkAvatar,
@@ -424,6 +435,7 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           groupSubscribedRewardClaimed: player.groupSubscribedRewardClaimed,
           lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
           dailyRewardIndex: player.dailyRewardIndex,
+          extraTimerUntil: player.extraTimerUntil,
         },
         withdrawState: { date: withdrawState.date, amount: withdrawState.amount },
         lavaCardStock,

@@ -73,8 +73,10 @@ export function GameArena() {
   const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds } = useGame()
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
   const MOVES = hasWaterCard ? [...BASE_MOVES, WATER_MOVE] : BASE_MOVES
+  const hasExtraTimer = (player.extraTimerUntil ?? 0) > Date.now()
+  const baseTimer = hasExtraTimer ? 25 : 15
 
-  const [timeLeft, setTimeLeft] = useState(15)
+  const [timeLeft, setTimeLeft] = useState(baseTimer)
   const [selectedMove, setSelectedMove] = useState<Move | null>(null)
   const [opponentMove, setOpponentMove] = useState<Move | null>(null)
   const [phase, setPhase] = useState<Phase>("choosing")
@@ -169,7 +171,7 @@ export function GameArena() {
             setOpponentMove(null)
             setShowOpponentCard(false)
             setPhase("choosing")
-            setTimeLeft(15)
+            setTimeLeft(baseTimer)
             resolvedRef.current = false
           }, 2000)
           timersRef.current.push(drawTimer)
@@ -307,7 +309,7 @@ export function GameArena() {
             setOpponentMove(null)
             setShowOpponentCard(false)
             setPhase("choosing")
-            setTimeLeft(15)
+            setTimeLeft(baseTimer)
             resolvedRef.current = false
           }
         }, 1800)
@@ -346,7 +348,7 @@ export function GameArena() {
 
     const id = setInterval(() => setTimeLeft((t) => t - 1), 1000)
     return () => clearInterval(id)
-  }, [timeLeft, phase, selectedMove, currentBet, setPlayer, setLastResult, setScreen, resolveRound])
+  }, [timeLeft, phase, selectedMove, currentBet, setPlayer, setLastResult, setScreen, resolveRound, baseTimer])
 
   const handleSelectMove = (move: Move) => {
     if (phase !== "choosing") return
@@ -443,7 +445,9 @@ export function GameArena() {
         )}
         <span className="text-base font-bold text-white">{opponentData.name}</span>
         <div
-          className={`card-flip-wrap w-28 h-36 ${phase !== "choosing" && opponentMove && showOpponentCard ? "flipped" : ""}`}
+          className={`card-flip-wrap w-28 h-36 ${
+            phase !== "choosing" && opponentMove && showOpponentCard ? "flipped" : ""
+          } ${opponent?.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
         >
           <div className="card-flip-inner w-full h-full">
             {/* Лицевая сторона (пока соперник не открыл карту): просто рубашка */}
@@ -589,7 +593,7 @@ export function GameArena() {
                     : ""
                 } ${isSelected || player.cardSkin === "gold" ? "card-medieval-selected" : ""} ${
                   move.key === "water" ? "border-sky-500/60" : ""
-                }`}
+                } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
               >
                 {move.key === "water" && (
                   <span className="card-symbol-icon text-3xl mb-0.5">{move.icon}</span>

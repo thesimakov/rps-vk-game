@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, showWallPostBox, joinVKGroup } from "@/lib/vk-bridge"
-import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X } from "lucide-react"
+import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass } from "lucide-react"
 
 const INVITED_SLOTS = 4
 const INVITE_REWARD = 100
@@ -29,6 +29,24 @@ const SHOP_ITEMS: ShopItem[] = [
     price: 49,
     icon: <Crown className="h-5 w-5" />,
     category: "premium",
+    color: "text-accent",
+  },
+  {
+    id: "timer-plus-10",
+    name: "Таймер +10 секунд (1 день)",
+    description: "Увеличивает время выбора хода до 25 секунд на сутки.",
+    price: 10,
+    icon: <Hourglass className="h-5 w-5" />,
+    category: "boost",
+    color: "text-secondary",
+  },
+  {
+    id: "card-set-ancient",
+    name: "Карты: Древняя Русь",
+    description: "Средневековый набор карт. Видят вы и ваши соперники.",
+    price: 200,
+    icon: <Palette className="h-5 w-5" />,
+    category: "cosmetic",
     color: "text-accent",
   },
   {
@@ -378,6 +396,11 @@ export function ShopScreen() {
         case "card-skin":
           updated.cardSkin = "gold"
           break
+        case "card-set-ancient":
+          updated.hasAncientDeck = true
+          // по умолчанию сразу включаем тему при первой покупке
+          if (!p.cardDeck) updated.cardDeck = "ancient-rus"
+          break
         case "frame-neon":
           updated.avatarFrame = "neon"
           break
@@ -388,6 +411,13 @@ export function ShopScreen() {
           updated.tournamentEntry = true
           updated.balance += 50
           break
+        case "timer-plus-10": {
+          const now = Date.now()
+          const current = p.extraTimerUntil && p.extraTimerUntil > now ? p.extraTimerUntil : now
+          const oneDay = 24 * 60 * 60 * 1000
+          updated.extraTimerUntil = current + oneDay
+          break
+        }
       }
       return updated
     })
@@ -611,7 +641,8 @@ export function ShopScreen() {
             (item.id === "card-skin" && player.cardSkin) ||
             (item.id === "frame-neon" && player.avatarFrame === "neon") ||
             (item.id === "frame-gold" && player.avatarFrame === "gold") ||
-            (item.id === "tournament-entry" && player.tournamentEntry)
+            (item.id === "tournament-entry" && player.tournamentEntry) ||
+            (item.id === "card-set-ancient" && player.hasAncientDeck)
           const lavaOutOfStock = item.id === "lava-card" && lavaCardStock <= 0
           const canBuy =
             item.id === "lava-card"

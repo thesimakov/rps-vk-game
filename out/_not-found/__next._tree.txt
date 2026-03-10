@@ -1,3 +1,3 @@
 :HL["/rps-vk-game/_next/static/chunks/754ac0c83ed54af7.css","style"]
-:HL["/rps-vk-game/_next/static/chunks/ebcd7aa2287af7a0.css","style"]
-0:{"buildId":"9GvWcC3gGPeYc1jS7yDm-","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"/_not-found","paramType":null,"paramKey":"/_not-found","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+:HL["/rps-vk-game/_next/static/chunks/3683a92054ea8a72.css","style"]
+0:{"buildId":"pSBjPIWmkE3cUVVrMbgb7","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"/_not-found","paramType":null,"paramKey":"/_not-found","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
