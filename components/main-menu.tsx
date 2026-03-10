@@ -86,24 +86,22 @@ export function MainMenu() {
 
   return (
     <div className="flex flex-col min-h-screen px-4 py-6">
-      {/* Верх: логотип, уровень, прогресс-бар */}
+      {/* Верх: крупный логотип, уровень, прогресс-бар */}
       <div className="flex flex-col items-center mb-5">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="w-12 h-12 rounded-2xl bg-slate-900/80 border border-amber-400/40 shadow-lg shadow-amber-500/20 overflow-hidden flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 mb-2">
+          <div className="w-24 h-24 rounded-[2rem] bg-slate-900/80 border border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.35)] overflow-hidden flex items-center justify-center">
             <img
               src="/logo.png"
               alt="RPS Arena"
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="text-left">
-            <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">
-              RPS Arena
-            </p>
-            <p className="text-sm text-white/90 font-medium">
-              Твой уровень: {levelName}
-            </p>
-          </div>
+          <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">
+            RPS Arena
+          </p>
+          <p className="text-sm text-white/90 font-medium">
+            Твой уровень: {levelName}
+          </p>
         </div>
         <div className="w-full max-w-[200px] mt-1.5 flex items-center gap-2">
           <div className="flex-1 h-2 bg-white/15 rounded-full overflow-hidden">

@@ -46,8 +46,9 @@ export function EntryScreen() {
   return (
     <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 bg-transparent">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="w-20 h-20 rounded-3xl bg-slate-900/70 border border-amber-400/40 shadow-lg shadow-amber-500/20 flex items-center justify-center overflow-hidden">
+        {/* Крупный логотип над всеми кнопками */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <div className="w-28 h-28 rounded-[2.25rem] bg-slate-900/80 border border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.35)] flex items-center justify-center overflow-hidden">
             <img
               src="/logo.png"
               alt="RPS Arena"
