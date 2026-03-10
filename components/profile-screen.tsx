@@ -2,7 +2,7 @@
 
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, ArrowDownToLine, Pencil, Check, UserMinus, LogOut } from "lucide-react"
+import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, ArrowDownToLine, Pencil, Check, UserMinus, LogOut, Users } from "lucide-react"
 import { useState } from "react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 
@@ -10,7 +10,7 @@ const MIN_BALANCE_FOR_WITHDRAW = 200
 const HIDE_AVATAR_PRICE = 100
 
 export function ProfileScreen() {
-  const { setScreen, player, setPlayer, playerRank, logoutWithVK } = useGame()
+  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend } = useGame()
   const [isEditingName, setIsEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(player.name)
 
@@ -147,6 +147,7 @@ export function ProfileScreen() {
                 type="button"
                 onClick={() => {
                   if (player.balance >= HIDE_AVATAR_PRICE) {
+                    trackSpend(HIDE_AVATAR_PRICE, "hide-vk-avatar")
                     setPlayer((p) => ({ ...p, balance: p.balance - HIDE_AVATAR_PRICE, hideVkAvatar: true }))
                   }
                 }}
@@ -242,6 +243,15 @@ export function ProfileScreen() {
           Вывод доступен при балансе от {MIN_BALANCE_FOR_WITHDRAW} голосов
         </p>
       )}
+
+      {/* Реферальная программа */}
+      <button
+        onClick={() => setScreen("referral")}
+        className="w-full max-w-md flex items-center justify-center gap-2 bg-card/50 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/70 active:scale-[0.99] mb-4"
+      >
+        <Users className="h-5 w-5 text-muted-foreground" />
+        <span>Реферальная программа</span>
+      </button>
 
       {/* VIP promo */}
       {!player.vip && (

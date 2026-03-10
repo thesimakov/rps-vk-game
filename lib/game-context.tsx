@@ -20,6 +20,7 @@ export type GameScreen =
   | "result"
   | "leaderboard"
   | "profile"
+  | "referral"
   | "shop"
   | "withdraw"
   | "bets"
@@ -192,6 +193,8 @@ interface GameState {
   lavaCardStock: number
   purchaseLavaCard: () => boolean
   purchaseWaterCard: () => boolean
+  /** Учитывать «траты» для реферальной программы (начисление 10% рефереру) */
+  trackSpend: (amount: number, reason: string) => void
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -334,6 +337,20 @@ const LEADERBOARD_UPDATE_MS = 30 * 1000
 /** Сохранение в localStorage: версия для совместимости при будущих обновлениях */
 const SAVE_STORAGE_KEY = "rps_vk_save"
 const SAVE_VERSION = 2
+
+async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | null> {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    })
+    if (!res.ok) return null
+    return (await res.json()) as T
+  } catch {
+    return null
+  }
+}
 
 const DEFAULT_PLAYER: Player = {
   id: "player1",
@@ -520,6 +537,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     initVKBridge().finally(() => setIsLoading(false))
   }, [])
 
+  const trackSpend = useCallback(
+    (amount: number, reason: string) => {
+      if (!vkUser) return
+      const userId = player.id
+      if (!userId || !userId.startsWith("vk_")) return
+      if (!Number.isFinite(amount) || amount <= 0) return
+      void postJSON("/api/referrals/spend", { userId, amount: Math.floor(amount), reason })
+    },
+    [player.id, vkUser]
+  )
+
   // На своём сервере (без Bridge): обработать возврат из VK OAuth или восстановить сессию из localStorage
   useEffect(() => {
     if (isLoading || getBridgeReady()) return
@@ -564,6 +592,32 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setScreen("menu")
     }
   }, [isLoading])
+
+  // Реферальная привязка: если открыли ссылку с ?ref=vk_123 — привязать реферера один раз.
+  useEffect(() => {
+    if (!vkUser) return
+    const userId = player.id
+    if (!userId || !userId.startsWith("vk_")) return
+    if (typeof window === "undefined") return
+
+    const key = `rps_ref_applied_${userId}`
+    if (window.localStorage.getItem(key) === "1") return
+
+    const params = new URLSearchParams(window.location.search)
+    const ref = params.get("ref")
+    if (!ref || !ref.startsWith("vk_") || ref === userId) {
+      // всё равно создаём запись пользователя
+      void postJSON("/api/referrals/upsert", { userId }).then(() => {
+        window.localStorage.setItem(key, "1")
+      })
+      return
+    }
+
+    void postJSON("/api/referrals/accept", { userId, referrerId: ref }).finally(() => {
+      void postJSON("/api/referrals/upsert", { userId })
+      window.localStorage.setItem(key, "1")
+    })
+  }, [player.id, vkUser])
 
   const loginWithVK = useCallback(async () => {
     const user = await getVKUser()
@@ -685,13 +739,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const cost = 250
     const bonus = 100
     if (player.balance < cost) return false
+    trackSpend(cost, "rank-boost")
     setPlayer((p) => ({
       ...p,
       balance: p.balance - cost,
       ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonus),
     }))
     return true
-  }, [player.balance])
+  }, [player.balance, trackSpend])
 
   const BOT_AUTO_ACCEPT_AFTER_MS = 30 * 1000
 
@@ -891,6 +946,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const LAVA_CARD_PRICE = 120_000
   const purchaseLavaCard = useCallback(() => {
     if (lavaCardStock <= 0 || player.balance < LAVA_CARD_PRICE) return false
+    trackSpend(LAVA_CARD_PRICE, "lava-card")
     setLavaCardStock((s) => s - 1)
     setPlayer((p) => ({
       ...p,
@@ -898,18 +954,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       lavaCardUses: (p.lavaCardUses ?? 0) + 5,
     }))
     return true
-  }, [lavaCardStock, player.balance])
+  }, [lavaCardStock, player.balance, trackSpend])
 
   const WATER_CARD_PRICE = 20
   const purchaseWaterCard = useCallback(() => {
     if (player.balance < WATER_CARD_PRICE) return false
+    trackSpend(WATER_CARD_PRICE, "water-card")
     setPlayer((p) => ({
       ...p,
       balance: p.balance - WATER_CARD_PRICE,
       waterCardUses: (p.waterCardUses ?? 0) + 3,
     }))
     return true
-  }, [player.balance])
+  }, [player.balance, trackSpend])
 
   return (
     <GameContext.Provider
@@ -949,6 +1006,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         lavaCardStock,
         purchaseLavaCard,
         purchaseWaterCard,
+        trackSpend,
       }}
     >
       {children}

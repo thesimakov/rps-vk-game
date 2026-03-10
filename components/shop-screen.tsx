@@ -199,7 +199,7 @@ function normalizeInvitedSlots(
 }
 
 export function ShopScreen() {
-  const { setScreen, player, setPlayer, lavaCardStock, purchaseLavaCard, purchaseWaterCard } = useGame()
+  const { setScreen, player, setPlayer, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
   const [customTopUp, setCustomTopUp] = useState("")
   const [openingChest, setOpeningChest] = useState<{ type: ChestType; prizes: ChestPrize[] } | null>(null)
@@ -350,6 +350,7 @@ export function ShopScreen() {
     }
 
     if (item.id === "chest-basic" || item.id === "chest-premium") {
+      trackSpend(item.price, item.id)
       const type: ChestType = item.id === "chest-basic" ? "basic" : "premium"
       const count = type === "premium" ? 3 : 2
       const prizes = rollChestPrizes(type, count)
@@ -358,6 +359,7 @@ export function ShopScreen() {
       return
     }
 
+    trackSpend(item.price, item.id)
     setPlayer((p) => {
       const updated = { ...p, balance: p.balance - item.price }
       switch (item.id) {
