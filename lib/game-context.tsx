@@ -601,8 +601,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return
 
     const key = `rps_ref_applied_${userId}`
-    if (window.localStorage.getItem(key) === "1") return
-
     const params = new URLSearchParams(window.location.search)
     const ref = params.get("ref")
     const pendingCode = (window.localStorage.getItem("rps_pending_ref_code") ?? "").trim()
@@ -610,24 +608,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const referrerIdFromCode =
       pendingCode && pendingCode.startsWith("vk_") && pendingCode !== userId ? pendingCode : ""
 
-    if (!ref || !ref.startsWith("vk_") || ref === userId) {
-      if (referrerIdFromCode) {
-        // Если код ввели на экране входа — пробуем привязать по нему.
-        void postJSON("/api/referrals/accept", { userId, referrerId: referrerIdFromCode })
-          .then((r) => {
-            // если сервер недоступен (статический хостинг) — не помечаем applied,
-            // чтобы попробовать позже, когда появится сервер.
-            const err = (r as { error?: string } | null)?.error
-            if (err === "no_server") return
-            window.localStorage.removeItem("rps_pending_ref_code")
-            window.localStorage.setItem(key, "1")
-          })
-          .finally(() => {
-            void postJSON("/api/referrals/upsert", { userId })
-          })
-        return
-      }
+    const validRefFromUrl = ref && ref.startsWith("vk_") && ref !== userId ? ref : ""
 
+    // Если уже помечали applied, но есть "pending code" — всё равно пробуем (на случай, когда пользователь
+    // сначала заходил без кода, а потом ввёл код на экране входа).
+    if (window.localStorage.getItem(key) === "1" && !referrerIdFromCode) return
+
+    const referrerIdToApply = validRefFromUrl || referrerIdFromCode
+    if (!referrerIdToApply) {
       // всё равно создаём запись пользователя
       void postJSON("/api/referrals/upsert", { userId }).then(() => {
         window.localStorage.setItem(key, "1")
@@ -635,10 +623,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    void postJSON("/api/referrals/accept", { userId, referrerId: ref }).finally(() => {
-      void postJSON("/api/referrals/upsert", { userId })
-      window.localStorage.setItem(key, "1")
-    })
+    void postJSON("/api/referrals/accept", { userId, referrerId: referrerIdToApply })
+      .then((r) => {
+        const err = (r as { error?: string } | null)?.error
+        if (err === "no_server") return
+        window.localStorage.removeItem("rps_pending_ref_code")
+        window.localStorage.setItem(key, "1")
+      })
+      .finally(() => {
+        void postJSON("/api/referrals/upsert", { userId })
+      })
   }, [player.id, vkUser])
 
   const loginWithVK = useCallback(async () => {

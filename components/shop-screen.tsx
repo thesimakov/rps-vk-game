@@ -302,7 +302,10 @@ export function ShopScreen() {
 
   const buildWallPostMessage = () => {
     const name = player.name || "Игрок"
-    const appLink = typeof window !== "undefined" ? window.location.href.split("?")[0] : ""
+    const base =
+      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""
+    const ref = player.id?.startsWith("vk_") ? `?ref=${encodeURIComponent(player.id)}` : ""
+    const appLink = `${base}${ref}`
     return `Играй со мной в игру «Камень, ножницы, бумага»! ${name} приглашает тебя — переходи по ссылке и сыграем: ${appLink}`
   }
 

@@ -61,7 +61,7 @@ export function ReferralScreen() {
   const referralCode = useMemo(() => (userId.startsWith("vk_") ? userId : ""), [userId])
   const referralLink = useMemo(() => {
     if (typeof window === "undefined") return ""
-    const base = window.location.href.split("?")[0]
+    const base = `${window.location.origin}${window.location.pathname}`
     return referralCode ? `${base}?ref=${encodeURIComponent(referralCode)}` : base
   }, [referralCode])
 
