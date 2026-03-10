@@ -1,7 +1,7 @@
 "use client"
 
 import { GameProvider, useGame } from "@/lib/game-context"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { CSSProperties } from "react"
 import { showFriendsPicker } from "@/lib/vk-bridge"
 import { MainMenu } from "@/components/main-menu"
@@ -22,6 +22,7 @@ import { ParticlesBg } from "@/components/particles-bg"
 import { WithdrawScreen } from "@/components/withdraw-screen"
 import { EntryScreen } from "@/components/entry-screen"
 import { BackgroundMusic } from "@/components/background-music"
+import { GameLoader } from "@/components/game-loader"
 
 function GameScreen() {
   const { screen, vkUser } = useGame()
@@ -48,7 +49,7 @@ function GameScreen() {
 }
 
 function GameLayout() {
-  const { screen, vkUser, player, setPlayer } = useGame()
+  const { screen, vkUser, player, setPlayer, isLoading } = useGame()
   const hideNav = ["matchmaking", "result", "withdraw", "entry"].includes(screen)
   const showLeftSidebar = !hideNav && screen !== "bets" && screen !== "withdraw" && vkUser != null
   const showRightSidebar = !hideNav && vkUser != null
@@ -76,6 +77,10 @@ function GameLayout() {
       <ParticlesBg />
       <BetResponseDialog />
       <BackgroundMusic />
+
+      {isLoading && (
+        <GameLoader />
+      )}
 
       {showLowBalanceHint && (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center">

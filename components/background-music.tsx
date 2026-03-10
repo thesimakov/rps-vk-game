@@ -114,10 +114,10 @@ export function BackgroundMusic() {
   }, [enabled, ready])
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 group">
+    <div className="fixed bottom-[4.5rem] left-4 z-50 group">
       {/* Ползунок громкости (появляется при наведении/фокусе) */}
       <div
-        className="absolute right-12 bottom-1/2 translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity"
+        className="absolute left-12 bottom-1/2 translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card/90 border border-border/50 shadow-lg backdrop-blur">
