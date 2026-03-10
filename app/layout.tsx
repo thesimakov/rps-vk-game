@@ -3,7 +3,7 @@ import { Rubik } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _rubik = Rubik({ subsets: ['latin', 'cyrillic'], weight: ['400', '500', '600', '700', '800', '900'] })
+const rubik = Rubik({ subsets: ['latin', 'cyrillic'], weight: ['400', '500', '600', '700', '800', '900'] })
 
 export const metadata: Metadata = {
   title: 'RPS Arena - Камень Ножницы Бумага',
@@ -40,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru">
-      <body className="font-sans antialiased">
+      <body className={`${rubik.className} font-sans antialiased`}>
         {children}
         <Analytics />
       </body>

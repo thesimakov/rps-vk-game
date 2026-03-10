@@ -696,33 +696,23 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loginWithVK = useCallback(async () => {
-    // ВРЕМЕННО: отключаем реальную авторизацию через ВК и заходим в игру сразу.
-    // Оставляем структуру такой же, как у vk-пользователя, чтобы остальной код не ломать.
-    const fakeUser: VKUser = {
-      id: 1,
-      first_name: "Игрок",
-      last_name: "",
-      photo_100: "",
-      photo_200: "",
+    // Если приложение запущено как мини-приложение ВКонтакте — используем VK Bridge.
+    if (getBridgeReady()) {
+      await loginWithVKBridge()
+      return
     }
-    setVkUser(fakeUser)
-    setPlayer((p) => ({
-      ...p,
-      id: "local_player",
-      name: fakeUser.first_name,
-      avatar: fakeUser.first_name.charAt(0).toUpperCase(),
-      avatarUrl: "",
-      hideVkAvatar: p.hideVkAvatar ?? false,
-    }))
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem("rps_vk_user_id", "local_player")
-      } catch {
-        // ignore
-      }
+
+    // На своём домене: вход через VK OAuth (Implicit Flow) с редиректом.
+    if (typeof window === "undefined") return
+
+    const url = getVKOAuthRedirectUrl()
+    if (!isVKOAuthConfigured() || !url) {
+      console.warn("VK OAuth не настроен: проверьте NEXT_PUBLIC_VK_APP_ID и Redirect URI в настройках приложения ВК")
+      return
     }
-    setScreen("menu")
-  }, [])
+
+    window.location.href = url
+  }, [loginWithVKBridge])
 
   const logoutWithVK = useCallback(() => {
     clearVKOAuthSession()
