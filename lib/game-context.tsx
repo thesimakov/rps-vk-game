@@ -670,71 +670,42 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [player.id, vkUser])
 
   const loginWithVKBridge = useCallback(async () => {
-    const user = await getVKUser()
-    if (!user) return
-
-    // Проверка возраста: если ВК вернул полную дату рождения и возраст < 18 — не пускаем в игру.
-    const bdate = user.bdate
-    if (bdate && bdate.split(".").length === 3) {
-      const [dayStr, monthStr, yearStr] = bdate.split(".")
-      const day = Number(dayStr)
-      const month = Number(monthStr)
-      const year = Number(yearStr)
-      if (Number.isFinite(day) && Number.isFinite(month) && Number.isFinite(year)) {
-        const today = new Date()
-        let age = today.getFullYear() - year
-        const hasHadBirthdayThisYear =
-          month < today.getMonth() + 1 || (month === today.getMonth() + 1 && day <= today.getDate())
-        if (!hasHadBirthdayThisYear) age -= 1
-        if (age < 18) {
-          if (typeof window !== "undefined") {
-            // Показываем короткое предупреждение и выходим без авторизации
-            window.alert("Игра доступна только пользователям старше 18 лет.")
-          }
-          return
-        }
-      }
+    // Временное отключение реальной авторизации через VK Bridge.
+    // Пока игра работает в офлайн-режиме без привязки к аккаунту ВК.
+    const fakeUser: VKUser = {
+      id: 1,
+      first_name: "Игрок",
+      last_name: "",
+      photo_100: "",
+      photo_200: "",
     }
-
-    setVkUser(user)
+    setVkUser(fakeUser)
     setPlayer((p) => ({
       ...p,
-      id: `vk_${user.id}`,
-      name: user.first_name,
-      avatar: user.first_name.charAt(0).toUpperCase(),
-      avatarUrl: user.photo_200 || user.photo_100 || "",
+      id: "local_player",
+      name: fakeUser.first_name,
+      avatar: fakeUser.first_name.charAt(0).toUpperCase(),
+      avatarUrl: "",
       hideVkAvatar: p.hideVkAvatar ?? false,
     }))
-    try {
-      window.localStorage.setItem("rps_vk_user_id", `vk_${user.id}`)
-    } catch {
-      // ignore
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem("rps_vk_user_id", "local_player")
+      } catch {
+        // ignore
+      }
+      try {
+        window.dispatchEvent(new Event("rps_vk_login_success"))
+      } catch {
+        // ignore
+      }
     }
     setScreen("menu")
-    try {
-      window.dispatchEvent(new Event("rps_vk_login_success"))
-    } catch {
-      // ignore
-    }
   }, [])
 
   const loginWithVK = useCallback(async () => {
-    // Если приложение запущено как мини-приложение ВКонтакте — используем VK Bridge.
-    if (getBridgeReady()) {
-      await loginWithVKBridge()
-      return
-    }
-
-    // На своём домене: вход через VK OAuth (Implicit Flow) с редиректом.
-    if (typeof window === "undefined") return
-
-    const url = getVKOAuthRedirectUrl()
-    if (!isVKOAuthConfigured() || !url) {
-      console.warn("VK OAuth не настроен: проверьте NEXT_PUBLIC_VK_APP_ID и Redirect URI в настройках приложения ВК")
-      return
-    }
-
-    window.location.href = url
+    // Временный офлайн-режим: входим без реальной авторизации ВКонтакте.
+    await loginWithVKBridge()
   }, [loginWithVKBridge])
 
   const logoutWithVK = useCallback(() => {
