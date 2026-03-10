@@ -46,13 +46,22 @@ export function EntryScreen() {
   return (
     <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 bg-transparent">
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-base font-black text-white uppercase tracking-wide">
-            Камень · Ножницы · Бумага
-          </h1>
-          <p className="text-white/70 text-sm">
-            Играйте, делайте ставки и выводите выигрыш
-          </p>
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="w-20 h-20 rounded-3xl bg-slate-900/70 border border-amber-400/40 shadow-lg shadow-amber-500/20 flex items-center justify-center overflow-hidden">
+            <img
+              src="/logo.png"
+              alt="RPS Arena"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-base font-black text-white uppercase tracking-wide">
+              Камень · Ножницы · Бумага
+            </h1>
+            <p className="text-white/70 text-sm">
+              Играйте, делайте ставки и выводите выигрыш
+            </p>
+          </div>
         </div>
 
         <div className="w-full flex flex-col gap-4">
