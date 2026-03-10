@@ -8,6 +8,8 @@ import {
   saveVKOAuthSession,
   getStoredVKOAuthSession,
   clearVKOAuthSession,
+  getVKOAuthRedirectUrl,
+  isVKOAuthConfigured,
 } from "@/lib/vk-oauth"
 
 export type Move = "rock" | "scissors" | "paper" | "water"
@@ -174,7 +176,7 @@ interface GameState {
   /** Покупка буста рейтинга: 250 голосов → +100 к недельным очкам */
   purchaseRankBoost: () => boolean
   vkUser: VKUser | null
-  /** Войти через ВК: авторизация, привязка профиля, после этого можно играть и выводить деньги */
+  /** Войти через ВК: внутри мини-приложения использует VK Bridge, на своём сервере — OAuth редирект */
   loginWithVK: () => Promise<void>
   /** Выйти из аккаунта ВК — возврат на экран входа */
   logoutWithVK: () => void
@@ -657,7 +659,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       })
   }, [player.id, vkUser])
 
-  const loginWithVK = useCallback(async () => {
+  const loginWithVKBridge = useCallback(async () => {
     const user = await getVKUser()
     if (user) {
       setVkUser(user)
@@ -677,6 +679,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setScreen("menu")
     }
   }, [])
+
+  const loginWithVK = useCallback(async () => {
+    // Если приложение запущено как VK Mini App — используем VK Bridge.
+    if (getBridgeReady()) {
+      await loginWithVKBridge()
+      return
+    }
+
+    // Если задан APP_ID для OAuth — используем авторизацию через редирект на свой домен.
+    if (isVKOAuthConfigured() && typeof window !== "undefined") {
+      const url = getVKOAuthRedirectUrl()
+      window.location.href = url
+      return
+    }
+
+    // Фолбэк для dev-режима вне ВК и без настроенного OAuth — мок-авторизация через getVKUser.
+    await loginWithVKBridge()
+  }, [loginWithVKBridge])
 
   const logoutWithVK = useCallback(() => {
     clearVKOAuthSession()
