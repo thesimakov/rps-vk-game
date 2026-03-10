@@ -592,6 +592,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             hideVkAvatar: p.hideVkAvatar ?? false,
           }))
           setScreen("menu")
+          try {
+            window.dispatchEvent(new Event("rps_vk_login_success"))
+          } catch {
+            // ignore
+          }
           window.history.replaceState(null, "", window.location.pathname + window.location.search)
         }
       })
@@ -614,6 +619,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
       setScreen("menu")
+      try {
+        window.dispatchEvent(new Event("rps_vk_login_success"))
+      } catch {
+        // ignore
+      }
     }
   }, [isLoading])
 
@@ -677,6 +687,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
       setScreen("menu")
+      try {
+        window.dispatchEvent(new Event("rps_vk_login_success"))
+      } catch {
+        // ignore
+      }
     }
   }, [])
 

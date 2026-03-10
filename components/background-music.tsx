@@ -68,6 +68,23 @@ export function BackgroundMusic() {
     }
   }, [])
 
+  // Автоматически пытаемся запустить музыку сразу после успешного входа через ВК.
+  // GameProvider диспатчит событие rps_vk_login_success, когда авторизация завершена.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const handler = () => {
+      const audio = audioRef.current
+      if (!audio) return
+      if (!enabled) return
+      if (!ready) return
+      audio.play().catch(() => {})
+    }
+    window.addEventListener("rps_vk_login_success", handler)
+    return () => {
+      window.removeEventListener("rps_vk_login_success", handler)
+    }
+  }, [enabled, ready])
+
   useEffect(() => {
     const audio = audioRef.current
     if (!audio) return
