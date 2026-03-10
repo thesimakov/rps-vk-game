@@ -89,9 +89,9 @@ export function MainMenu() {
       {/* Верх: крупный логотип, уровень, прогресс-бар */}
       <div className="flex flex-col items-center mb-5">
         <div className="flex flex-col items-center gap-3 mb-2">
-          <div className="w-24 h-24 rounded-[2rem] bg-slate-900/80 border border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.35)] overflow-hidden flex items-center justify-center">
+          <div className="w-28 h-28 flex items-center justify-center">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="RPS Arena"
               className="w-full h-full object-contain"
             />

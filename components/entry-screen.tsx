@@ -48,9 +48,9 @@ export function EntryScreen() {
       <div className="w-full max-w-sm flex flex-col items-center gap-8">
         {/* Крупный логотип над всеми кнопками */}
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="w-28 h-28 rounded-[2.25rem] bg-slate-900/80 border border-amber-400/50 shadow-[0_0_40px_rgba(251,191,36,0.35)] flex items-center justify-center overflow-hidden">
+          <div className="w-32 h-32 flex items-center justify-center">
             <img
-              src="/logo.png"
+              src="/logo.webp"
               alt="RPS Arena"
               className="w-full h-full object-contain"
             />
