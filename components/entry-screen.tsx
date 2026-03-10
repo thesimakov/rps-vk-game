@@ -45,24 +45,19 @@ export function EntryScreen() {
 
   return (
     <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 bg-transparent">
-      <div className="w-full max-w-sm flex flex-col items-center gap-8">
+      <div className="w-full max-w-sm flex flex-col items-center gap-10">
         {/* Крупный логотип над всеми кнопками */}
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="w-32 h-32 flex items-center justify-center">
+          <div className="w-40 h-40 sm:w-44 sm:h-44 flex items-center justify-center">
             <img
               src="/logo.webp"
               alt="RPS Arena"
               className="w-full h-full object-contain"
             />
           </div>
-          <div className="space-y-1">
-            <h1 className="text-base font-black text-white uppercase tracking-wide">
-              Камень · Ножницы · Бумага
-            </h1>
-            <p className="text-white/70 text-sm">
-              Играйте, делайте ставки и выводите выигрыш
-            </p>
-          </div>
+          <p className="text-white/70 text-sm">
+            Играйте, делайте ставки и выводите выигрыш
+          </p>
         </div>
 
         <div className="w-full flex flex-col gap-4">
