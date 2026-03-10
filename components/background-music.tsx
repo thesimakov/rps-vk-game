@@ -10,7 +10,7 @@ const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
 const MUSIC_SRC = `${BASE_PATH}/bg-music.mp3`
 
 const DEFAULT_ENABLED = true
-const DEFAULT_VOLUME = 0.25
+const DEFAULT_VOLUME = 0.5
 
 function clamp01(v: number) {
   if (!Number.isFinite(v)) return DEFAULT_VOLUME
@@ -82,16 +82,6 @@ export function BackgroundMusic() {
     window.addEventListener("rps_vk_login_success", handler)
     return () => {
       window.removeEventListener("rps_vk_login_success", handler)
-    }
-  }, [enabled, ready])
-
-  useEffect(() => {
-    const audio = audioRef.current
-    if (!audio) return
-    if (enabled && ready) {
-      audio.play().catch(() => {})
-    } else {
-      audio.pause()
     }
   }, [enabled, ready])
 

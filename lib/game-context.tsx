@@ -717,7 +717,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     // eslint-disable-next-line no-alert
     if (typeof window !== "undefined") {
-      window.alert("Авторизация через ВК не настроена. Проверьте переменные окружения VK_APP_ID и редирект.")
+      window.alert(
+        "Авторизация через ВК не настроена. Проверьте NEXT_PUBLIC_VK_APP_ID и NEXT_PUBLIC_VK_REDIRECT_URI в .env."
+      )
     }
   }, [loginWithVKBridge])
 
