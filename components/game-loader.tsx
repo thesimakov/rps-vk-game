@@ -1,6 +1,6 @@
-\"use client\"
+"use client"
 
-import { useEffect, useState } from \"react\"
+import { useEffect, useState } from "react"
 
 export function GameLoader() {
   const [visible, setVisible] = useState(true)
@@ -14,21 +14,21 @@ export function GameLoader() {
   if (!visible) return null
 
   return (
-    <div className=\"rps-loader-overlay\">
+    <div className="rps-loader-overlay">
       <div>
-        <div className=\"rps-loader-ring\">
-          <div className=\"rps-loader-segment\" />
-          <div className=\"rps-loader-center\">
-            <div className=\"rps-loader-icons\" aria-hidden>
+        <div className="rps-loader-ring">
+          <div className="rps-loader-segment" />
+          <div className="rps-loader-center">
+            <div className="rps-loader-icons" aria-hidden>
               <span>🪨</span>
               <span>✂️</span>
               <span>📜</span>
             </div>
           </div>
         </div>
-        <div className=\"rps-loader-text mt-4\">
+        <div className="rps-loader-text mt-4">
           ЗАГРУЗКА АРЕНЫ
-          <span className=\"rps-loader-dots ml-1\">
+          <span className="rps-loader-dots ml-1">
             <span />
             <span />
             <span />
