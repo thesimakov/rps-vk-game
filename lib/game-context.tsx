@@ -76,6 +76,12 @@ export interface Player {
   lastDailyGiftClaimedAt?: number
   /** Индекс текущего дня в цепочке ежедневных наград (0..6). */
   dailyRewardIndex?: number
+  /** Лото: выбранные игроком числа (1..99, максимум 10 штук), действуют 3 дня. */
+  lottoNumbers?: number[]
+  /** Лото: момент, когда должен состояться розыгрыш (timestamp, ms). */
+  lottoDrawAt?: number
+  /** Лото: выпавшие числа в последнем розыгрыше. */
+  lottoDrawnNumbers?: number[]
 }
 
 export interface LeaderboardEntry {
@@ -438,6 +444,9 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
           dailyRewardIndex: player.dailyRewardIndex,
           extraTimerUntil: player.extraTimerUntil,
+          lottoNumbers: player.lottoNumbers,
+          lottoDrawAt: player.lottoDrawAt,
+          lottoDrawnNumbers: player.lottoDrawnNumbers,
         },
         withdrawState: { date: withdrawState.date, amount: withdrawState.amount },
         lavaCardStock,
