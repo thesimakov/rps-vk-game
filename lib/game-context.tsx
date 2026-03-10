@@ -702,24 +702,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return
     }
 
-    // Если задан APP_ID для OAuth — используем авторизацию через редирект на свой домен.
-    if (isVKOAuthConfigured() && typeof window !== "undefined") {
+    // Вне мини‑аппы всегда отправляем пользователя в OAuth‑редирект ВК.
+    if (typeof window !== "undefined") {
       const url = getVKOAuthRedirectUrl()
       window.location.href = url
-      return
-    }
-
-    // В продакшене без корректной настройки OAuth/мини-приложения — не даём войти "в обход" ВК.
-    if (process.env.NODE_ENV !== "production") {
-      await loginWithVKBridge()
-      return
-    }
-
-    // eslint-disable-next-line no-alert
-    if (typeof window !== "undefined") {
-      window.alert(
-        "Авторизация через ВК не настроена. Проверьте NEXT_PUBLIC_VK_APP_ID и NEXT_PUBLIC_VK_REDIRECT_URI в .env."
-      )
     }
   }, [loginWithVKBridge])
 
