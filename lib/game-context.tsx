@@ -696,18 +696,33 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const loginWithVK = useCallback(async () => {
-    // Если приложение запущено как VK Mini App — используем VK Bridge.
-    if (getBridgeReady()) {
-      await loginWithVKBridge()
-      return
+    // ВРЕМЕННО: отключаем реальную авторизацию через ВК и заходим в игру сразу.
+    // Оставляем структуру такой же, как у vk-пользователя, чтобы остальной код не ломать.
+    const fakeUser: VKUser = {
+      id: 1,
+      first_name: "Игрок",
+      last_name: "",
+      photo_100: "",
+      photo_200: "",
     }
-
-    // Вне мини‑аппы всегда отправляем пользователя в OAuth‑редирект ВК.
+    setVkUser(fakeUser)
+    setPlayer((p) => ({
+      ...p,
+      id: "local_player",
+      name: fakeUser.first_name,
+      avatar: fakeUser.first_name.charAt(0).toUpperCase(),
+      avatarUrl: "",
+      hideVkAvatar: p.hideVkAvatar ?? false,
+    }))
     if (typeof window !== "undefined") {
-      const url = getVKOAuthRedirectUrl()
-      window.location.href = url
+      try {
+        window.localStorage.setItem("rps_vk_user_id", "local_player")
+      } catch {
+        // ignore
+      }
     }
-  }, [loginWithVKBridge])
+    setScreen("menu")
+  }, [])
 
   const logoutWithVK = useCallback(() => {
     clearVKOAuthSession()
