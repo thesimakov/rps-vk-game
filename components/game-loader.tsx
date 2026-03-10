@@ -15,25 +15,11 @@ export function GameLoader() {
 
   return (
     <div className="rps-loader-overlay">
-      <div>
-        <div className="rps-loader-ring">
-          <div className="rps-loader-segment" />
-          <div className="rps-loader-center">
-            <div className="rps-loader-icons" aria-hidden>
-              <span>🪨</span>
-              <span>✂️</span>
-              <span>📜</span>
-            </div>
-          </div>
+      <div className="rps-loader-bar-wrap">
+        <div className="rps-loader-bar-track">
+          <div className="rps-loader-bar-fill" />
         </div>
-        <div className="rps-loader-text mt-4">
-          ЗАГРУЗКА АРЕНЫ
-          <span className="rps-loader-dots ml-1">
-            <span />
-            <span />
-            <span />
-          </span>
-        </div>
+        <div className="rps-loader-text">ЗАГРУЗКА АРЕНЫ</div>
       </div>
     </div>
   )
