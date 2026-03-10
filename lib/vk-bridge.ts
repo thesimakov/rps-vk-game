@@ -14,6 +14,8 @@ export interface VKUser {
   last_name: string
   photo_100: string
   photo_200: string
+  /** Дата рождения в формате ДД.ММ.ГГГГ или ДД.ММ (если пользователь её открыл) */
+  bdate?: string
 }
 
 let bridgeReady = false

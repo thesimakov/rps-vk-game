@@ -671,38 +671,52 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithVKBridge = useCallback(async () => {
     const user = await getVKUser()
-    if (user) {
-      setVkUser(user)
-      setPlayer((p) => ({
-        ...p,
-        id: `vk_${user.id}`,
-        name: user.first_name,
-        avatar: user.first_name.charAt(0).toUpperCase(),
-        avatarUrl: user.photo_200 || user.photo_100 || "",
-        hideVkAvatar: p.hideVkAvatar ?? false,
-      }))
-      try {
-        window.localStorage.setItem("rps_vk_user_id", `vk_${user.id}`)
-      } catch {
-        // ignore
-      }
-      setScreen("menu")
-      try {
-        window.dispatchEvent(new Event("rps_vk_login_success"))
-      } catch {
-        // ignore
+    if (!user) return
+
+    // Проверка возраста: если ВК вернул полную дату рождения и возраст < 18 — не пускаем в игру.
+    const bdate = user.bdate
+    if (bdate && bdate.split(".").length === 3) {
+      const [dayStr, monthStr, yearStr] = bdate.split(".")
+      const day = Number(dayStr)
+      const month = Number(monthStr)
+      const year = Number(yearStr)
+      if (Number.isFinite(day) && Number.isFinite(month) && Number.isFinite(year)) {
+        const today = new Date()
+        let age = today.getFullYear() - year
+        const hasHadBirthdayThisYear =
+          month < today.getMonth() + 1 || (month === today.getMonth() + 1 && day <= today.getDate())
+        if (!hasHadBirthdayThisYear) age -= 1
+        if (age < 18) {
+          if (typeof window !== "undefined") {
+            // Показываем короткое предупреждение и выходим без авторизации
+            window.alert("Игра доступна только пользователям старше 18 лет.")
+          }
+          return
+        }
       }
     }
-  }, [])
 
-  // Если приложение открыто внутри ВК (мини‑приложение) — авторизуем пользователя автоматически
-  // через VK Bridge, без необходимости нажимать кнопку «Войти».
-  useEffect(() => {
-    if (isLoading) return
-    if (!getBridgeReady()) return
-    if (vkUser) return
-    void loginWithVKBridge()
-  }, [isLoading, vkUser, loginWithVKBridge])
+    setVkUser(user)
+    setPlayer((p) => ({
+      ...p,
+      id: `vk_${user.id}`,
+      name: user.first_name,
+      avatar: user.first_name.charAt(0).toUpperCase(),
+      avatarUrl: user.photo_200 || user.photo_100 || "",
+      hideVkAvatar: p.hideVkAvatar ?? false,
+    }))
+    try {
+      window.localStorage.setItem("rps_vk_user_id", `vk_${user.id}`)
+    } catch {
+      // ignore
+    }
+    setScreen("menu")
+    try {
+      window.dispatchEvent(new Event("rps_vk_login_success"))
+    } catch {
+      // ignore
+    }
+  }, [])
 
   const loginWithVK = useCallback(async () => {
     // Если приложение запущено как мини-приложение ВКонтакте — используем VK Bridge.
