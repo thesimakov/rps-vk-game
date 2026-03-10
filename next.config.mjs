@@ -11,8 +11,14 @@ function normalizeBasePath(value) {
   return withLeading.endsWith("/") ? withLeading.slice(0, -1) : withLeading
 }
 
+const basePathEnv = normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH || "")
+const isExport = process.env.NEXT_OUTPUT_EXPORT === "1" || process.env.NEXT_OUTPUT_EXPORT === "true" || !!process.env.GITHUB_ACTIONS
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  basePath: basePathEnv || undefined,
+  assetPrefix: basePathEnv || undefined,
+  output: isExport ? "export" : undefined,
   typescript: {
     ignoreBuildErrors: true,
   },
