@@ -13,19 +13,6 @@ function normalizeBasePath(value) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // В dev нужен нормальный роутинг и dev-сервер.
-  // Сейчас проект размещён статикой, поэтому в production по умолчанию включаем export.
-  // Когда подключите свой сервер — ставьте NEXT_OUTPUT_EXPORT=0 (и API заработают полностью).
-  ...(process.env.NODE_ENV === "production" && process.env.NEXT_OUTPUT_EXPORT !== "0" ? { output: "export" } : {}),
-  ...(process.env.NODE_ENV === "production" &&
-  process.env.NEXT_OUTPUT_EXPORT !== "0" &&
-  normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH)
-    ? {
-        basePath: normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH),
-        assetPrefix: normalizeBasePath(process.env.NEXT_PUBLIC_BASE_PATH),
-        trailingSlash: true,
-      }
-    : {}),
   typescript: {
     ignoreBuildErrors: true,
   },
