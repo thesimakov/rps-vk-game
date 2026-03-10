@@ -317,7 +317,18 @@ export function GameArena() {
       }, 1200)
       timersRef.current.push(revealTimer)
     },
-    [currentBet, opponent?.id, player.vip, setPlayer, setLastResult, setScreen, totalRounds, roundCount]
+    [
+      currentBet,
+      opponent?.id,
+      player.vip,
+      setPlayer,
+      setLastResult,
+      setScreen,
+      totalRounds,
+      roundCount,
+      playerScore,
+      opponentScore,
+    ]
   )
 
   // Timer countdown
@@ -491,15 +502,19 @@ export function GameArena() {
             <div className="relative w-20 h-20 rounded-full bg-sky-600/40 border-2 border-sky-400/50 flex items-center justify-center">
               <svg className="absolute w-20 h-20 -rotate-90" viewBox="0 0 80 80">
                 <circle cx="40" cy="40" r="36" fill="none" strokeWidth="4" className="stroke-white/20" />
-                <circle
-                  cx="40" cy="40" r="36"
-                  fill="none"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  strokeDasharray={2 * Math.PI * 36}
-                  strokeDashoffset={2 * Math.PI * 36 * (1 - timeLeft / 15)}
-                  className={`transition-all duration-1000 linear ${timerDanger ? "stroke-red-400" : "stroke-sky-400"}`}
-                />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      fill="none"
+                      strokeWidth="4"
+                      strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 36}
+                      strokeDashoffset={2 * Math.PI * 36 * (1 - timeLeft / baseTimer)}
+                      className={`transition-all duration-1000 linear ${
+                        timerDanger ? "stroke-red-400" : "stroke-sky-400"
+                      }`}
+                    />
               </svg>
               <div className="absolute flex flex-col items-center">
                 <Timer className={`h-4 w-4 mb-0.5 ${timerDanger ? "text-red-300" : "text-sky-300"}`} />

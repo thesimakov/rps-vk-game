@@ -575,6 +575,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             expires_at,
             user,
           })
+          try {
+            window.localStorage.setItem("rps_vk_user_id", `vk_${parsed.user_id}`)
+          } catch {
+            // ignore
+          }
           setVkUser(user)
           setPlayer((p) => ({
             ...p,
@@ -601,6 +606,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
         hideVkAvatar: p.hideVkAvatar ?? false,
       }))
+      try {
+        window.localStorage.setItem("rps_vk_user_id", `vk_${session.user.id}`)
+      } catch {
+        // ignore
+      }
       setScreen("menu")
     }
   }, [isLoading])
@@ -659,12 +669,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         avatarUrl: user.photo_200 || user.photo_100 || "",
         hideVkAvatar: p.hideVkAvatar ?? false,
       }))
+      try {
+        window.localStorage.setItem("rps_vk_user_id", `vk_${user.id}`)
+      } catch {
+        // ignore
+      }
       setScreen("menu")
     }
   }, [])
 
   const logoutWithVK = useCallback(() => {
     clearVKOAuthSession()
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem("rps_vk_user_id")
+      } catch {
+        // ignore
+      }
+    }
     setVkUser(null)
     setPlayer((p) => ({ ...p, id: "player1", name: "Игрок", avatar: "И", avatarUrl: "" }))
     setScreen("entry")

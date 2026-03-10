@@ -57,27 +57,44 @@ export async function getVKUser(): Promise<VKUser | null> {
  */
 export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (typeof window === "undefined") return false
-  if (!bridgeReady) return true // dev: вне ВК симулируем успех
+
+  // Вне окружения ВК — ведём себя как раньше: просто симулируем успех.
+  if (!bridgeReady) return true
+
   try {
+    // 1. Запрашиваем на бэкенде app_id и подпись для платежа
+    const userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
+    const res = await fetch("/api/payment/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, userId }),
+    })
+
+    if (!res.ok) {
+      return false
+    }
+
+    const data = (await res.json()) as { ok?: boolean; app_id?: number; hash?: string }
+    if (!data.ok || !data.app_id || !data.hash) {
+      return false
+    }
+
     const vkBridge = await import("@vkontakte/vk-bridge")
     const payload: Record<string, unknown> = {
       action: "pay-to-service",
       amount,
+      app_id: data.app_id,
+      hash: data.hash,
     }
-    // В продакшене: const { app_id, hash } = await fetchFromBackend('/payment/sign', { amount }); payload.app_id = app_id; payload.hash = hash;
-    const res = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
-    const result = res && typeof res === "object" ? (res as { result?: boolean }).result : undefined
-    return result !== false
+
+    const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
+    const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
+
+    // Важно: реальные голоса должны начисляться только после серверного подтверждения платежа.
+    // Здесь возвращаем только факт успешного открытия/завершения формы.
+    return ok !== false
   } catch {
-    try {
-      await (await import("@vkontakte/vk-bridge")).default.send("VKWebAppShowOrderBox", {
-        type: "item",
-        item: `voices_${amount}`,
-      })
-      return true
-    } catch {
-      return false
-    }
+    return false
   }
 }
 
@@ -94,9 +111,28 @@ export async function showVKPayment(amount: number): Promise<boolean> {
  */
 export async function requestWithdraw(amount: number): Promise<boolean> {
   if (amount < 10) return false
-  if (!bridgeReady) return new Promise((r) => setTimeout(() => r(true), 1200)) // dev
-  // В продакшене: const ok = await fetch('/api/withdraw', { method: 'POST', body: JSON.stringify({ amount, user_id: vkUserId }) }).then(r => r.ok);
-  return new Promise((resolve) => setTimeout(() => resolve(true), 1200))
+  if (typeof window === "undefined") return false
+
+  // Без окружения ВК — оставляем поведение как в dev, чтобы можно было тестировать вне mini-app.
+  if (!bridgeReady) return new Promise((r) => setTimeout(() => r(true), 1200))
+
+  try {
+    const userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
+    const res = await fetch("/api/withdraw", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, userId }),
+    })
+
+    if (!res.ok) {
+      return false
+    }
+
+    const data = (await res.json()) as { ok?: boolean }
+    return !!data.ok
+  } catch {
+    return false
+  }
 }
 
 export function isVKEnvironment(): boolean {
