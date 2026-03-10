@@ -695,6 +695,15 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Если приложение открыто внутри ВК (мини‑приложение) — авторизуем пользователя автоматически
+  // через VK Bridge, без необходимости нажимать кнопку «Войти».
+  useEffect(() => {
+    if (isLoading) return
+    if (!getBridgeReady()) return
+    if (vkUser) return
+    void loginWithVKBridge()
+  }, [isLoading, vkUser, loginWithVKBridge])
+
   const loginWithVK = useCallback(async () => {
     // Если приложение запущено как мини-приложение ВКонтакте — используем VK Bridge.
     if (getBridgeReady()) {
