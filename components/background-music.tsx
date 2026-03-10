@@ -9,36 +9,40 @@ const VOLUME_KEY = "rps_bg_music_volume"
 const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
 const MUSIC_SRC = `${BASE_PATH}/bg-music.mp3`
 
+const DEFAULT_ENABLED = true
+const DEFAULT_VOLUME = 0.25
+
 function clamp01(v: number) {
-  if (!Number.isFinite(v)) return 0.35
+  if (!Number.isFinite(v)) return DEFAULT_VOLUME
   return Math.min(1, Math.max(0, v))
 }
 
 export function BackgroundMusic() {
-  const [enabled, setEnabled] = useState(false)
+  const [enabled, setEnabled] = useState(DEFAULT_ENABLED)
   const [playing, setPlaying] = useState(false)
   const [ready, setReady] = useState(false)
-  const [volume, setVolume] = useState(0.35)
+  const [volume, setVolume] = useState(DEFAULT_VOLUME)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const loadStored = useCallback(() => {
-    if (typeof window === "undefined") return false
+  const loadStoredEnabled = useCallback((): boolean | null => {
+    if (typeof window === "undefined") return null
     try {
       const stored = window.localStorage.getItem(STORAGE_KEY)
+      if (stored == null) return null
       return stored === "1"
     } catch {
-      return false
+      return null
     }
   }, [])
 
   useEffect(() => {
-    const stored = loadStored()
-    setEnabled(stored)
+    const storedEnabled = loadStoredEnabled()
+    setEnabled(storedEnabled ?? DEFAULT_ENABLED)
     try {
       const v = window.localStorage.getItem(VOLUME_KEY)
-      if (v != null) setVolume(clamp01(Number(v)))
+      setVolume(v != null ? clamp01(Number(v)) : DEFAULT_VOLUME)
     } catch {}
-  }, [loadStored])
+  }, [loadStoredEnabled])
 
   useEffect(() => {
     const audio = new Audio(MUSIC_SRC)
@@ -62,7 +66,7 @@ export function BackgroundMusic() {
       audio.removeEventListener("error", onError)
       audioRef.current = null
     }
-  }, [volume])
+  }, [])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -82,6 +86,12 @@ export function BackgroundMusic() {
       window.localStorage.setItem(VOLUME_KEY, String(volume))
     } catch {}
   }, [volume])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0")
+    } catch {}
+  }, [enabled])
 
   const toggle = useCallback(() => {
     const next = !enabled

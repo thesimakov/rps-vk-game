@@ -81,27 +81,27 @@ export function WeeklyRanking() {
   return (
     <div className="flex flex-col h-full py-4 px-3 gap-3">
       {/* Турнир сезона */}
-      <div className="rounded-2xl border border-amber-400/40 bg-card/40 px-3 py-2.5 flex flex-col gap-1.5">
-        <div className="flex items-center justify-between gap-2">
+      <div className="rounded-2xl border border-amber-400/60 bg-amber-500/15 px-3 py-3 flex flex-col gap-2 shadow-[0_0_20px_rgba(251,191,36,0.25)]">
+        <div className="flex items-center justify-between gap-2 mb-0.5">
           <div className="flex items-center gap-2">
-            <Crown className="h-4 w-4 text-amber-300" />
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-amber-200">
+            <Crown className="h-5 w-5 text-amber-200" />
+            <span className="text-xs font-extrabold uppercase tracking-wide text-amber-50">
               Турнир сезона
             </span>
           </div>
           <button
             type="button"
             disabled
-            className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-400/20 text-amber-200 border border-amber-400/50 cursor-default"
+            className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-amber-300 text-amber-950 border border-amber-400 cursor-default"
           >
             Скоро
           </button>
         </div>
-        <div className="flex items-baseline justify-between">
-          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">
-            Банк
+        <div className="flex items-baseline justify-between mt-1">
+          <span className="text-[11px] uppercase tracking-wide text-amber-100/90 font-semibold">
+            Банк турнира
           </span>
-          <span className="text-sm font-extrabold text-amber-300 tabular-nums">
+          <span className="text-sm font-extrabold text-amber-100 tabular-nums">
             {seasonBank} голосов
           </span>
         </div>
