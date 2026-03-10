@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
-import { isValidVkUserId, recordSpend } from "@/lib/referral-store"
+import { isValidVkUserId } from "@/lib/referral-store"
+
+export const dynamic = "force-static"
+
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT !== "0" && process.env.NODE_ENV === "production"
 
 export async function POST(req: Request) {
+  if (IS_STATIC_EXPORT) {
+    return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
+  }
   try {
     const body = (await req.json()) as { userId?: string; amount?: number; reason?: string }
     const userId = typeof body.userId === "string" ? body.userId : ""
@@ -15,6 +22,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "invalid_amount" }, { status: 400 })
     }
 
+    const { recordSpend } = await import("@/lib/referral-store")
     const res = await recordSpend(userId, amount, reason)
     return NextResponse.json({ ok: true, commission: res.commission })
   } catch {
