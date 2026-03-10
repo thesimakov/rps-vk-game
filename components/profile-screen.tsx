@@ -244,15 +244,6 @@ export function ProfileScreen() {
         </p>
       )}
 
-      {/* Реферальная программа */}
-      <button
-        onClick={() => setScreen("referral")}
-        className="w-full max-w-md flex items-center justify-center gap-2 bg-card/50 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/70 active:scale-[0.99] mb-4"
-      >
-        <Users className="h-5 w-5 text-muted-foreground" />
-        <span>Реферальная программа</span>
-      </button>
-
       {/* VIP promo */}
       {!player.vip && (
         <button
@@ -263,6 +254,15 @@ export function ProfileScreen() {
           <span>{"Купить VIP \u2014 49 голосов/мес"}</span>
         </button>
       )}
+
+      {/* Реферальная программа */}
+      <button
+        onClick={() => setScreen("referral")}
+        className="w-full max-w-md flex items-center justify-center gap-2 bg-card/50 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/70 active:scale-[0.99] mb-4"
+      >
+        <Users className="h-5 w-5 text-muted-foreground" />
+        <span>Реферальная программа</span>
+      </button>
 
       {/* Выйти — в самом низу */}
       <div className="flex-1 min-h-4" />

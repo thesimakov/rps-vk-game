@@ -83,6 +83,7 @@ export function MainMenu() {
     }))
   }
 
+
   return (
     <div className="flex flex-col min-h-screen px-4 py-6">
       {/* Верх: иконка приветствия, уровень, прогресс-бар */}

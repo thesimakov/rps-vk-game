@@ -1,10 +1,47 @@
 "use client"
 
 import { useGame } from "@/lib/game-context"
-import { LogIn, Trophy, Coins } from "lucide-react"
+import { LogIn, Trophy, Coins, Ticket } from "lucide-react"
+import { useEffect, useState } from "react"
 
 export function EntryScreen() {
   const { setScreen, loginWithVK } = useGame()
+  const [showInviteCode, setShowInviteCode] = useState(false)
+  const [inviteCode, setInviteCode] = useState("")
+  const [inviteStatus, setInviteStatus] = useState<"idle" | "saved" | "error">("idle")
+  const [inviteError, setInviteError] = useState("")
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const saved = window.localStorage.getItem("rps_pending_ref_code") ?? ""
+    if (saved) {
+      setInviteCode(saved)
+      setShowInviteCode(true)
+      setInviteStatus("saved")
+    }
+  }, [])
+
+  const normalizeCode = (raw: string) => raw.trim().replace(/\s+/g, "")
+
+  const handleSaveInviteCode = () => {
+    const code = normalizeCode(inviteCode)
+    if (!code) {
+      if (typeof window !== "undefined") window.localStorage.removeItem("rps_pending_ref_code")
+      setInviteStatus("idle")
+      setInviteError("")
+      return
+    }
+    if (!code.startsWith("vk_") || code.length <= 3) {
+      setInviteStatus("error")
+      setInviteError("Неверный код. Пример: vk_123")
+      return
+    }
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("rps_pending_ref_code", code)
+    }
+    setInviteStatus("saved")
+    setInviteError("")
+  }
 
   return (
     <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 bg-transparent">
@@ -27,6 +64,63 @@ export function EntryScreen() {
             <LogIn className="h-6 w-6" />
             Войти
           </button>
+
+          {/* Код приглашения (ввод до входа, применится после авторизации) */}
+          <div className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3">
+            <button
+              type="button"
+              onClick={() => { setShowInviteCode((v) => !v); setInviteStatus("idle"); setInviteError("") }}
+              className="w-full flex items-center justify-between gap-3"
+            >
+              <span className="flex items-center gap-2 text-sm font-semibold text-white/90">
+                <Ticket className="h-4 w-4 text-amber-400" />
+                Код приглашения
+              </span>
+              <span
+                className={`w-10 h-6 rounded-full border transition-colors ${
+                  showInviteCode ? "bg-emerald-500/30 border-emerald-400/60" : "bg-white/10 border-white/15"
+                }`}
+                aria-hidden
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white transition-transform mt-0.5 ${
+                    showInviteCode ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
+            </button>
+
+            {showInviteCode && (
+              <div className="mt-3">
+                <div className="flex gap-2">
+                  <input
+                    value={inviteCode}
+                    onChange={(e) => { setInviteCode(e.target.value); setInviteStatus("idle"); setInviteError("") }}
+                    placeholder="Например: vk_123"
+                    className="flex-1 min-w-0 rounded-xl bg-slate-900/40 border border-white/15 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:outline-none focus:border-amber-400/60"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveInviteCode}
+                    className="px-4 py-2 rounded-xl bg-amber-400 text-amber-950 font-bold text-sm"
+                  >
+                    Сохранить
+                  </button>
+                </div>
+                {inviteStatus === "saved" && (
+                  <p className="mt-2 text-xs font-bold text-emerald-300">
+                    Код сохранён. После входа мы автоматически привяжем аккаунт к пригласившему.
+                  </p>
+                )}
+                {inviteStatus === "error" && (
+                  <p className="mt-2 text-xs font-bold text-red-300">{inviteError}</p>
+                )}
+                <p className="mt-2 text-[11px] text-white/60 leading-snug">
+                  Привязка выполняется <span className="font-bold">один раз</span> после входа через ВК.
+                </p>
+              </div>
+            )}
+          </div>
           <p className="text-center text-xs text-white/50">
             Вход через профиль ВКонтакте. После входа можно играть, оплачивать и выводить деньги.
           </p>

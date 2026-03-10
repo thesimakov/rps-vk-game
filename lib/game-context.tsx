@@ -605,7 +605,29 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
     const params = new URLSearchParams(window.location.search)
     const ref = params.get("ref")
+    const pendingCode = (window.localStorage.getItem("rps_pending_ref_code") ?? "").trim()
+
+    const referrerIdFromCode =
+      pendingCode && pendingCode.startsWith("vk_") && pendingCode !== userId ? pendingCode : ""
+
     if (!ref || !ref.startsWith("vk_") || ref === userId) {
+      if (referrerIdFromCode) {
+        // Если код ввели на экране входа — пробуем привязать по нему.
+        void postJSON("/api/referrals/accept", { userId, referrerId: referrerIdFromCode })
+          .then((r) => {
+            // если сервер недоступен (статический хостинг) — не помечаем applied,
+            // чтобы попробовать позже, когда появится сервер.
+            const err = (r as { error?: string } | null)?.error
+            if (err === "no_server") return
+            window.localStorage.removeItem("rps_pending_ref_code")
+            window.localStorage.setItem(key, "1")
+          })
+          .finally(() => {
+            void postJSON("/api/referrals/upsert", { userId })
+          })
+        return
+      }
+
       // всё равно создаём запись пользователя
       void postJSON("/api/referrals/upsert", { userId }).then(() => {
         window.localStorage.setItem(key, "1")
