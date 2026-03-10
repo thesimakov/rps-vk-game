@@ -28,7 +28,7 @@ jobs:
         run: npm run build
 
       - name: Copy files to VPS via rsync over SSH
-        uses: burnett01/rsync-deployments@v7.1.4
+        uses: burnett01/rsync-deployments@8.0.4
         with:
           switches: -avz --delete
           path: ./
