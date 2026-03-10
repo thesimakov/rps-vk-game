@@ -1,5 +1,5 @@
 :HL["/rps-vk-game/_next/static/chunks/754ac0c83ed54af7.css","style"]
-:HL["/rps-vk-game/_next/static/chunks/f7e51b4d311897b0.css","style"]
+:HL["/rps-vk-game/_next/static/chunks/ebcd7aa2287af7a0.css","style"]
 :HL["/rps-vk-game/_next/static/media/21445b8bd0ec5702-s.p.077f82d0.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
 :HL["/rps-vk-game/_next/static/media/c9f6ebf08ddd616b-s.p.8e1a882d.woff2","font",{"crossOrigin":"","type":"font/woff2"}]
-0:{"buildId":"RHEYeDY4TGBIFr36ecF3R","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
+0:{"buildId":"NGGwqJgmT6GdGcJ1aXb28","tree":{"name":"","paramType":null,"paramKey":"","hasRuntimePrefetch":false,"slots":{"children":{"name":"__PAGE__","paramType":null,"paramKey":"__PAGE__","hasRuntimePrefetch":false,"slots":null,"isRootLayout":false}},"isRootLayout":true},"staleTime":300}
