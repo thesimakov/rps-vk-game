@@ -258,7 +258,7 @@ export function MainMenu() {
       </div>
 
       {/* Ежедневные награды: подарок раз в 24 ч, состояние сохраняется после обновления страницы */}
-      <div className="w-full sm:max-w-md sm:mx-auto mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-4">
+      <div className="w-full max-w-md mx-auto mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <p className="text-sm text-white/95 font-medium leading-tight">
             Заходи в игру каждый день и получай голоса

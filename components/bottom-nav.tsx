@@ -30,7 +30,7 @@ export function BottomNav() {
       aria-label="Main navigation"
     >
       <div className="max-w-lg mx-auto flex items-center justify-between py-1.5 px-2">
-        <div className="flex items-center">
+        <div className="hidden sm:flex items-center">
           <BackgroundMusic />
         </div>
         <div className="flex-1 flex items-center justify-around">
