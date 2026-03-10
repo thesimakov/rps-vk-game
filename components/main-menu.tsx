@@ -145,9 +145,9 @@ export function MainMenu() {
 
 
   return (
-    <div className="flex flex-col min-h-screen px-4 py-6">
+    <div className="flex flex-col items-center min-h-screen w-full py-6">
       {/* Верх: крупный логотип, уровень, прогресс-бар */}
-      <div className="flex flex-col items-center mb-5">
+      <div className="w-full max-w-md flex flex-col items-center mb-5">
         <div className="flex flex-col items-center gap-3 mb-2">
           <div className="w-28 h-28 flex items-center justify-center">
             <img
@@ -175,7 +175,7 @@ export function MainMenu() {
       </div>
 
       {/* Валюта: аватар слева, поле и кнопки управления (лото, пополнить) */}
-      <div className="w-full sm:max-w-md sm:mx-auto flex items-center gap-3 mb-5">
+      <div className="w-full max-w-md flex items-center gap-3 mb-5">
         {player.avatarFrame === "gold" ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="gold-frame-outer h-12 w-12">
@@ -258,7 +258,7 @@ export function MainMenu() {
       </div>
 
       {/* Ежедневные награды: подарок раз в 24 ч, состояние сохраняется после обновления страницы */}
-      <div className="w-full max-w-md mx-auto mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
+      <div className="w-full max-w-md mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <p className="text-sm text-white/95 font-medium leading-tight">
             Заходи в игру каждый день и получай голоса
@@ -312,7 +312,7 @@ export function MainMenu() {
       </div>
 
       {/* Кнопки: ИГРАТЬ, Таблица лидеров, Магазин и Профиль */}
-      <div className="w-full flex flex-col gap-3">
+      <div className="w-full max-w-md flex flex-col gap-3">
         <button
           onClick={() => setScreen("bet-select")}
           className="w-full flex items-center justify-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-black text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"
@@ -358,7 +358,7 @@ export function MainMenu() {
 
       {/* VIP блок снизу */}
       {!player.vip && (
-        <div className="mt-6 w-full sm:max-w-md sm:mx-auto">
+        <div className="mt-6 w-full max-w-md">
           <button
             onClick={() => setScreen("shop")}
             className="w-full flex items-center justify-center gap-2 bg-amber-400/25 border-2 border-amber-400/50 text-amber-400 font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-amber-400/35"

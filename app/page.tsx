@@ -115,9 +115,9 @@ function GameLayout() {
           </aside>
         )}
 
-        <main className="flex-1 flex justify-center">
+        <main className="flex-1 flex justify-center min-w-0">
           <div
-            className={`w-full max-w-md px-3 ${
+            className={`w-full max-w-md mx-auto px-4 ${
               isScrollableScreen ? "min-h-screen max-h-screen overflow-y-auto" : "min-h-screen"
             } ${showBottomNav ? "pb-20" : ""}`}
           >
