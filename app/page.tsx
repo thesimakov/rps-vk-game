@@ -21,7 +21,6 @@ import { BetResponseDialog } from "@/components/bet-response-dialog"
 import { ParticlesBg } from "@/components/particles-bg"
 import { WithdrawScreen } from "@/components/withdraw-screen"
 import { EntryScreen } from "@/components/entry-screen"
-import { BackgroundMusic } from "@/components/background-music"
 import { GameLoader } from "@/components/game-loader"
 
 function GameScreen() {
@@ -76,7 +75,6 @@ function GameLayout() {
     <div className="relative min-h-screen">
       <ParticlesBg />
       <BetResponseDialog />
-      <BackgroundMusic />
 
       {isLoading && (
         <GameLoader />

@@ -115,7 +115,7 @@ export function MainMenu() {
       </div>
 
       {/* Валюта: аватар слева, поле и кнопка одной высоты */}
-      <div className="w-full max-w-md mx-auto flex items-center gap-3 mb-5">
+      <div className="w-full sm:max-w-md sm:mx-auto flex items-center gap-3 mb-5">
         {player.avatarFrame === "gold" ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="gold-frame-outer h-12 w-12">
@@ -185,7 +185,7 @@ export function MainMenu() {
       </div>
 
       {/* Ежедневные награды: подарок раз в 24 ч, состояние сохраняется после обновления страницы */}
-      <div className="w-full max-w-md mx-auto mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-4">
+      <div className="w-full sm:max-w-md sm:mx-auto mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <p className="text-sm text-white/95 font-medium leading-tight">
             Заходи в игру каждый день и получай голоса
@@ -203,7 +203,7 @@ export function MainMenu() {
             </span>
           )}
         </div>
-        <div className="flex gap-1 overflow-x-auto py-1">
+        <div className="flex gap-1 overflow-x-auto py-1 w-full">
           {DAILY_REWARDS.map((r, i) => {
             const claimed = i < dailyIndex
             const isCurrent = i === dailyIndex
@@ -211,7 +211,7 @@ export function MainMenu() {
             return (
               <div
                 key={r.day}
-                className={`flex flex-col items-center min-w-[64px] px-2 py-1.5 rounded-xl border text-center ${
+                className={`flex flex-col items-center min-w-[64px] shrink-0 px-2 py-1.5 rounded-xl border text-center ${
                   claimed
                     ? "bg-emerald-500/20 border-emerald-400/40"
                     : isAvailable
@@ -239,7 +239,7 @@ export function MainMenu() {
       </div>
 
       {/* Кнопки: ИГРАТЬ, Таблица лидеров, Магазин и Профиль */}
-      <div className="w-full max-w-md mx-auto flex flex-col gap-3">
+      <div className="w-full sm:max-w-md sm:mx-auto flex flex-col gap-3">
         <button
           onClick={() => setScreen("bet-select")}
           className="w-full flex items-center justify-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-black text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"
@@ -265,17 +265,17 @@ export function MainMenu() {
           <span>Ставки игроков</span>
         </button>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={() => setScreen("shop")}
-            className="flex-1 flex items-center justify-center gap-2 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
+            className="w-full sm:flex-1 flex items-center justify-center gap-2 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
           >
             <ShoppingBag className="h-5 w-5 text-orange-400" />
             <span>Магазин</span>
           </button>
           <button
             onClick={() => setScreen("profile")}
-            className="flex-1 flex items-center justify-center gap-2 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
+            className="w-full sm:flex-1 flex items-center justify-center gap-2 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
           >
             <User className="h-5 w-5 text-amber-400" />
             <span>Профиль</span>
@@ -285,13 +285,15 @@ export function MainMenu() {
 
       {/* VIP блок снизу */}
       {!player.vip && (
-        <button
-          onClick={() => setScreen("shop")}
-          className="mt-6 w-full max-w-md mx-auto flex items-center justify-center gap-2 bg-amber-400/25 border-2 border-amber-400/50 text-amber-400 font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-amber-400/35"
-        >
-          <Crown className="h-5 w-5" />
-          <span>Стань ВИП — сниженная комиссия!</span>
-        </button>
+        <div className="mt-6 w-full sm:max-w-md sm:mx-auto">
+          <button
+            onClick={() => setScreen("shop")}
+            className="w-full flex items-center justify-center gap-2 bg-amber-400/25 border-2 border-amber-400/50 text-amber-400 font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-amber-400/35"
+          >
+            <Crown className="h-5 w-5" />
+            <span>Стань ВИП — сниженная комиссия!</span>
+          </button>
+        </div>
       )}
     </div>
   )

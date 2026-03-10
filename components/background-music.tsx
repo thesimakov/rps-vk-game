@@ -114,13 +114,13 @@ export function BackgroundMusic() {
   }, [enabled, ready])
 
   return (
-    <div className="fixed bottom-[4.5rem] left-4 z-50 group">
-      {/* Ползунок громкости (появляется при наведении/фокусе) */}
+    <div className="relative group">
+      {/* Ползунок громкости (появляется при наведении/фокусе над иконкой) */}
       <div
-        className="absolute left-12 bottom-1/2 translate-y-1/2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity"
+        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-opacity"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card/90 border border-border/50 shadow-lg backdrop-blur">
+        <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-card/95 border border-border/60 shadow-lg backdrop-blur">
           <span className="text-[10px] font-bold text-muted-foreground tabular-nums w-8 text-right">
             {Math.round(volume * 100)}%
           </span>
@@ -130,8 +130,10 @@ export function BackgroundMusic() {
             max={100}
             step={1}
             value={Math.round(volume * 100)}
-            onChange={(e) => setVolume(clamp01(Number(e.target.value) / 100))}
-            className="w-28 accent-primary"
+            onChange={(e) =>
+              setVolume(clamp01(Number(e.target.value) / 100))
+            }
+            className="w-24 accent-primary"
             aria-label="Громкость музыки"
           />
         </div>

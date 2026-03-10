@@ -2,6 +2,7 @@
 
 import { useGame, type GameScreen } from "@/lib/game-context"
 import { Home, Swords, Trophy, User, ShoppingBag } from "lucide-react"
+import { BackgroundMusic } from "@/components/background-music"
 
 interface NavItem {
   screen: GameScreen
@@ -28,7 +29,11 @@ export function BottomNav() {
       role="navigation"
       aria-label="Main navigation"
     >
-      <div className="max-w-lg mx-auto flex items-center justify-around py-1.5 px-1">
+      <div className="max-w-lg mx-auto flex items-center justify-between py-1.5 px-2">
+        <div className="flex items-center">
+          <BackgroundMusic />
+        </div>
+        <div className="flex-1 flex items-center justify-around">
         {NAV_ITEMS.map((item) => {
           const isActive = screen === item.screen
           const isPlay = item.screen === "bet-select"
@@ -67,6 +72,7 @@ export function BottomNav() {
             </button>
           )
         })}
+        </div>
       </div>
       <div className="h-[env(safe-area-inset-bottom)]" />
     </nav>
