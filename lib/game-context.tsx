@@ -592,6 +592,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     saveState(player, withdrawState, lavaCardStock)
   }, [hasLoadedSave, player, withdrawState, lavaCardStock])
 
+  // Синхронизация прогресса VK-пользователя с сервером (единый прогресс на всех платформах).
+  useEffect(() => {
+    if (!hasLoadedSave) return
+    if (!vkUser) return
+    const userId = player.id
+    if (!userId || !userId.startsWith("vk_")) return
+
+    const controller = new AbortController()
+    const timeout = setTimeout(() => {
+      void postJSON("/api/player/save", { player: toStoredPlayer(player) })
+    }, 1500)
+
+    return () => {
+      clearTimeout(timeout)
+      controller.abort()
+    }
+  }, [hasLoadedSave, vkUser, player])
+
   // Инициализация VK Bridge; при запуске на своём сервере — проверка OAuth callback или сохранённой сессии
   useEffect(() => {
     initVKBridge().finally(() => setIsLoading(false))

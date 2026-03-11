@@ -222,6 +222,7 @@ export function ShopScreen() {
   const { setScreen, player, setPlayer, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
   const [customTopUp, setCustomTopUp] = useState("")
+  const [topUpError, setTopUpError] = useState<string>("")
   const [openingChest, setOpeningChest] = useState<{ type: ChestType; prizes: ChestPrize[] } | null>(null)
   const [chestPhase, setChestPhase] = useState<"fly" | "open" | "reward" | "collect">("fly")
   const [inviteLoading, setInviteLoading] = useState(false)
@@ -263,6 +264,24 @@ export function ShopScreen() {
   }
 
   const handleTopUp = async (amount: number) => {
+    setTopUpError("")
+
+    // Лимит пополнений: не более 3000 голосов в сутки на пользователя.
+    try {
+      if (typeof window !== "undefined" && player.id.startsWith("vk_")) {
+        const today = new Date().toISOString().slice(0, 10)
+        const key = `rps_vk_topup_${player.id}_${today}`
+        const usedRaw = window.localStorage.getItem(key)
+        const used = Number(usedRaw) || 0
+        if (used + amount > 3000) {
+          setTopUpError("Лимит пополнения 3000 голосов в сутки уже достигнут или будет превышен этой покупкой.")
+          return
+        }
+      }
+    } catch {
+      // если localStorage недоступен, просто продолжаем без учёта лимита
+    }
+
     setTopUpLoading(amount)
     try {
       const success = await purchaseVKVoices(amount)
@@ -273,6 +292,17 @@ export function ShopScreen() {
           balance: p.balance + amount,
           totalPurchases: (p.totalPurchases ?? 0) + amount,
         }))
+        try {
+          if (typeof window !== "undefined" && player.id.startsWith("vk_")) {
+            const today = new Date().toISOString().slice(0, 10)
+            const key = `rps_vk_topup_${player.id}_${today}`
+            const usedRaw = window.localStorage.getItem(key)
+            const used = Number(usedRaw) || 0
+            window.localStorage.setItem(key, String(used + amount))
+          }
+        } catch {
+          // ignore
+        }
       }
     } finally {
       setTopUpLoading(null)
@@ -454,6 +484,11 @@ export function ShopScreen() {
         <p className="text-xs text-muted-foreground mb-3">
           Оплата через ВКонтакте — списание голосов с вашего аккаунта.
         </p>
+        {topUpError && (
+          <p className="text-xs text-red-500 mb-2 font-medium">
+            {topUpError}
+          </p>
+        )}
         {!isVKEnvironment() && (
           <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
             Для пополнения откройте приложение в ВКонтакте.
