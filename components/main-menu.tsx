@@ -51,6 +51,35 @@ function formatLottoTime(ms: number): string {
   return `${hours} ч ${pad(minutes)} мин ${pad(seconds)} сек`
 }
 
+/**
+ * Возвращает timestamp следующего розыгрыша лото.
+ * Розыгрыш проходит каждую среду и пятницу в 00:00 по МСК (UTC+3),
+ * то есть во вторник и четверг в 21:00 по UTC.
+ */
+function getNextLottoDrawTimestamp(from: number = Date.now()): number {
+  const now = new Date(from)
+  const year = now.getUTCFullYear()
+  const month = now.getUTCMonth()
+  const date = now.getUTCDate()
+  const day = now.getUTCDay() // 0..6, вс = 0
+
+  // Цели: вторник (2) 21:00 UTC и четверг (4) 21:00 UTC
+  const buildTarget = (targetDay: number) => {
+    const base = new Date(Date.UTC(year, month, date, 21, 0, 0, 0))
+    const diffDays = (targetDay - day + 7) % 7
+    base.setUTCDate(base.getUTCDate() + diffDays)
+    // если получившееся время уже прошло "сейчас" — переносим ещё на неделю вперёд
+    if (base.getTime() <= from) {
+      base.setUTCDate(base.getUTCDate() + 7)
+    }
+    return base.getTime()
+  }
+
+  const nextTue = buildTarget(2)
+  const nextThu = buildTarget(4)
+  return Math.min(nextTue, nextThu)
+}
+
 export function MainMenu() {
   const { setScreen, player, setPlayer } = useGame()
   const [now, setNow] = useState(() => Date.now())
@@ -96,7 +125,7 @@ export function MainMenu() {
     }))
   }
 
-  // Лото: если прошло 3 дня и розыгрыш ещё не проведён — провести при открытии меню.
+  // Лото: если наступил момент ближайшего розыгрыша и он ещё не проведён — провести при открытии меню.
   useEffect(() => {
     if (!player.lottoNumbers || !player.lottoDrawAt) return
     if (player.lottoDrawnNumbers && player.lottoDrawnNumbers.length > 0) return
@@ -144,7 +173,7 @@ export function MainMenu() {
 
   const handleSaveLotto = () => {
     if (tempSelection.length !== 10) return
-    const drawAt = Date.now() + 3 * MS_PER_DAY
+    const drawAt = getNextLottoDrawTimestamp()
     setPlayer((p) => ({
       ...p,
       lottoNumbers: tempSelection,
@@ -390,7 +419,8 @@ export function MainMenu() {
                   Лото
                 </h2>
                 <p className="text-xs text-white/70 mt-0.5">
-                  Выбери 10 чисел от 1 до 99. Комбинация участвует в розыгрыше 3 дня.
+                  Выбери 10 чисел от 1 до 99. Комбинация участвует в ближайшем розыгрыше
+                  в среду или пятницу в 00:00 по МСК.
                 </p>
               </div>
               <button
