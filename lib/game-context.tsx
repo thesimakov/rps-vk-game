@@ -366,6 +366,43 @@ async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | nu
   }
 }
 
+function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
+  return {
+    id: player.id,
+    name: player.name,
+    avatar: player.avatar,
+    avatarUrl: player.avatarUrl,
+    balance: player.balance,
+    wins: player.wins,
+    losses: player.losses,
+    weekWins: player.weekWins,
+    weekEarnings: player.weekEarnings,
+    ratingPoints: player.ratingPoints,
+    totalPurchases: player.totalPurchases,
+    vip: player.vip,
+    fastMatchBoosts: player.fastMatchBoosts,
+    victoryAnimation: player.victoryAnimation,
+    cardSkin: player.cardSkin,
+    cardDeck: player.cardDeck,
+    hasAncientDeck: player.hasAncientDeck,
+    avatarFrame: player.avatarFrame,
+    tournamentEntry: player.tournamentEntry,
+    hideVkAvatar: player.hideVkAvatar,
+    lavaCardUses: player.lavaCardUses,
+    waterCardUses: player.waterCardUses,
+    invitedFriends: player.invitedFriends,
+    invitedRewardClaimed: player.invitedRewardClaimed,
+    wallPostRewardClaimed: player.wallPostRewardClaimed,
+    groupSubscribedRewardClaimed: player.groupSubscribedRewardClaimed,
+    lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
+    dailyRewardIndex: player.dailyRewardIndex,
+    extraTimerUntil: player.extraTimerUntil,
+    lottoNumbers: player.lottoNumbers,
+    lottoDrawAt: player.lottoDrawAt,
+    lottoDrawnNumbers: player.lottoDrawnNumbers,
+  }
+}
+
 const DEFAULT_PLAYER: Player = {
   id: "player1",
   name: "Игрок",
@@ -571,7 +608,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [player.id, vkUser]
   )
 
-  // На своём сервере (без Bridge): обработать возврат из VK OAuth или восстановить сессию из localStorage
+  // На своём сервере (без Bridge): обработать возврат из VK OAuth или восстановить сессию из localStorage,
+  // затем загрузить/создать профиль игрока на сервере.
   useEffect(() => {
     if (isLoading || getBridgeReady()) return
     const hash = typeof window !== "undefined" ? window.location.hash : ""
@@ -587,19 +625,41 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             user,
           })
           try {
-            window.localStorage.setItem("rps_vk_user_id", `vk_${parsed.user_id}`)
+            const vkId = `vk_${parsed.user_id}`
+            window.localStorage.setItem("rps_vk_user_id", vkId)
           } catch {
             // ignore
           }
+          const vkId = `vk_${user.id}`
           setVkUser(user)
           setPlayer((p) => ({
             ...p,
-            id: `vk_${user.id}`,
+            id: vkId,
             name: user.first_name,
             avatar: user.first_name.charAt(0).toUpperCase(),
             avatarUrl: user.photo_200 || user.photo_100 || "",
             hideVkAvatar: p.hideVkAvatar ?? false,
           }))
+          // Загрузить/создать профиль игрока на сервере.
+          void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer }>("/api/player/load", {
+            userId: vkId,
+          }).then((res) => {
+            if (!res || !res.ok) return
+            if (res.player) {
+              setPlayer((p) => ({
+                ...p,
+                ...res.player,
+              }))
+            } else {
+              void postJSON("/api/player/save", { player: toStoredPlayer({
+                ...DEFAULT_PLAYER,
+                id: vkId,
+                name: user.first_name,
+                avatar: user.first_name.charAt(0).toUpperCase(),
+                avatarUrl: user.photo_200 || user.photo_100 || "",
+              }) })
+            }
+          })
           setScreen("menu")
           try {
             window.dispatchEvent(new Event("rps_vk_login_success"))
@@ -613,17 +673,18 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
     const session = getStoredVKOAuthSession()
     if (session) {
+      const vkId = `vk_${session.user.id}`
       setVkUser(session.user)
       setPlayer((p) => ({
         ...p,
-        id: `vk_${session.user.id}`,
+        id: vkId,
         name: session.user.first_name,
         avatar: session.user.first_name.charAt(0).toUpperCase(),
         avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
         hideVkAvatar: p.hideVkAvatar ?? false,
       }))
       try {
-        window.localStorage.setItem("rps_vk_user_id", `vk_${session.user.id}`)
+        window.localStorage.setItem("rps_vk_user_id", vkId)
       } catch {
         // ignore
       }
@@ -633,6 +694,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       } catch {
         // ignore
       }
+      // Загрузить/создать профиль игрока на сервере.
+      void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer }>("/api/player/load", {
+        userId: vkId,
+      }).then((res) => {
+        if (!res || !res.ok) return
+        if (res.player) {
+          setPlayer((p) => ({
+            ...p,
+            ...res.player,
+          }))
+        } else {
+          void postJSON("/api/player/save", { player: toStoredPlayer({
+            ...DEFAULT_PLAYER,
+            id: vkId,
+            name: session.user.first_name,
+            avatar: session.user.first_name.charAt(0).toUpperCase(),
+            avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
+          }) })
+        }
+      })
     }
   }, [isLoading])
 
@@ -679,27 +760,21 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [player.id, vkUser])
 
   const loginWithVKBridge = useCallback(async () => {
-    // Временное отключение реальной авторизации через VK Bridge.
-    // Пока игра работает в офлайн-режиме без привязки к аккаунту ВК.
-    const fakeUser: VKUser = {
-      id: 1,
-      first_name: "Игрок",
-      last_name: "",
-      photo_100: "",
-      photo_200: "",
-    }
-    setVkUser(fakeUser)
+    const user = await getVKUser()
+    if (!user) return
+    const vkId = `vk_${user.id}`
+    setVkUser(user)
     setPlayer((p) => ({
       ...p,
-      id: "local_player",
-      name: fakeUser.first_name,
-      avatar: fakeUser.first_name.charAt(0).toUpperCase(),
-      avatarUrl: "",
+      id: vkId,
+      name: user.first_name,
+      avatar: user.first_name.charAt(0).toUpperCase(),
+      avatarUrl: user.photo_200 || user.photo_100 || "",
       hideVkAvatar: p.hideVkAvatar ?? false,
     }))
     if (typeof window !== "undefined") {
       try {
-        window.localStorage.setItem("rps_vk_user_id", "local_player")
+        window.localStorage.setItem("rps_vk_user_id", vkId)
       } catch {
         // ignore
       }
@@ -709,12 +784,39 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
     }
+    // Загрузить/создать профиль игрока на сервере.
+    void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer }>("/api/player/load", {
+      userId: vkId,
+    }).then((res) => {
+      if (!res || !res.ok) return
+      if (res.player) {
+        setPlayer((p) => ({
+          ...p,
+          ...res.player,
+        }))
+      } else {
+        void postJSON("/api/player/save", { player: toStoredPlayer({
+          ...DEFAULT_PLAYER,
+          id: vkId,
+          name: user.first_name,
+          avatar: user.first_name.charAt(0).toUpperCase(),
+          avatarUrl: user.photo_200 || user.photo_100 || "",
+        }) })
+      }
+    })
     setScreen("menu")
   }, [])
 
   const loginWithVK = useCallback(async () => {
-    // Временный офлайн-режим: входим без реальной авторизации ВКонтакте.
-    await loginWithVKBridge()
+    if (getBridgeReady()) {
+      await loginWithVKBridge()
+      return
+    }
+    // Без VK Bridge — редирект в OAuth на своём домене
+    if (typeof window !== "undefined") {
+      const url = getVKOAuthRedirectUrl()
+      window.location.href = url
+    }
   }, [loginWithVKBridge])
 
   const logoutWithVK = useCallback(() => {

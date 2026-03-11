@@ -40,7 +40,7 @@ export function getBridgeReady(): boolean {
 /** Данные текущего пользователя ВК (VKWebAppGetUserInfo). В dev — мок. */
 export async function getVKUser(): Promise<VKUser | null> {
   if (!bridgeReady) {
-    return { id: 1, first_name: "Игрок", last_name: "", photo_100: "", photo_200: "" }
+    return null
   }
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
