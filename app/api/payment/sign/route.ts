@@ -16,17 +16,12 @@ function getAppId() {
   return typeof id === "string" ? id : ""
 }
 
-function getMerchantId() {
-  const id = process.env.VK_MERCHANT_ID
-  return typeof id === "string" ? id : ""
-}
-
 function getSecretKey() {
   const key = process.env.VK_SECRET_KEY
   return typeof key === "string" ? key : ""
 }
 
-type PaymentMethod = "vk_voices" | "vk_pay"
+type PaymentMethod = "vk_voices"
 
 function generateOrderId(userId: string, amount: number) {
   const base = `${userId || "anon"}:${amount}:${Date.now()}:${Math.random()}`
@@ -53,7 +48,7 @@ export async function POST(req: Request) {
 
     const amount = Number(body.amount)
     const userId = typeof body.userId === "string" ? body.userId : ""
-    const method: PaymentMethod = body.method === "vk_pay" ? "vk_pay" : "vk_voices"
+    const method: PaymentMethod = "vk_voices"
     const description = typeof body.description === "string" ? body.description.slice(0, 128) : "Пополнение баланса"
 
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -81,8 +76,7 @@ export async function POST(req: Request) {
       description,
       order_id: orderId,
       user_id: userId,
-      currency: method === "vk_voices" ? "votes" : body.currency || "RUB",
-      merchant_id: getMerchantId() || undefined,
+      currency: "votes",
     }
 
     const sign = signPayload(basePayload, secret)
