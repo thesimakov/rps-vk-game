@@ -11,6 +11,10 @@ import type { VKUser } from "./vk-bridge"
 const VK_OAUTH_STORAGE_KEY = "rps_vk_oauth"
 const VK_API_VERSION = "5.199"
 
+// Жёсткий fallback на ID приложения ВК, чтобы избежать client_id=0,
+// даже если NEXT_PUBLIC_VK_APP_ID не подтянулся из окружения.
+const FALLBACK_VK_APP_ID = "54475232"
+
 export interface VKOAuthSession {
   access_token: string
   user_id: number
@@ -19,7 +23,9 @@ export interface VKOAuthSession {
 }
 
 function getAppId(): string {
-  return typeof process.env.NEXT_PUBLIC_VK_APP_ID === "string" ? process.env.NEXT_PUBLIC_VK_APP_ID : ""
+  const fromEnv =
+    typeof process.env.NEXT_PUBLIC_VK_APP_ID === "string" ? process.env.NEXT_PUBLIC_VK_APP_ID.trim() : ""
+  return fromEnv || FALLBACK_VK_APP_ID
 }
 
 /** Полный Redirect URI из .env — должен **дословно** совпадать с настройками приложения ВК (иначе Security Error). */
@@ -40,7 +46,7 @@ export function getVKOAuthRedirectUrl(redirectUri?: string): string {
   const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : ""
   const redirect = redirectUri ?? base
   const params = new URLSearchParams({
-    client_id: clientId || "0",
+    client_id: clientId,
     redirect_uri: redirect,
     response_type: "token",
     scope: "",
