@@ -12,12 +12,14 @@ import crypto from "crypto"
 export const dynamic = "force-static"
 
 function getAppId() {
-  const id = process.env.NEXT_PUBLIC_VK_APP_ID ?? process.env.VK_APP_ID
-  return typeof id === "string" ? id : ""
+  // Берём ID приложения из env, при отсутствии — жёстко подставляем 54475232.
+  const id = process.env.NEXT_PUBLIC_VK_APP_ID ?? process.env.VK_APP_ID ?? "54475232"
+  return typeof id === "string" && id.trim() ? id.trim() : "54475232"
 }
 
 function getSecretKey() {
-  const key = process.env.VK_SECRET_KEY
+  // Поддерживаем и новое имя VK_SECRET_KEY, и старое VK_APP_SECRET_KEY.
+  const key = process.env.VK_SECRET_KEY ?? process.env.VK_APP_SECRET_KEY
   return typeof key === "string" ? key : ""
 }
 
