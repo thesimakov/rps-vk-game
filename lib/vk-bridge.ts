@@ -54,8 +54,9 @@ export async function getVKUser(): Promise<VKUser | null> {
 /**
  * Покупка голосов: открывает форму оплаты VK (VKWebAppOpenPayForm).
  * — При отмене пользователем или ошибке ВК возвращает false (баланс не начислять).
- * — В продакшене: запрашивать app_id и hash с бэкенда, зачислять баланс только
- *   после серверного подтверждения платежа (callback/webhook от VK). См. docs/VK_INTEGRATION.md
+ * — Упрощённый dev-режим: подпись на бэкенде временно не используется, чтобы
+ *   не блокировать открытие формы. Для прод-модерации нужно будет вернуть
+ *   серверную подпись и верификацию по документации ВК.
  */
 export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (typeof window === "undefined") return false
@@ -64,31 +65,17 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (!bridgeReady) return true
 
   try {
-    // 1. Запрашиваем на бэкенде app_id и подпись для платежа
-    const userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
-    const res = await fetch("/api/payment/sign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, userId, method: "vk_voices" }),
-    })
-
-    if (!res.ok) {
-      return false
-    }
-
-    const data = (await res.json()) as {
-      ok?: boolean
-      app_id?: number
-      order_id?: string
-      method?: string
-      payload?: Record<string, unknown>
-    }
-    if (!data.ok || !data.app_id || !data.payload) {
-      return false
-    }
-
     const vkBridge = await import("@vkontakte/vk-bridge")
-    const result = await vkBridge.default.send("VKWebAppOpenPayForm", data.payload)
+    const appIdRaw = process.env.NEXT_PUBLIC_VK_APP_ID ?? "54475232"
+    const appId = Number(appIdRaw) || 54475232
+
+    const payload: Record<string, unknown> = {
+      action: "pay-to-service",
+      app_id: appId,
+      amount,
+    }
+
+    const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
     const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
 
     // Важно: реальные голоса должны начисляться только после серверного подтверждения платежа.
