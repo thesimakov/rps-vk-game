@@ -143,9 +143,11 @@ const SHOP_ITEMS: ShopItem[] = [
 
 const VOICE_PACKS = [
   { amount: 10, price: 10, label: "10 голосов" },
+  { amount: 20, price: 20, label: "20 голосов" },
+  { amount: 30, price: 30, label: "30 голосов" },
   { amount: 50, price: 50, label: "50 голосов" },
+  { amount: 70, price: 70, label: "70 голосов" },
   { amount: 100, price: 100, label: "100 голосов" },
-  { amount: 500, price: 500, label: "500 голосов" },
 ]
 
 type ChestType = "basic" | "premium"
