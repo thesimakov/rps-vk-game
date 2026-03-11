@@ -716,7 +716,7 @@ export function ShopScreen() {
           {groupSubLoading
             ? "Подписка…"
             : player.groupSubscribedRewardClaimed
-              ? "Награда получена"
+              ? "Вы уже подписаны"
               : `Подписаться и получить ${GROUP_SUB_REWARD} голосов`}
         </button>
       </div>
