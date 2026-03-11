@@ -10,6 +10,7 @@ const INVITED_SLOTS = 4
 const INVITE_REWARD = 100
 const WALL_POST_REWARD = 100
 const GROUP_SUB_REWARD = 40
+const ENABLE_WALL_POST_REWARD = true
 
 interface ShopItem {
   id: string
@@ -219,7 +220,7 @@ function normalizeInvitedSlots(
 }
 
 export function ShopScreen() {
-  const { setScreen, player, setPlayer, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend } = useGame()
+  const { setScreen, player, setPlayer, vkUser, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
   const [customTopUp, setCustomTopUp] = useState("")
   const [topUpError, setTopUpError] = useState<string>("")
@@ -613,29 +614,31 @@ export function ShopScreen() {
       </div>
 
       {/* 100 голосов — расскажи друзьям (пост на стену) */}
-      <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Share2 className="h-5 w-5 text-secondary" />
-          <span className="font-bold text-base text-foreground">Получить {WALL_POST_REWARD} голосов — расскажи друзьям</span>
-        </div>
-        <p className="text-xs text-muted-foreground mb-3">
-          Опубликуйте на своей стене приглашение поиграть в игру. После публикации вам начислят {WALL_POST_REWARD} голосов.
-        </p>
-        {!isVKEnvironment() && (
-          <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
-            Откройте приложение в ВКонтакте, чтобы опубликовать пост на стене.
+      {ENABLE_WALL_POST_REWARD && (
+        <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Share2 className="h-5 w-5 text-secondary" />
+            <span className="font-bold text-base text-foreground">Получить {WALL_POST_REWARD} голосов — расскажи друзьям</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Опубликуйте на своей стене приглашение поиграть в игру. После публикации вам начислят {WALL_POST_REWARD} голосов.
           </p>
-        )}
-        <button
-          type="button"
-          onClick={handleWallPostAndReward}
-          disabled={!canClaimWallPostReward || wallPostLoading || !isVKEnvironment()}
-          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-secondary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
-        >
-          <Share2 className="h-4 w-4" />
-          {wallPostLoading ? "Публикация…" : player.wallPostRewardClaimed ? "Награда получена" : `Опубликовать и получить ${WALL_POST_REWARD} голосов`}
-        </button>
-      </div>
+          {!isVKEnvironment() && (
+            <p className="text-xs text-amber-600 dark:text-amber-400 mb-2">
+              Откройте приложение в ВКонтакте, чтобы опубликовать пост на стене.
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleWallPostAndReward}
+            disabled={!canClaimWallPostReward || wallPostLoading || !isVKEnvironment() || !vkUser}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-secondary text-secondary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+          >
+            <Share2 className="h-4 w-4" />
+            {wallPostLoading ? "Публикация…" : player.wallPostRewardClaimed ? "Награда получена" : `Опубликовать и получить ${WALL_POST_REWARD} голосов`}
+          </button>
+        </div>
+      )}
 
       {/* 40 голосов за подписку на группу ВК */}
       <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
