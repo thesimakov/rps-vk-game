@@ -418,8 +418,8 @@ export function MainMenu() {
               {player.lottoDrawAt && (
                 <span>
                   Розыгрыш через:{" "}
-                  {formatTimeUntil(Math.max(0, player.lottoDrawAt - Date.now())) ||
-                    "скоро"}
+                  {formatTimeUntil(Math.max(0, player.lottoDrawAt - Date.now())) || "скоро"}{" "}
+                  (таймер идёт)
                 </span>
               )}
             </div>
