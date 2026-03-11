@@ -230,6 +230,9 @@ export function ShopScreen() {
   const [wallPostLoading, setWallPostLoading] = useState(false)
   const [groupSubLoading, setGroupSubLoading] = useState(false)
   const [groupSubError, setGroupSubError] = useState("")
+  const [promoCode, setPromoCode] = useState("")
+  const [promoStatus, setPromoStatus] = useState<"idle" | "success" | "error">("idle")
+  const [promoMessage, setPromoMessage] = useState("")
   const confettiRef = useRef<HTMLDivElement>(null)
 
   const invitedSlots = normalizeInvitedSlots(player.invitedFriends)
@@ -392,6 +395,69 @@ export function ShopScreen() {
       }
     } finally {
       setGroupSubLoading(false)
+    }
+  }
+
+  const handleRedeemPromo = async () => {
+    if (!promoCode.trim() || promoStatus === "success") return
+    if (!vkUser || !player.id.startsWith("vk_")) {
+      setPromoStatus("error")
+      setPromoMessage("Промокоды доступны после входа через ВКонтакте.")
+      return
+    }
+    setPromoStatus("idle")
+    setPromoMessage("")
+    try {
+      const res = await fetch("/api/promo/redeem", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: player.id, code: promoCode }),
+      })
+      const json = (await res.json()) as {
+        ok: boolean
+        error?: string
+        reward?: { kind: "voices" | "fast_match" | "lava_card" | "water_card"; amount?: number }
+      }
+      if (!json.ok || !json.reward) {
+        const msg =
+          json.error === "already_used"
+            ? "Вы уже активировали этот промокод."
+            : json.error === "limit_reached"
+              ? "Лимит активаций этого промокода исчерпан."
+              : "Промокод не найден или недействителен."
+        setPromoStatus("error")
+        setPromoMessage(msg)
+        return
+      }
+      // Применяем награду к игроку.
+      const reward = json.reward
+      setPlayer((p) => {
+        const amount = reward.amount ?? 0
+        const updated = { ...p }
+        if (reward.kind === "voices") {
+          updated.balance = p.balance + amount
+        } else if (reward.kind === "fast_match") {
+          updated.fastMatchBoosts = (p.fastMatchBoosts ?? 0) + (amount || 1)
+        } else if (reward.kind === "lava_card") {
+          updated.lavaCardUses = (p.lavaCardUses ?? 0) + (amount || 5)
+        } else if (reward.kind === "water_card") {
+          updated.waterCardUses = (p.waterCardUses ?? 0) + (amount || 3)
+        }
+        return updated
+      })
+      setPromoStatus("success")
+      const baseText =
+        reward.kind === "voices"
+          ? `Начислено ${formatAmount(reward.amount ?? 0)} голосов.`
+          : reward.kind === "fast_match"
+            ? `Начислено ${reward.amount ?? 1} использований быстрого поиска.`
+            : reward.kind === "lava_card"
+              ? `Добавлено ${reward.amount ?? 5} использований карты «Лава».`
+              : `Добавлено ${reward.amount ?? 3} использований карты «Вода».`
+      setPromoMessage(baseText)
+    } catch {
+      setPromoStatus("error")
+      setPromoMessage("Не удалось активировать промокод. Попробуйте позже.")
     }
   }
 
@@ -653,6 +719,44 @@ export function ShopScreen() {
               ? "Награда получена"
               : `Подписаться и получить ${GROUP_SUB_REWARD} голосов`}
         </button>
+      </div>
+
+      {/* Промокод */}
+      <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <Ticket className="h-5 w-5 text-primary" />
+          <span className="font-bold text-base text-foreground">Промокод</span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">
+          Иногда мы дарим промокоды с голосами, особыми картами или бустами. Введите код сюда, чтобы получить подарок.
+        </p>
+        <div className="flex gap-2 mb-2">
+          <input
+            type="text"
+            value={promoCode}
+            onChange={(e) => {
+              setPromoCode(e.target.value)
+              setPromoStatus("idle")
+              setPromoMessage("")
+            }}
+            placeholder="Например: RPS2026"
+            className="flex-1 min-w-0 rounded-xl bg-background/80 border border-border/50 px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/60"
+          />
+          <button
+            type="button"
+            onClick={handleRedeemPromo}
+            disabled={!promoCode.trim()}
+            className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-bold text-sm disabled:opacity-50"
+          >
+            Активировать
+          </button>
+        </div>
+        {promoStatus === "success" && promoMessage && (
+          <p className="text-xs text-emerald-400 font-medium">{promoMessage}</p>
+        )}
+        {promoStatus === "error" && promoMessage && (
+          <p className="text-xs text-red-400 font-medium">{promoMessage}</p>
+        )}
       </div>
 
       {/* Items */}

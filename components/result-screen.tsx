@@ -264,16 +264,11 @@ export function ResultScreen() {
             <span className="text-[13px] uppercase tracking-wide text-white/60">
               Все ходы в матче
             </span>
-            <span className="text-[13px] text-white/70">
-              Счёт матча:{" "}
-              <span className="font-bold text-emerald-300">{playerRoundsWon}</span>
-              {" : "}
-              <span className="font-bold text-red-300">{opponentRoundsWon}</span>
-            </span>
           </div>
 
           {isFiveRoundMatch ? (
-            // Специальное расположение 5 карт: для каждого игрока 3 сверху, 2 снизу — над своим аватаром.
+            // Специальное расположение 5 карт: для каждого игрока 3 сверху, 2 снизу — над своим аватаром,
+            // между ними крупный счёт матча.
             <div className="mt-2 flex items-center justify-between w-full max-w-md mx-auto gap-4">
               {/* Карты игрока (слева) */}
               <div className="flex flex-col items-center gap-1">
@@ -310,6 +305,13 @@ export function ResultScreen() {
                   ))}
                 </div>
               </div>
+
+              {/* Крупный счёт посередине */}
+              <span className="text-xl sm:text-2xl font-extrabold text-white">
+                <span className="text-emerald-300">{playerRoundsWon}</span>
+                <span className="mx-1">:</span>
+                <span className="text-red-400">{opponentRoundsWon}</span>
+              </span>
 
               {/* Карты соперника (справа) */}
               <div className="flex flex-col items-center gap-1">
