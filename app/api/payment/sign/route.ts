@@ -11,8 +11,6 @@ import crypto from "crypto"
 
 export const dynamic = "force-static"
 
-const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT !== "0" && process.env.NODE_ENV === "production"
-
 function getAppId() {
   const id = process.env.NEXT_PUBLIC_VK_APP_ID ?? process.env.VK_APP_ID
   return typeof id === "string" ? id : ""
@@ -44,10 +42,6 @@ function signPayload(payload: Record<string, unknown>, secret: string) {
 }
 
 export async function POST(req: Request) {
-  if (IS_STATIC_EXPORT) {
-    return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
-  }
-
   try {
     const body = (await req.json()) as {
       amount?: number

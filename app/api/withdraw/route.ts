@@ -4,17 +4,11 @@ import { loadPlayer, savePlayer } from "@/lib/player-store"
 
 export const dynamic = "force-static"
 
-const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT !== "0" && process.env.NODE_ENV === "production"
-
 // Лимиты вывода: минимум 10 голосов, максимум 10 000 в сутки на пользователя
 const MIN_WITHDRAW = 10
 const MAX_WITHDRAW_PER_DAY = 10_000
 
 export async function POST(req: Request) {
-  if (IS_STATIC_EXPORT) {
-    return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
-  }
-
   try {
     const body = (await req.json()) as { userId?: string; amount?: number }
     const userId = typeof body.userId === "string" ? body.userId : ""
