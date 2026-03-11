@@ -234,6 +234,7 @@ export function ShopScreen() {
   const [promoStatus, setPromoStatus] = useState<"idle" | "success" | "error">("idle")
   const [promoMessage, setPromoMessage] = useState("")
   const confettiRef = useRef<HTMLDivElement>(null)
+  const [showFriendsModal, setShowFriendsModal] = useState(false)
 
   const invitedSlots = normalizeInvitedSlots(player.invitedFriends)
   const invitedCount = invitedSlots.filter(Boolean).length
@@ -688,20 +689,7 @@ export function ShopScreen() {
           <button
             type="button"
             disabled={invitedCount === 0}
-            onClick={() => {
-              if (invitedCount === 0) return
-              const names = invitedSlots
-                .filter(Boolean)
-                .map((f) => `${f!.first_name} ${f!.last_name}`.trim())
-              const message =
-                names.length > 0
-                  ? `Уже играют:\n\n${names.join("\n")}`
-                  : "Пока ни один друг не принял приглашение."
-              // В простом варианте используем alert; при необходимости можно заменить на модалку.
-              if (typeof window !== "undefined") {
-                window.alert(message)
-              }
-            }}
+            onClick={() => setShowFriendsModal(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-muted/40 text-xs font-semibold text-foreground transition-all active:scale-95 disabled:opacity-50"
           >
             Посмотреть
@@ -849,6 +837,57 @@ export function ShopScreen() {
           )
         })}
       </div>
+
+      {/* Модалка: друзья, которые уже в игре */}
+      {showFriendsModal && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowFriendsModal(false)
+          }}
+        >
+          <div className="w-full max-w-sm mx-4 rounded-2xl bg-card/95 border border-border/40 shadow-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-foreground">
+                Друзья, которые уже играют
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowFriendsModal(false)}
+                className="p-1.5 rounded-lg hover:bg-muted/60 text-muted-foreground hover:text-foreground"
+                aria-label="Закрыть"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {invitedCount === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Пока ни один друг не принял приглашение. Пригласите друзей, и они появятся здесь.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-2 max-h-64 overflow-y-auto">
+                {invitedSlots
+                  .filter(Boolean)
+                  .map((friend, idx) => (
+                    <div
+                      key={friend!.id ?? idx}
+                      className="flex items-center gap-3 rounded-xl bg-muted/30 border border-border/40 px-3 py-2"
+                    >
+                      <img
+                        src={friend!.photo_200 || ""}
+                        alt=""
+                        className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                      />
+                      <span className="text-sm font-medium text-foreground truncate">
+                        {friend!.first_name} {friend!.last_name}
+                      </span>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Модалка открытия сундука: вылетает, открывается, конфетти, награда, «Собрать» */}
       {openingChest && (

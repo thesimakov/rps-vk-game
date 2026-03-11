@@ -13,10 +13,14 @@ export function ProfileScreen() {
   const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend } = useGame()
   const [isEditingName, setIsEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(player.name)
+  const [showRubles, setShowRubles] = useState(false)
 
   const totalGames = player.wins + player.losses
   const winRate = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0
   const canWithdraw = player.balance >= MIN_BALANCE_FOR_WITHDRAW
+
+  const balanceValue = showRubles ? player.balance * 7 : player.balance
+  const balanceLabel = showRubles ? "рубли" : "голоса"
 
   const saveName = () => {
     const trimmed = nameInput.trim()
@@ -47,6 +51,29 @@ export function ProfileScreen() {
           Профиль
         </h1>
         <div className="w-9" />
+      </div>
+
+      {/* Конвертация голосов в рубли */}
+      <div className="w-full max-w-md mb-4 flex items-center justify-between rounded-2xl bg-card/40 backdrop-blur-sm border border-border/30 px-3 py-2.5">
+        <div className="flex flex-col">
+          <span className="text-xs font-semibold text-foreground">
+            Конвертация
+          </span>
+          <span className="text-[11px] text-muted-foreground">
+            1 голос = 7 ₽. Показать баланс в рублях.
+          </span>
+        </div>
+        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            checked={showRubles}
+            onChange={(e) => setShowRubles(e.target.checked)}
+          />
+          <span className="text-xs text-foreground font-medium">
+            В рублях
+          </span>
+        </label>
       </div>
 
       {/* Avatar + Name (аватар из ВК, можно отключить за 100 голосов) */}
@@ -167,10 +194,10 @@ export function ProfileScreen() {
         <div className="bg-card/50 backdrop-blur-sm border border-accent/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
           <Coins className="h-5 w-5 text-accent mb-1" />
           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-            голоса
+            {showRubles ? "рубли" : "голоса"}
           </span>
           <span className="mt-1 text-lg font-extrabold text-accent tabular-nums">
-            {formatAmount(player.balance)}
+            {formatAmount(balanceValue)}
           </span>
         </div>
         <div className="bg-card/50 backdrop-blur-sm border border-amber-400/40 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
