@@ -426,7 +426,7 @@ export function ShopScreen() {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen max-h-screen overflow-y-auto px-4 py-6">
+    <div className="flex flex-col items-center min-h-screen px-4 py-6">
       {/* Header */}
       <div className="w-full max-w-md flex items-center mb-6">
         <button
