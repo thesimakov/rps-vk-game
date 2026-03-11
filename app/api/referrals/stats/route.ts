@@ -3,7 +3,7 @@ import { isValidVkUserId } from "@/lib/referral-store"
 
 export const dynamic = "force-static"
 
-const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT !== "0" && process.env.NODE_ENV === "production"
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 export async function GET(req: Request) {
   if (IS_STATIC_EXPORT) {

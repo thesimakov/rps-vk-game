@@ -323,9 +323,24 @@ export function ShopScreen() {
         setPlayer((p) => {
           const current = normalizeInvitedSlots(p.invitedFriends)
           const next = [...current]
-          next[slotIndex] = { id: friend.id, first_name: friend.first_name, last_name: friend.last_name, photo_200: friend.photo_200 }
+          next[slotIndex] = {
+            id: friend.id,
+            first_name: friend.first_name,
+            last_name: friend.last_name,
+            photo_200: friend.photo_200,
+          }
           return { ...p, invitedFriends: next }
         })
+
+        // После выбора друга сразу открываем стандартное окно приглашения ВК,
+        // чтобы ему пришло уведомление «Начать играть».
+        try {
+          if (isVKEnvironment()) {
+            await showInviteBox()
+          }
+        } catch {
+          // игнорируем сбой открытия инвайта, слоты всё равно обновлены
+        }
       }
     } finally {
       setInviteLoading(false)

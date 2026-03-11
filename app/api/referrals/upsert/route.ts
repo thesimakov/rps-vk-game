@@ -3,7 +3,9 @@ import { isValidVkUserId } from "@/lib/referral-store"
 
 export const dynamic = "force-static"
 
-const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT !== "0" && process.env.NODE_ENV === "production"
+// Важно: отключаем бэкенд только при явном статическом экспорте (NEXT_OUTPUT_EXPORT === "export").
+// В обычном прод-сервере API должен работать, иначе реферальная статистика не будет обновляться.
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 export async function POST(req: Request) {
   if (IS_STATIC_EXPORT) {
