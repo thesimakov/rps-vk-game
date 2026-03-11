@@ -186,7 +186,6 @@ export async function joinVKGroup(): Promise<boolean> {
  */
 export async function showInviteBox(): Promise<boolean> {
   if (typeof window === "undefined") return false
-  if (!bridgeReady) return true
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
     await vkBridge.default.send("VKWebAppShowInviteBox", {})

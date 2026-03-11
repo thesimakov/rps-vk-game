@@ -675,7 +675,7 @@ export function ShopScreen() {
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 items-center">
           <button
             type="button"
             onClick={handleInviteFriends}
@@ -684,6 +684,27 @@ export function ShopScreen() {
           >
             <UserPlus className="h-4 w-4" />
             Пригласить
+          </button>
+          <button
+            type="button"
+            disabled={invitedCount === 0}
+            onClick={() => {
+              if (invitedCount === 0) return
+              const names = invitedSlots
+                .filter(Boolean)
+                .map((f) => `${f!.first_name} ${f!.last_name}`.trim())
+              const message =
+                names.length > 0
+                  ? `Уже играют:\n\n${names.join("\n")}`
+                  : "Пока ни один друг не принял приглашение."
+              // В простом варианте используем alert; при необходимости можно заменить на модалку.
+              if (typeof window !== "undefined") {
+                window.alert(message)
+              }
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-muted/40 text-xs font-semibold text-foreground transition-all active:scale-95 disabled:opacity-50"
+          >
+            Посмотреть
           </button>
           {canClaimInviteReward && (
             <button
