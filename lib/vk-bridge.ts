@@ -162,12 +162,13 @@ export async function showFriendsPicker(): Promise<VKFriend[] | null> {
 /**
  * Подписка на группу ВК (VKWebAppJoinGroup).
  * ID группы берём из переменной окружения NEXT_PUBLIC_VK_GROUP_ID.
+ * По умолчанию используем клуб vk.com/club236519647 (ID 236519647).
  */
 export async function joinVKGroup(): Promise<boolean> {
   if (typeof window === "undefined") return false
   if (!bridgeReady) return true // dev-окружение: считаем, что подписка прошла
 
-  const rawId = process.env.NEXT_PUBLIC_VK_GROUP_ID
+  const rawId = process.env.NEXT_PUBLIC_VK_GROUP_ID ?? "236519647"
   const groupId = rawId ? Number(rawId) : NaN
   if (!Number.isFinite(groupId) || groupId <= 0) return false
 

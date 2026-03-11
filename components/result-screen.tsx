@@ -261,10 +261,10 @@ export function ResultScreen() {
       {rounds.length > 1 && (
         <div className="flex flex-col items-center gap-2 mb-3 w-full max-w-md mx-auto">
           <div className="flex flex-col items-center gap-1">
-            <span className="text-[10px] uppercase tracking-wide text-white/60">
+            <span className="text-[13px] uppercase tracking-wide text-white/60">
               Все ходы в матче
             </span>
-            <span className="text-[10px] text-white/70">
+            <span className="text-[13px] text-white/70">
               Счёт матча:{" "}
               <span className="font-bold text-emerald-300">{playerRoundsWon}</span>
               {" : "}
