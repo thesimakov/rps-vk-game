@@ -44,7 +44,9 @@ export function getVKOAuthRedirectUrl(redirectUri?: string): string {
     console.warn("NEXT_PUBLIC_VK_APP_ID не задан — вход через ВК на своём сервере недоступен")
   }
   const base = typeof window !== "undefined" ? window.location.origin + window.location.pathname : ""
-  const redirect = redirectUri ?? base
+  const configured = getConfiguredRedirectUri()
+  // Приоритет: переданный redirectUri → значение из .env → текущий URL
+  const redirect = redirectUri ?? configured ?? base
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirect,
