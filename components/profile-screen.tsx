@@ -10,17 +10,13 @@ const MIN_BALANCE_FOR_WITHDRAW = 200
 const HIDE_AVATAR_PRICE = 100
 
 export function ProfileScreen() {
-  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend } = useGame()
+  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, showRubles, setShowRubles, toDisplayAmount, currencyLabel } = useGame()
   const [isEditingName, setIsEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(player.name)
-  const [showRubles, setShowRubles] = useState(false)
 
   const totalGames = player.wins + player.losses
   const winRate = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0
   const canWithdraw = player.balance >= MIN_BALANCE_FOR_WITHDRAW
-
-  const balanceValue = showRubles ? player.balance * 7 : player.balance
-  const balanceLabel = showRubles ? "рубли" : "голоса"
 
   const saveName = () => {
     const trimmed = nameInput.trim()
@@ -51,29 +47,6 @@ export function ProfileScreen() {
           Профиль
         </h1>
         <div className="w-9" />
-      </div>
-
-      {/* Конвертация голосов в рубли */}
-      <div className="w-full max-w-md mb-4 flex items-center justify-between rounded-2xl bg-card/40 backdrop-blur-sm border border-border/30 px-3 py-2.5">
-        <div className="flex flex-col">
-          <span className="text-xs font-semibold text-foreground">
-            Конвертация
-          </span>
-          <span className="text-[11px] text-muted-foreground">
-            1 голос = 7 ₽. Показать баланс в рублях.
-          </span>
-        </div>
-        <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-            checked={showRubles}
-            onChange={(e) => setShowRubles(e.target.checked)}
-          />
-          <span className="text-xs text-foreground font-medium">
-            В рублях
-          </span>
-        </label>
       </div>
 
       {/* Avatar + Name (аватар из ВК, можно отключить за 100 голосов) */}
@@ -194,10 +167,10 @@ export function ProfileScreen() {
         <div className="bg-card/50 backdrop-blur-sm border border-accent/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
           <Coins className="h-5 w-5 text-accent mb-1" />
           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
-            {showRubles ? "рубли" : "голоса"}
+            {currencyLabel}
           </span>
           <span className="mt-1 text-lg font-extrabold text-accent tabular-nums">
-            {formatAmount(balanceValue)}
+            {formatAmount(toDisplayAmount(player.balance))}
           </span>
         </div>
         <div className="bg-card/50 backdrop-blur-sm border border-amber-400/40 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
@@ -250,7 +223,7 @@ export function ProfileScreen() {
           <span className="text-sm text-muted-foreground font-medium">Заработано за неделю</span>
           <div className="flex items-center gap-1.5">
             <Coins className="h-3.5 w-3.5 text-accent" />
-            <span className="text-base font-extrabold text-primary tabular-nums">{formatAmount(player.weekEarnings)}</span>
+            <span className="text-base font-extrabold text-primary tabular-nums">{formatAmount(toDisplayAmount(player.weekEarnings))}</span>
           </div>
         </div>
       </div>
@@ -320,6 +293,25 @@ export function ProfileScreen() {
         <Users className="h-5 w-5 text-muted-foreground" />
         <span>Реферальная программа</span>
       </button>
+
+      {/* Конвертация: показывать суммы в рублях по всей игре (1 голос = 7 ₽) */}
+      <div className="w-full max-w-md bg-card/50 border border-border/40 rounded-2xl p-4 mb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-foreground">Конвертация</p>
+            <p className="text-xs text-muted-foreground mt-0.5">1 голос = 7 ₽. Во всей игре суммы отображаются в рублях.</p>
+          </div>
+          <label className="inline-flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
+            <input
+              type="checkbox"
+              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+              checked={showRubles}
+              onChange={(e) => setShowRubles(e.target.checked)}
+            />
+            <span className="text-sm font-medium text-foreground">В рублях</span>
+          </label>
+        </div>
+      </div>
 
       {/* Выйти — в самом низу */}
       <div className="flex-1 min-h-4" />

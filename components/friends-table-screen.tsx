@@ -65,7 +65,7 @@ function runTournament(totalPlayers: number, hostIndex: number): number {
 }
 
 export function FriendsTableScreen() {
-  const { player, setPlayer, setScreen } = useGame()
+  const { player, setPlayer, setScreen, toDisplayAmount, currencyLabel } = useGame()
   const [bet, setBet] = useState(10)
   const [seats, setSeats] = useState<(TableSeat | null)[]>(() => {
     const arr: (TableSeat | null)[] = Array(MAX_SEATS).fill(null)
@@ -158,15 +158,15 @@ export function FriendsTableScreen() {
 
       if (winnerIsHost) {
         setResultText(
-          `Вы выиграли турнир за столом! Плюс ${formatAmount(earnings)} голосов и ${
+          `Вы выиграли турнир за столом! Плюс ${formatAmount(toDisplayAmount(earnings))} ${currencyLabel} и ${
             bonus
           } бонусов.`
         )
       } else {
         setResultText(
           `${winner?.name || "Игрок"} победил в турнире. Вы потеряли ${formatAmount(
-            -earnings
-          )} голосов.`
+            toDisplayAmount(-earnings)
+          )} ${currencyLabel}.`
         )
       }
     } finally {
@@ -239,7 +239,7 @@ export function FriendsTableScreen() {
                     <span className="px-1 text-[10px] truncate">{seat.name}</span>
                   )}
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded-full bg-black/70 border border-amber-400/50 text-[9px] text-amber-300 font-bold tabular-nums">
-                    {formatAmount(bet)}
+                    {formatAmount(toDisplayAmount(bet))}
                   </div>
                 </>
               ) : (
@@ -252,7 +252,7 @@ export function FriendsTableScreen() {
 
       {/* Ставка и инфо */}
       <div className="w-full max-w-md mb-4">
-        <label className="text-sm font-bold text-foreground mb-2 block">Ставка (голоса)</label>
+        <label className="text-sm font-bold text-foreground mb-2 block">Ставка ({currencyLabel})</label>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
             <input
@@ -268,7 +268,7 @@ export function FriendsTableScreen() {
           <div className="px-3 py-2 rounded-2xl bg-card/60 border border-border/40 text-xs text-muted-foreground">
             Банк:{" "}
             <span className="font-bold text-foreground">
-              {formatAmount(bet * 2)} голосов
+              {formatAmount(toDisplayAmount(bet * 2))} {currencyLabel}
             </span>
           </div>
         </div>

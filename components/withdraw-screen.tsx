@@ -12,7 +12,7 @@ const MIN_BALANCE_FOR_WITHDRAW = 200
 const MAX_WITHDRAW_PER_DAY = 10_000
 
 export function WithdrawScreen() {
-  const { setScreen, player, setPlayer, withdrawState, recordWithdraw } = useGame()
+  const { setScreen, player, setPlayer, withdrawState, recordWithdraw, toDisplayAmount, currencyLabel } = useGame()
   const [amount, setAmount] = useState("")
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [errorMsg, setErrorMsg] = useState("")
@@ -85,7 +85,7 @@ export function WithdrawScreen() {
         </div>
         <div>
           <p className="text-xs text-muted-foreground font-medium uppercase">Доступно</p>
-          <p className="text-base font-black text-accent tabular-nums">{formatAmount(player.balance)}</p>
+          <p className="text-base font-black text-accent tabular-nums">{formatAmount(toDisplayAmount(player.balance))} {currencyLabel}</p>
         </div>
       </div>
 

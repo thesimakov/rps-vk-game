@@ -81,7 +81,7 @@ function getNextLottoDrawTimestamp(from: number = Date.now()): number {
 }
 
 export function MainMenu() {
-  const { setScreen, player, setPlayer } = useGame()
+  const { setScreen, player, setPlayer, toDisplayAmount, currencyLabel } = useGame()
   const [now, setNow] = useState(() => Date.now())
   const [showLotto, setShowLotto] = useState(false)
   const [tempSelection, setTempSelection] = useState<number[]>([])
@@ -265,8 +265,8 @@ export function MainMenu() {
             <Coins className="h-4 w-4 text-amber-500" />
           </div>
           <div className="flex items-center gap-2 min-w-0">
-            <span className="text-base font-black text-amber-500 tabular-nums truncate">{formatAmount(player.balance)}</span>
-            <span className="text-base font-medium text-white/90 flex-shrink-0">голосов</span>
+            <span className="text-base font-black text-amber-500 tabular-nums truncate">{formatAmount(toDisplayAmount(player.balance))}</span>
+            <span className="text-base font-medium text-white/90 flex-shrink-0">{currencyLabel}</span>
           </div>
           {player.vip && (
             <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-600 text-[10px] font-bold uppercase flex-shrink-0">

@@ -71,7 +71,7 @@ function getConfettiPosition(i: number) {
 }
 
 export function ResultScreen() {
-  const { lastResult, setScreen, opponent, player, totalRounds } = useGame()
+  const { lastResult, setScreen, opponent, player, totalRounds, toDisplayAmount, currencyLabel } = useGame()
   const isWin = lastResult?.outcome === "win"
   const isDraw = lastResult?.outcome === "draw"
   /** Поражение из-за таймаута (кто-то не выбрал карту) — показываем «Кто-то уснул» вместо черепа и карт */
@@ -174,11 +174,11 @@ export function ResultScreen() {
             <div className="mt-1 flex items-baseline gap-2">
               <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
               <span className="text-xl font-extrabold text-amber-400 tabular-nums leading-none">
-                {formatAmount(bankAmount)}
+                {formatAmount(toDisplayAmount(bankAmount))}
               </span>
             </div>
             <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
-              голосов
+              {currencyLabel}
             </span>
           </div>
 
@@ -501,14 +501,14 @@ export function ResultScreen() {
             }`}
           >
             {lastResult.earnings > 0 ? "+" : ""}
-            {formatAmount(lastResult.earnings)} голосов
+            {formatAmount(toDisplayAmount(lastResult.earnings))} {currencyLabel}
           </span>
         </div>
         <p className="text-xs text-white/70">
           {lastResult.earnings > 0
-            ? `Вы выиграли ${formatAmount(lastResult.earnings)} голосов`
+            ? `Вы выиграли ${formatAmount(toDisplayAmount(lastResult.earnings))} ${currencyLabel}`
             : lastResult.earnings < 0
-              ? `Вы проиграли ${formatAmount(Math.abs(lastResult.earnings))} голосов`
+              ? `Вы проиграли ${formatAmount(toDisplayAmount(Math.abs(lastResult.earnings)))} ${currencyLabel}`
               : "Ничья — баланс не изменился"}
         </p>
       </div>

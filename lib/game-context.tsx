@@ -209,6 +209,13 @@ interface GameState {
   purchaseWaterCard: () => boolean
   /** Учитывать «траты» для реферальной программы (начисление 10% рефереру) */
   trackSpend: (amount: number, reason: string) => void
+  /** Показывать суммы в рублях (1 голос = 7 ₽) по всей игре */
+  showRubles: boolean
+  setShowRubles: (v: boolean) => void
+  /** Для отображения: голоса → число для показа (при showRubles умножается на 7) */
+  toDisplayAmount: (voices: number) => number
+  /** Подпись валюты: "голосов" или "руб." */
+  currencyLabel: string
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -426,31 +433,34 @@ function loadSavedState(): {
   player: Player
   withdrawState: { date: string; amount: number }
   lavaCardStock: number
+  showRubles: boolean
 } | null {
   if (typeof window === "undefined") return null
   try {
     const raw = window.localStorage.getItem(SAVE_STORAGE_KEY)
     if (!raw) return null
-    const data = JSON.parse(raw) as { version?: number; player?: Partial<Player>; withdrawState?: { date: string; amount: number }; lavaCardStock?: number }
+    const data = JSON.parse(raw) as { version?: number; player?: Partial<Player>; withdrawState?: { date: string; amount: number }; lavaCardStock?: number; showRubles?: boolean }
     if (!data || (data.version != null && data.version > SAVE_VERSION)) return null
     const player: Player = { ...DEFAULT_PLAYER, ...data.player }
     const withdrawState = data.withdrawState && typeof data.withdrawState.amount === "number"
       ? { date: String(data.withdrawState.date ?? ""), amount: Number(data.withdrawState.amount) }
       : { date: "", amount: 0 }
     const lavaCardStock = typeof data.lavaCardStock === "number" ? Math.max(0, data.lavaCardStock) : 3
-    return { player, withdrawState, lavaCardStock }
+    const showRubles = data.showRubles === true
+    return { player, withdrawState, lavaCardStock, showRubles }
   } catch {
     return null
   }
 }
 
-function saveState(player: Player, withdrawState: { date: string; amount: number }, lavaCardStock: number) {
+function saveState(player: Player, withdrawState: { date: string; amount: number }, lavaCardStock: number, showRubles: boolean) {
   if (typeof window === "undefined") return
   try {
     window.localStorage.setItem(
       SAVE_STORAGE_KEY,
       JSON.stringify({
         version: SAVE_VERSION,
+        showRubles,
         player: {
           id: player.id,
           name: player.name,
@@ -494,6 +504,8 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
   }
 }
 
+const RUB_PER_VOICE = 7
+
 function shuffleEarnings(entries: Omit<LeaderboardEntry, "rank">[]): Omit<LeaderboardEntry, "rank">[] {
   return entries.map((e) => ({
     ...e,
@@ -517,6 +529,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [totalRounds, setTotalRounds] = useState<1 | 3 | 5>(1)
   const [withdrawState, setWithdrawState] = useState({ date: "", amount: 0 })
   const [lavaCardStock, setLavaCardStock] = useState(3)
+  const [showRubles, setShowRubles] = useState(false)
   const [hasLoadedSave, setHasLoadedSave] = useState(false)
   const leaderboardDataRef = useRef(
     STATIC_LEADERBOARD.map((e) => ({ ...e }))
@@ -582,15 +595,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setPlayer(saved.player)
       setWithdrawState(saved.withdrawState)
       setLavaCardStock(saved.lavaCardStock)
+      setShowRubles(saved.showRubles)
     }
     setHasLoadedSave(true)
   }, [])
 
-  // Сохранение в localStorage при изменении игрока, вывода и остатка карты «Лава»
+  // Сохранение в localStorage при изменении игрока, вывода, остатка карты «Лава» и конвертации
   useEffect(() => {
     if (!hasLoadedSave) return
-    saveState(player, withdrawState, lavaCardStock)
-  }, [hasLoadedSave, player, withdrawState, lavaCardStock])
+    saveState(player, withdrawState, lavaCardStock, showRubles)
+  }, [hasLoadedSave, player, withdrawState, lavaCardStock, showRubles])
 
   // Синхронизация прогресса VK-пользователя с сервером (единый прогресс на всех платформах).
   useEffect(() => {
@@ -1177,6 +1191,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return true
   }, [player.balance, trackSpend])
 
+  const toDisplayAmount = useCallback((voices: number) => (showRubles ? Math.round(voices * RUB_PER_VOICE) : voices), [showRubles])
+  const currencyLabel = showRubles ? "руб." : "голосов"
+
   return (
     <GameContext.Provider
       value={{
@@ -1216,6 +1233,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         purchaseLavaCard,
         purchaseWaterCard,
         trackSpend,
+        showRubles,
+        setShowRubles,
+        toDisplayAmount,
+        currencyLabel,
       }}
     >
       {children}

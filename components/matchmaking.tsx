@@ -10,7 +10,7 @@ const NORMAL_SEARCH_MS = 2500
 const FAST_SEARCH_MS = 800
 
 export function Matchmaking() {
-  const { setScreen, opponent, currentBet, player, setPlayer } = useGame()
+  const { setScreen, opponent, currentBet, player, setPlayer, toDisplayAmount, currencyLabel } = useGame()
   const [dots, setDots] = useState("")
   const [progress, setProgress] = useState(0)
   const useFastSearch = (player.fastMatchBoosts ?? 0) > 0
@@ -41,8 +41,8 @@ export function Matchmaking() {
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8">
       <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-accent/20 rounded-full px-5 py-2.5 mb-10">
         <Coins className="h-4 w-4 text-accent" />
-        <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(currentBet)}</span>
-        <span className="text-base font-medium text-muted-foreground">голосов</span>
+        <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(toDisplayAmount(currentBet))}</span>
+        <span className="text-base font-medium text-muted-foreground">{currencyLabel}</span>
       </div>
       <div className="relative mb-8">
         <div className="w-28 h-28 rounded-full border-2 border-muted/30 flex items-center justify-center">

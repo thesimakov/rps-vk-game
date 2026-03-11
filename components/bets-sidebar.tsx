@@ -20,7 +20,7 @@ import { Label } from "@/components/ui/label"
 const now = () => Date.now()
 
 export function BetsSidebar() {
-  const { bets, player, createBet, removeBet, pendingBet, setScreen, setCurrentBet, setOpponent, setTotalRounds, clearPendingBet, updatePendingBetAmount, vkUser, lavaCardStock, purchaseLavaCard } = useGame()
+  const { bets, player, createBet, removeBet, pendingBet, setScreen, setCurrentBet, setOpponent, setTotalRounds, clearPendingBet, updatePendingBetAmount, vkUser, lavaCardStock, purchaseLavaCard, toDisplayAmount, currencyLabel } = useGame()
   const [createOpen, setCreateOpen] = useState(false)
   const [lavaModalOpen, setLavaModalOpen] = useState(false)
   const [amount, setAmount] = useState("")
@@ -120,7 +120,7 @@ export function BetsSidebar() {
             </div>
             <div className="flex items-center gap-0.5 flex-shrink-0">
               <Coins className="h-3.5 w-3.5 text-amber-500" />
-              <span className="text-base font-bold text-amber-500">{formatAmount(120_000)}</span>
+              <span className="text-base font-bold text-amber-500">{formatAmount(toDisplayAmount(120_000))}</span>
             </div>
           </button>
         </div>
@@ -213,7 +213,7 @@ export function BetsSidebar() {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <Coins className="h-3.5 w-3.5 text-accent" />
-                  <span className="text-base font-bold text-accent tabular-nums">{formatAmount(bet.amount)}</span>
+                  <span className="text-base font-bold text-accent tabular-nums">{formatAmount(toDisplayAmount(bet.amount))}</span>
                 </div>
               </button>
             )
@@ -233,7 +233,7 @@ export function BetsSidebar() {
           {pendingBet && (
             <>
               <div className="space-y-3">
-                <Label htmlFor="edit-amount-sidebar">Новый размер (голоса)</Label>
+                <Label htmlFor="edit-amount-sidebar">Новый размер ({currencyLabel})</Label>
                 <Input
                   id="edit-amount-sidebar"
                   type="number"
@@ -244,7 +244,7 @@ export function BetsSidebar() {
                   className="text-lg font-bold tabular-nums"
                 />
                 <p className="text-base text-muted-foreground">
-                  Сейчас: {formatAmount(pendingBet.amount)}. Баланс: {formatAmount(player.balance + pendingBet.amount)}
+                  Сейчас: {formatAmount(toDisplayAmount(pendingBet.amount))}. Баланс: {formatAmount(toDisplayAmount(player.balance + pendingBet.amount))} {currencyLabel}
                 </p>
               </div>
               <DialogFooter className="flex-col sm:flex-row gap-2">
@@ -286,7 +286,7 @@ export function BetsSidebar() {
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            У вас нет денег на поддержать ставку{noMoneyBet ? ` (${formatAmount(noMoneyBet.amount)} голосов)` : ""}. Пополните баланс, чтобы принять участие в игре.
+            У вас нет денег на поддержать ставку{noMoneyBet ? ` (${formatAmount(toDisplayAmount(noMoneyBet.amount))} ${currencyLabel})` : ""}. Пополните баланс, чтобы принять участие в игре.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNoMoneyBet(null)}>
@@ -333,7 +333,7 @@ export function BetsSidebar() {
                 <div>
                   <p className="font-semibold text-base text-foreground">{inviteBet.creatorName}</p>
                   <p className="text-sm text-muted-foreground">{inviteBet.creatorWins} побед</p>
-                  <p className="text-base text-accent font-bold">{formatAmount(inviteBet.amount)} голосов</p>
+                  <p className="text-base text-accent font-bold">{formatAmount(toDisplayAmount(inviteBet.amount))} {currencyLabel}</p>
                 </div>
               </div>
               <DialogFooter className="gap-2 sm:gap-0">
@@ -360,7 +360,7 @@ export function BetsSidebar() {
             Укажите сумму ставки. Другие игроки смогут откликнуться и сыграть с вами.
           </p>
           <div className="grid gap-2">
-            <Label htmlFor="bet-amount">Сумма (голоса)</Label>
+            <Label htmlFor="bet-amount">Сумма ({currencyLabel})</Label>
             <Input
               id="bet-amount"
               type="number"
@@ -372,7 +372,7 @@ export function BetsSidebar() {
               className="bg-muted/30 border-border"
             />
             <p className="text-xs text-muted-foreground">
-              Баланс: <span className="font-semibold text-base text-accent">{formatAmount(player.balance)}</span> голосов
+              Баланс: <span className="font-semibold text-base text-accent">{formatAmount(toDisplayAmount(player.balance))}</span> {currencyLabel}
             </p>
             <div className="grid gap-2 pt-2">
               <Label>Держать ставку</Label>
@@ -431,7 +431,7 @@ export function BetsSidebar() {
           <div className="flex items-center justify-between py-2">
             <span className="text-sm text-muted-foreground">В наличии: {lavaCardStock} из 3</span>
             <span className="flex items-center gap-1 text-amber-500 font-bold">
-              <Coins className="h-4 w-4" /> {formatAmount(120_000)} голосов
+              <Coins className="h-4 w-4" /> {formatAmount(toDisplayAmount(120_000))} {currencyLabel}
             </span>
           </div>
           <DialogFooter>

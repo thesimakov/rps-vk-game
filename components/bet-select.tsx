@@ -27,7 +27,7 @@ function getTierBadge(rounds: number) {
 }
 
 export function BetSelect() {
-  const { setScreen, setCurrentBet, setTotalRounds, player } = useGame()
+  const { setScreen, setCurrentBet, setTotalRounds, player, toDisplayAmount, currencyLabel } = useGame()
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
@@ -56,8 +56,8 @@ export function BetSelect() {
       {/* Balance */}
       <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-accent/20 rounded-full px-5 py-2.5 mb-6">
         <Coins className="h-4 w-4 text-accent" />
-        <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(player.balance)}</span>
-        <span className="text-base font-medium text-muted-foreground">голосов</span>
+        <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(toDisplayAmount(player.balance))}</span>
+        <span className="text-base font-medium text-muted-foreground">{currencyLabel}</span>
       </div>
 
       <p className="text-muted-foreground text-sm mb-6 text-center font-medium">
@@ -82,9 +82,9 @@ export function BetSelect() {
             >
               <div className="flex items-center gap-1.5">
                 <Coins className={`h-5 w-5 ${canAfford ? "text-accent" : "text-muted-foreground"}`} />
-                <span className="text-base font-extrabold tabular-nums">{formatAmount(value)}</span>
+                <span className="text-base font-extrabold tabular-nums">{formatAmount(toDisplayAmount(value))}</span>
               </div>
-              <span className="text-base font-medium text-muted-foreground">голосов</span>
+              <span className="text-base font-medium text-muted-foreground">{currencyLabel}</span>
               <span className={`mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>
                 {badge.label}
               </span>

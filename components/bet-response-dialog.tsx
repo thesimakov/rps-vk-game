@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Coins, Check, X } from "lucide-react"
 
 export function BetResponseDialog() {
-  const { betResponse, acceptBetResponse, declineBetResponse } = useGame()
+  const { betResponse, acceptBetResponse, declineBetResponse, toDisplayAmount, currencyLabel } = useGame()
 
   if (!betResponse) return null
 
@@ -38,7 +38,7 @@ export function BetResponseDialog() {
             </p>
             <div className="flex items-center gap-1.5 mt-1">
               <Coins className="h-4 w-4 text-accent" />
-              <span className="font-bold text-base text-accent tabular-nums">{formatAmount(betResponse.amount)} голосов</span>
+              <span className="font-bold text-base text-accent tabular-nums">{formatAmount(toDisplayAmount(betResponse.amount))} {currencyLabel}</span>
             </div>
           </div>
         </div>

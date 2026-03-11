@@ -220,7 +220,7 @@ function normalizeInvitedSlots(
 }
 
 export function ShopScreen() {
-  const { setScreen, player, setPlayer, vkUser, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend } = useGame()
+  const { setScreen, player, setPlayer, vkUser, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend, toDisplayAmount, currencyLabel } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
   const [customTopUp, setCustomTopUp] = useState("")
   const [topUpError, setTopUpError] = useState<string>("")
@@ -558,7 +558,7 @@ export function ShopScreen() {
         </h1>
         <div className="flex items-center gap-1.5 bg-card/60 backdrop-blur-sm border border-border/30 rounded-full px-3 py-1.5">
           <Coins className="h-3.5 w-3.5 text-accent" />
-          <span className="font-bold text-accent text-base tabular-nums">{formatAmount(player.balance)}</span>
+          <span className="font-bold text-accent text-base tabular-nums">{formatAmount(toDisplayAmount(player.balance))} {currencyLabel}</span>
         </div>
       </div>
 
@@ -829,7 +829,7 @@ export function ShopScreen() {
                 {item.id === "lava-card" && lavaOutOfStock ? "Нет в наличии" : alreadyOwned ? "Куплено" : (
                   <>
                     <Coins className="h-3 w-3" />
-                    {formatAmount(item.price)}
+                    {formatAmount(toDisplayAmount(item.price))} {currencyLabel}
                   </>
                 )}
               </button>
@@ -950,7 +950,7 @@ export function ShopScreen() {
                     {prize.kind === "coins" || prize.kind === "voices_small" || prize.kind === "voices_medium" ? (
                       <>
                         <Coins className="w-6 h-6 text-accent shrink-0" />
-                        <span className="font-bold text-base text-accent">+{formatAmount(prize.amount ?? 0)} голосов</span>
+                        <span className="font-bold text-base text-accent">+{formatAmount(toDisplayAmount(prize.amount ?? 0))} {currencyLabel}</span>
                       </>
                     ) : prize.kind === "bonus" || prize.kind === "double_bonus" ? (
                       <>
