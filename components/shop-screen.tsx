@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, showWallPostBox, joinVKGroup } from "@/lib/vk-bridge"
-import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass } from "lucide-react"
+import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass, Ticket } from "lucide-react"
 
 const INVITED_SLOTS = 4
 const INVITE_REWARD = 100
