@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { isValidVkUserId } from "@/lib/referral-store"
+import { loadPlayer, savePlayer } from "@/lib/player-store"
 
 export const dynamic = "force-static"
 
@@ -31,14 +32,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "limit_exceeded" }, { status: 400 })
     }
 
-    // TODO: здесь должна быть реальная логика:
-    // - проверка баланса пользователя в БД
-    // - учёт суммарного вывода за сутки (MAX_WITHDRAW_PER_DAY)
-    // - создание заявки на вывод (БД/очередь)
-    // - фактический перевод голосов/средств пользователю через API ВК или вручную
+    const player = await loadPlayer(userId)
+    if (!player) {
+      return NextResponse.json({ ok: false, error: "no_player" }, { status: 400 })
+    }
 
-    // Пока просто симулируем успешное принятие заявки:
-    return NextResponse.json({ ok: true })
+    if (!Number.isFinite(player.balance) || player.balance < amount) {
+      return NextResponse.json({ ok: false, error: "insufficient_balance" }, { status: 400 })
+    }
+
+    const today = new Date().toISOString().slice(0, 10)
+    const withdrawnToday =
+      player.withdrawTodayDate === today && typeof player.withdrawTodayAmount === "number"
+        ? player.withdrawTodayAmount
+        : 0
+
+    if (withdrawnToday + amount > MAX_WITHDRAW_PER_DAY) {
+      return NextResponse.json({ ok: false, error: "limit_exceeded" }, { status: 400 })
+    }
+
+    // Здесь вы фактически обрабатываете выплату (через API ВК или вручную).
+    // После успешной обработки уменьшаем баланс и обновляем суточный лимит.
+    const updated = await savePlayer({
+      ...player,
+      balance: player.balance - amount,
+      withdrawTodayAmount: withdrawnToday + amount,
+      withdrawTodayDate: today,
+    })
+
+    return NextResponse.json({ ok: true, balance: updated.balance })
   } catch {
     return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 })
   }

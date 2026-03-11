@@ -33,15 +33,25 @@ export function WithdrawScreen() {
     setStatus("loading")
     setErrorMsg("")
     try {
-      const ok = await requestWithdraw(numAmount)
-      if (ok) {
-        setPlayer((p) => ({ ...p, balance: p.balance - numAmount }))
+      const res = await requestWithdraw(numAmount)
+      if (res.ok) {
+        if (typeof res.balance === "number") {
+          setPlayer((p) => ({ ...p, balance: res.balance }))
+        } else {
+          setPlayer((p) => ({ ...p, balance: p.balance - numAmount }))
+        }
         recordWithdraw(numAmount)
         setStatus("success")
         setAmount("")
       } else {
         setStatus("error")
-        setErrorMsg("Минимальная сумма вывода: 10 голосов. Баланс не менее 200. Не более 10 000 в день.")
+        setErrorMsg(
+          res.error === "limit_exceeded"
+            ? "Превышен дневной лимит вывода."
+            : res.error === "insufficient_balance"
+              ? "Недостаточно голосов для вывода."
+              : "Минимальная сумма вывода: 10 голосов. Баланс не менее 200. Не более 10 000 в день."
+        )
       }
     } catch {
       setStatus("error")

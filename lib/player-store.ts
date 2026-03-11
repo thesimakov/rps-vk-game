@@ -40,6 +40,10 @@ export interface StoredPlayer {
   lottoNumbers?: number[]
   lottoDrawAt?: number
   lottoDrawnNumbers?: number[]
+  /** Сколько пользователь уже вывел за сегодня (для лимитов вывода) */
+  withdrawTodayAmount?: number
+  /** Дата (YYYY-MM-DD), к которой относится withdrawTodayAmount */
+  withdrawTodayDate?: string
 }
 
 interface PlayerDb {

@@ -69,27 +69,26 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
     const res = await fetch("/api/payment/sign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, userId }),
+      body: JSON.stringify({ amount, userId, method: "vk_voices" }),
     })
 
     if (!res.ok) {
       return false
     }
 
-    const data = (await res.json()) as { ok?: boolean; app_id?: number; hash?: string }
-    if (!data.ok || !data.app_id || !data.hash) {
+    const data = (await res.json()) as {
+      ok?: boolean
+      app_id?: number
+      order_id?: string
+      method?: string
+      payload?: Record<string, unknown>
+    }
+    if (!data.ok || !data.app_id || !data.payload) {
       return false
     }
 
     const vkBridge = await import("@vkontakte/vk-bridge")
-    const payload: Record<string, unknown> = {
-      action: "pay-to-service",
-      amount,
-      app_id: data.app_id,
-      hash: data.hash,
-    }
-
-    const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
+    const result = await vkBridge.default.send("VKWebAppOpenPayForm", data.payload)
     const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
 
     // Важно: реальные голоса должны начисляться только после серверного подтверждения платежа.
@@ -111,12 +110,16 @@ export async function showVKPayment(amount: number): Promise<boolean> {
  * Списывать баланс на клиенте только после успешного ответа бэкенда (заявка принята).
  * Иначе при сбое пользователь теряет голоса без вывода. См. docs/VK_INTEGRATION.md
  */
-export async function requestWithdraw(amount: number): Promise<boolean> {
-  if (amount < 10) return false
-  if (typeof window === "undefined") return false
+export async function requestWithdraw(amount: number): Promise<{ ok: boolean; balance?: number; error?: string }> {
+  if (amount < 10) return { ok: false, error: "invalid_amount" }
+  if (typeof window === "undefined") return { ok: false, error: "no_window" }
 
-  // Без окружения ВК — оставляем поведение как в dev, чтобы можно было тестировать вне mini-app.
-  if (!bridgeReady) return new Promise((r) => setTimeout(() => r(true), 1200))
+  // Вне окружения ВК — позволяем тестировать, но не трогаем сервер.
+  if (!bridgeReady) {
+    return new Promise((resolve) =>
+      setTimeout(() => resolve({ ok: true }), 800)
+    )
+  }
 
   try {
     const userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
@@ -126,14 +129,13 @@ export async function requestWithdraw(amount: number): Promise<boolean> {
       body: JSON.stringify({ amount, userId }),
     })
 
-    if (!res.ok) {
-      return false
+    const data = (await res.json()) as { ok?: boolean; balance?: number; error?: string }
+    if (!res.ok || !data.ok) {
+      return { ok: false, error: data.error ?? "server_error" }
     }
-
-    const data = (await res.json()) as { ok?: boolean }
-    return !!data.ok
+    return { ok: true, balance: typeof data.balance === "number" ? data.balance : undefined }
   } catch {
-    return false
+    return { ok: false, error: "network" }
   }
 }
 
