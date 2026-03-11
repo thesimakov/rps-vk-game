@@ -40,6 +40,17 @@ function formatTimeUntil(ms: number): string {
   return `через ${minutes} мин`
 }
 
+/** Форматирует "H ч MM мин SS сек" для лото */
+function formatLottoTime(ms: number): string {
+  if (ms <= 0) return "скоро"
+  const totalSeconds = Math.floor(ms / 1000)
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const pad = (n: number) => n.toString().padStart(2, "0")
+  return `${hours} ч ${pad(minutes)} мин ${pad(seconds)} сек`
+}
+
 export function MainMenu() {
   const { setScreen, player, setPlayer } = useGame()
   const [now, setNow] = useState(() => Date.now())
@@ -418,8 +429,7 @@ export function MainMenu() {
               {player.lottoDrawAt && (
                 <span>
                   Розыгрыш через:{" "}
-                  {formatTimeUntil(Math.max(0, player.lottoDrawAt - Date.now())) || "скоро"}{" "}
-                  (таймер идёт)
+                  {formatLottoTime(Math.max(0, player.lottoDrawAt - Date.now()))}
                 </span>
               )}
             </div>
