@@ -273,39 +273,78 @@ export function ResultScreen() {
           </div>
 
           {isFiveRoundMatch ? (
-            // Специальное расположение 5 карт: 3 сверху, 2 снизу (как в референсе)
-            <div className="mt-2 flex flex-col items-center gap-1">
-              <div className="flex items-center justify-center gap-2">
-                {rounds.slice(0, 3).map((r, idx) => (
-                  <div
-                    key={`five-top-${r.round}-${idx}`}
-                    className={`w-10 h-14 sm:w-12 sm:h-16 card-medieval ${
-                      r.playerMove === "rock"
-                        ? "card-medieval-rock"
-                        : r.playerMove === "paper"
-                        ? "card-medieval-paper"
-                        : r.playerMove === "scissors"
-                        ? "card-medieval-scissors"
-                        : ""
-                    } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
-                  />
-                ))}
+            // Специальное расположение 5 карт: для каждого игрока 3 сверху, 2 снизу — над своим аватаром.
+            <div className="mt-2 flex items-center justify-between w-full max-w-md mx-auto gap-4">
+              {/* Карты игрока (слева) */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center justify-center gap-2">
+                  {rounds.slice(0, 3).map((r, idx) => (
+                    <div
+                      key={`five-top-player-${r.round}-${idx}`}
+                      className={`w-10 h-14 sm:w-12 sm:h-16 card-medieval ${
+                        r.playerMove === "rock"
+                          ? "card-medieval-rock"
+                          : r.playerMove === "paper"
+                          ? "card-medieval-paper"
+                          : r.playerMove === "scissors"
+                          ? "card-medieval-scissors"
+                          : ""
+                      } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  {rounds.slice(3, 5).map((r, idx) => (
+                    <div
+                      key={`five-bottom-player-${r.round}-${idx}`}
+                      className={`w-10 h-14 sm:w-12 sm:h-16 card-medieval ${
+                        r.playerMove === "rock"
+                          ? "card-medieval-rock"
+                          : r.playerMove === "paper"
+                          ? "card-medieval-paper"
+                          : r.playerMove === "scissors"
+                          ? "card-medieval-scissors"
+                          : ""
+                      } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="flex items-center justify-center gap-2 mt-1">
-                {rounds.slice(3, 5).map((r, idx) => (
-                  <div
-                    key={`five-bottom-${r.round}-${idx}`}
-                    className={`w-10 h-14 sm:w-12 sm:h-16 card-medieval ${
-                      r.playerMove === "rock"
-                        ? "card-medieval-rock"
-                        : r.playerMove === "paper"
-                        ? "card-medieval-paper"
-                        : r.playerMove === "scissors"
-                        ? "card-medieval-scissors"
-                        : ""
-                    } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
-                  />
-                ))}
+
+              {/* Карты соперника (справа) */}
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center justify-center gap-2">
+                  {rounds.slice(0, 3).map((r, idx) => (
+                    <div
+                      key={`five-top-opponent-${r.round}-${idx}`}
+                      className={`w-10 h-14 sm:w-12 sm:h-16 card-medieval card-medieval-opponent ${
+                        r.opponentMove === "rock"
+                          ? "card-medieval-rock"
+                          : r.opponentMove === "paper"
+                          ? "card-medieval-paper"
+                          : r.opponentMove === "scissors"
+                          ? "card-medieval-scissors"
+                          : ""
+                      } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center justify-center gap-2 mt-1">
+                  {rounds.slice(3, 5).map((r, idx) => (
+                    <div
+                      key={`five-bottom-opponent-${r.round}-${idx}`}
+                      className={`w-10 h-14 sm:w-12 sm:h-16 card-medieval card-medieval-opponent ${
+                        r.opponentMove === "rock"
+                          ? "card-medieval-rock"
+                          : r.opponentMove === "paper"
+                          ? "card-medieval-paper"
+                          : r.opponentMove === "scissors"
+                          ? "card-medieval-scissors"
+                          : ""
+                      } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
