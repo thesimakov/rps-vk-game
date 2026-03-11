@@ -441,7 +441,10 @@ function loadSavedState(): {
     if (!raw) return null
     const data = JSON.parse(raw) as { version?: number; player?: Partial<Player>; withdrawState?: { date: string; amount: number }; lavaCardStock?: number; showRubles?: boolean }
     if (!data || (data.version != null && data.version > SAVE_VERSION)) return null
-    const player: Player = { ...DEFAULT_PLAYER, ...data.player }
+    // Если сохранение относится к VK-аккаунту, не восстанавливаем прогресс из localStorage —
+    // для таких игроков источником правды является сервер (API /api/player/load/save).
+    const isVkPlayer = typeof data.player?.id === "string" && data.player.id.startsWith("vk_")
+    const player: Player = isVkPlayer ? { ...DEFAULT_PLAYER } : { ...DEFAULT_PLAYER, ...data.player }
     const withdrawState = data.withdrawState && typeof data.withdrawState.amount === "number"
       ? { date: String(data.withdrawState.date ?? ""), amount: Number(data.withdrawState.amount) }
       : { date: "", amount: 0 }
