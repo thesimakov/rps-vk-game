@@ -477,32 +477,32 @@ export function ShopScreen() {
     }
   }
 
-  const handleBuy = (item: ShopItem) => {
-    if (player.balance < item.price) return
+  const handleBuy = (itemId: string, price: number) => {
+    if (player.balance < price) return
 
-    if (item.id === "lava-card") {
+    if (itemId === "lava-card") {
       purchaseLavaCard()
       return
     }
-    if (item.id === "water-card") {
+    if (itemId === "water-card") {
       purchaseWaterCard()
       return
     }
 
-    if (item.id === "chest-basic" || item.id === "chest-premium") {
-      trackSpend(item.price, item.id)
-      const type: ChestType = item.id === "chest-basic" ? "basic" : "premium"
+    if (itemId === "chest-basic" || itemId === "chest-premium") {
+      trackSpend(price, itemId)
+      const type: ChestType = itemId === "chest-basic" ? "basic" : "premium"
       const count = type === "premium" ? 3 : 2
       const prizes = rollChestPrizes(type, count)
-      setPlayer((p) => ({ ...p, balance: p.balance - item.price }))
+      setPlayer((p) => ({ ...p, balance: p.balance - price }))
       setOpeningChest({ type, prizes })
       return
     }
 
-    trackSpend(item.price, item.id)
+    trackSpend(price, itemId)
     setPlayer((p) => {
-      const updated = { ...p, balance: p.balance - item.price }
-      switch (item.id) {
+      const updated = { ...p, balance: p.balance - price }
+      switch (itemId) {
         case "vip":
           updated.vip = true
           break
@@ -537,6 +537,9 @@ export function ShopScreen() {
           updated.extraTimerUntil = current + oneDay
           break
         }
+        default:
+          // неизвестный id — ничего не покупаем
+          return p
       }
       return updated
     })
@@ -818,7 +821,8 @@ export function ShopScreen() {
                 )}
               </div>
               <button
-                onClick={() => handleBuy(item)}
+                type="button"
+                onClick={() => handleBuy(item.id, item.price)}
                 disabled={!canBuy}
                 className={`flex items-center gap-1 px-3.5 py-2 rounded-xl text-base font-bold transition-all flex-shrink-0 ${
                   canBuy
