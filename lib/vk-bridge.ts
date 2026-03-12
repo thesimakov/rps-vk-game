@@ -52,20 +52,29 @@ export async function getVKUser(): Promise<VKUser | null> {
 }
 
 /**
- * Покупка голосов: открывает форму оплаты VK (VKWebAppOpenPayForm).
+ * Покупка внутриигрового баланса: открывает форму оплаты VK (VKWebAppOpenPayForm).
  * — При отмене пользователем или ошибке ВК возвращает false (баланс не начислять).
- * — Упрощённый dev-режим: подпись на бэкенде временно не используется, чтобы
- *   не блокировать открытие формы. Для прод-модерации нужно будет вернуть
- *   серверную подпись и верификацию по документации ВК.
+ * — Подпись/проверка платежа должны выполняться на бэкенде (см. docs/VK_INTEGRATION.md),
+ *   здесь мы отвечаем только за корректное открытие формы.
  */
 export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (typeof window === "undefined") return false
 
-  // Вне окружения ВК — ведём себя как раньше: просто симулируем успех.
-  if (!bridgeReady) return true
-
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
+
+    // Если Bridge ещё не инициализирован (например, покупка вызвана раньше initVKBridge),
+    // пробуем выполнить VKWebAppInit локально.
+    if (!bridgeReady) {
+      try {
+        await vkBridge.default.send("VKWebAppInit")
+        bridgeReady = true
+      } catch (e) {
+        console.error("[VK] VKWebAppInit failed in purchaseVKVoices:", e)
+        return false
+      }
+    }
+
     const appIdRaw = process.env.NEXT_PUBLIC_VK_APP_ID ?? "54475232"
     const appId = Number(appIdRaw) || 54475232
 
@@ -76,12 +85,13 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
     }
 
     const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
+    console.log("[VK] VKWebAppOpenPayForm result:", result)
     const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
 
-    // Важно: реальные голоса должны начисляться только после серверного подтверждения платежа.
     // Здесь возвращаем только факт успешного открытия/завершения формы.
     return ok !== false
-  } catch {
+  } catch (e) {
+    console.error("[VK] purchaseVKVoices error:", e)
     return false
   }
 }
@@ -190,7 +200,8 @@ export async function showInviteBox(): Promise<boolean> {
     const vkBridge = await import("@vkontakte/vk-bridge")
     await vkBridge.default.send("VKWebAppShowInviteBox", {})
     return true
-  } catch {
+  } catch (e) {
+    console.error("[VK] showInviteBox error:", e)
     return false
   }
 }

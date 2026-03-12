@@ -288,6 +288,12 @@ export function ShopScreen() {
       // если localStorage недоступен, просто продолжаем без учёта лимита
     }
 
+    // Вне окружения ВК сразу показываем подсказку и ничего не делаем.
+    if (!isVKEnvironment()) {
+      setTopUpError("Пополнение доступно только внутри ВКонтакте. Откройте игру как мини‑приложение ВК и попробуйте ещё раз.")
+      return
+    }
+
     setTopUpLoading(amount)
     try {
       const success = await purchaseVKVoices(amount)
@@ -309,6 +315,8 @@ export function ShopScreen() {
         } catch {
           // ignore
         }
+      } else {
+        setTopUpError("Не удалось открыть форму оплаты ВКонтакте. Попробуйте ещё раз или перезапустите мини‑приложение.")
       }
     } finally {
       setTopUpLoading(null)
