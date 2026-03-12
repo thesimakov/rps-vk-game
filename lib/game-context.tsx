@@ -24,7 +24,6 @@ export type GameScreen =
   | "profile"
   | "referral"
   | "shop"
-  | "withdraw"
   | "bets"
 
 export interface Player {
@@ -200,21 +199,15 @@ interface GameState {
   /** Количество ходов в матче: 1 (быстрая игра), 3 или 5 */
   totalRounds: 1 | 3 | 5
   setTotalRounds: (n: 1 | 3 | 5) => void
-  /** Лимит вывода: от 200 на балансе, не более 10 000 в день */
-  withdrawState: { date: string; amount: number }
-  recordWithdraw: (amount: number) => void
   /** Горячая новинка: карта «Лава», остаток в наличии (3 штуки всего) */
   lavaCardStock: number
   purchaseLavaCard: () => boolean
   purchaseWaterCard: () => boolean
   /** Учитывать «траты» для реферальной программы (начисление 10% рефереру) */
   trackSpend: (amount: number, reason: string) => void
-  /** Показывать суммы в рублях (1 голос = 7 ₽) по всей игре */
-  showRubles: boolean
-  setShowRubles: (v: boolean) => void
-  /** Для отображения: голоса → число для показа (при showRubles умножается на 7) */
+  /** Для отображения: голоса → число для показа (можно переопределить формат) */
   toDisplayAmount: (voices: number) => number
-  /** Подпись валюты: "голосов" или "руб." */
+  /** Подпись валюты: "голосов" и т.п. */
   currencyLabel: string
 }
 
@@ -431,39 +424,32 @@ const DEFAULT_PLAYER: Player = {
 
 function loadSavedState(): {
   player: Player
-  withdrawState: { date: string; amount: number }
   lavaCardStock: number
-  showRubles: boolean
 } | null {
   if (typeof window === "undefined") return null
   try {
     const raw = window.localStorage.getItem(SAVE_STORAGE_KEY)
     if (!raw) return null
-    const data = JSON.parse(raw) as { version?: number; player?: Partial<Player>; withdrawState?: { date: string; amount: number }; lavaCardStock?: number; showRubles?: boolean }
+    const data = JSON.parse(raw) as { version?: number; player?: Partial<Player>; lavaCardStock?: number }
     if (!data || (data.version != null && data.version > SAVE_VERSION)) return null
     // Если сохранение относится к VK-аккаунту, не восстанавливаем прогресс из localStorage —
     // для таких игроков источником правды является сервер (API /api/player/load/save).
     const isVkPlayer = typeof data.player?.id === "string" && data.player.id.startsWith("vk_")
     const player: Player = isVkPlayer ? { ...DEFAULT_PLAYER } : { ...DEFAULT_PLAYER, ...data.player }
-    const withdrawState = data.withdrawState && typeof data.withdrawState.amount === "number"
-      ? { date: String(data.withdrawState.date ?? ""), amount: Number(data.withdrawState.amount) }
-      : { date: "", amount: 0 }
     const lavaCardStock = typeof data.lavaCardStock === "number" ? Math.max(0, data.lavaCardStock) : 3
-    const showRubles = data.showRubles === true
-    return { player, withdrawState, lavaCardStock, showRubles }
+    return { player, lavaCardStock }
   } catch {
     return null
   }
 }
 
-function saveState(player: Player, withdrawState: { date: string; amount: number }, lavaCardStock: number, showRubles: boolean) {
+function saveState(player: Player, lavaCardStock: number) {
   if (typeof window === "undefined") return
   try {
     window.localStorage.setItem(
       SAVE_STORAGE_KEY,
       JSON.stringify({
         version: SAVE_VERSION,
-        showRubles,
         player: {
           id: player.id,
           name: player.name,
@@ -498,7 +484,6 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
           lottoDrawAt: player.lottoDrawAt,
           lottoDrawnNumbers: player.lottoDrawnNumbers,
         },
-        withdrawState: { date: withdrawState.date, amount: withdrawState.amount },
         lavaCardStock,
       })
     )
@@ -506,8 +491,6 @@ function saveState(player: Player, withdrawState: { date: string; amount: number
     // ignore
   }
 }
-
-const RUB_PER_VOICE = 7
 
 function shuffleEarnings(entries: Omit<LeaderboardEntry, "rank">[]): Omit<LeaderboardEntry, "rank">[] {
   return entries.map((e) => ({
@@ -530,9 +513,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [betResponse, setBetResponse] = useState<BetResponse | null>(null)
   const [leaderboardVersion, setLeaderboardVersion] = useState(0)
   const [totalRounds, setTotalRounds] = useState<1 | 3 | 5>(1)
-  const [withdrawState, setWithdrawState] = useState({ date: "", amount: 0 })
   const [lavaCardStock, setLavaCardStock] = useState(3)
-  const [showRubles, setShowRubles] = useState(false)
   const [hasLoadedSave, setHasLoadedSave] = useState(false)
   const leaderboardDataRef = useRef(
     STATIC_LEADERBOARD.map((e) => ({ ...e }))
@@ -596,18 +577,16 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const saved = loadSavedState()
     if (saved) {
       setPlayer(saved.player)
-      setWithdrawState(saved.withdrawState)
       setLavaCardStock(saved.lavaCardStock)
-      setShowRubles(saved.showRubles)
     }
     setHasLoadedSave(true)
   }, [])
 
-  // Сохранение в localStorage при изменении игрока, вывода, остатка карты «Лава» и конвертации
+  // Сохранение в localStorage при изменении игрока и остатка карты «Лава»
   useEffect(() => {
     if (!hasLoadedSave) return
-    saveState(player, withdrawState, lavaCardStock, showRubles)
-  }, [hasLoadedSave, player, withdrawState, lavaCardStock, showRubles])
+    saveState(player, lavaCardStock)
+  }, [hasLoadedSave, player, lavaCardStock])
 
   // Синхронизация прогресса VK-пользователя с сервером (единый прогресс на всех платформах).
   useEffect(() => {
@@ -1079,8 +1058,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   )
 
   // Очистка таймера отклика и ожидающей ставки только при переходе на экраны,
-  // где список ставок точно не нужен (например, вывод средств). На menu/bets/bet-select/arena ставка должна оставаться.
-  const screensThatClearPendingBet: GameScreen[] = ["withdraw"]
+  // где список ставок точно не нужен. На menu/bets/bet-select/arena ставка должна оставаться.
+  const screensThatClearPendingBet: GameScreen[] = []
   useEffect(() => {
     if (screensThatClearPendingBet.includes(screen)) {
       if (betResponseTimeoutRef.current) {
@@ -1162,13 +1141,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setBetResponse(null)
   }, [pendingBet])
 
-  const recordWithdraw = useCallback((amount: number) => {
-    const today = new Date().toISOString().slice(0, 10)
-    setWithdrawState((prev) =>
-      prev.date !== today ? { date: today, amount } : { date: today, amount: prev.amount + amount }
-    )
-  }, [])
-
   const LAVA_CARD_PRICE = 120_000
   const purchaseLavaCard = useCallback(() => {
     if (lavaCardStock <= 0 || player.balance < LAVA_CARD_PRICE) return false
@@ -1194,8 +1166,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return true
   }, [player.balance, trackSpend])
 
-  const toDisplayAmount = useCallback((voices: number) => (showRubles ? Math.round(voices * RUB_PER_VOICE) : voices), [showRubles])
-  const currencyLabel = showRubles ? "руб." : "голосов"
+  const toDisplayAmount = useCallback((voices: number) => voices, [])
+  const currencyLabel = "голосов"
 
   return (
     <GameContext.Provider
@@ -1230,14 +1202,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         clearPendingBet,
         totalRounds,
         setTotalRounds,
-        withdrawState,
-        recordWithdraw,
         lavaCardStock,
         purchaseLavaCard,
         purchaseWaterCard,
         trackSpend,
-        showRubles,
-        setShowRubles,
         toDisplayAmount,
         currencyLabel,
       }}

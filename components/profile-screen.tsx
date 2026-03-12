@@ -2,21 +2,19 @@
 
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, ArrowDownToLine, Pencil, Check, UserMinus, LogOut, Users } from "lucide-react"
+import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, Pencil, Check, UserMinus, LogOut, Users } from "lucide-react"
 import { useState } from "react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 
-const MIN_BALANCE_FOR_WITHDRAW = 200
 const HIDE_AVATAR_PRICE = 100
 
 export function ProfileScreen() {
-  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, showRubles, setShowRubles, toDisplayAmount, currencyLabel } = useGame()
+  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, toDisplayAmount, currencyLabel } = useGame()
   const [isEditingName, setIsEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(player.name)
 
   const totalGames = player.wins + player.losses
   const winRate = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0
-  const canWithdraw = player.balance >= MIN_BALANCE_FOR_WITHDRAW
 
   const saveName = () => {
     const trimmed = nameInput.trim()
@@ -258,22 +256,6 @@ export function ProfileScreen() {
         </div>
       )}
 
-      {/* Вывод — только при балансе от 200 голосов, не более 10 000 в день (на экране вывода) */}
-      {canWithdraw && (
-        <button
-          onClick={() => setScreen("withdraw")}
-          className="w-full max-w-md flex items-center justify-center gap-2 bg-card/60 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/80 active:scale-[0.99] mb-4"
-        >
-          <ArrowDownToLine className="h-5 w-5 text-muted-foreground" />
-          <span>Вывести голоса</span>
-        </button>
-      )}
-      {!canWithdraw && (
-        <p className="text-sm text-muted-foreground mb-4">
-          Вывод доступен при балансе от {MIN_BALANCE_FOR_WITHDRAW} голосов
-        </p>
-      )}
-
       {/* VIP promo */}
       {!player.vip && (
         <button
@@ -293,25 +275,6 @@ export function ProfileScreen() {
         <Users className="h-5 w-5 text-muted-foreground" />
         <span>Реферальная программа</span>
       </button>
-
-      {/* Конвертация: показывать суммы в рублях по всей игре (1 голос = 7 ₽) */}
-      <div className="w-full max-w-md bg-card/50 border border-border/40 rounded-2xl p-4 mb-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-foreground">Конвертация</p>
-            <p className="text-xs text-muted-foreground mt-0.5">1 голос = 7 ₽. Во всей игре суммы отображаются в рублях.</p>
-          </div>
-          <label className="inline-flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
-            <input
-              type="checkbox"
-              className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-              checked={showRubles}
-              onChange={(e) => setShowRubles(e.target.checked)}
-            />
-            <span className="text-sm font-medium text-foreground">В рублях</span>
-          </label>
-        </div>
-      </div>
 
       {/* Выйти — в самом низу */}
       <div className="flex-1 min-h-4" />
