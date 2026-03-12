@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server"
 import { isValidPlayerId, loadPlayer } from "@/lib/player-store"
 
-export const dynamic = "force-static"
+export const dynamic = "force-dynamic"
 
-const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT !== "0" && process.env.NODE_ENV === "production"
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 export async function POST(req: Request) {
   if (IS_STATIC_EXPORT) {
@@ -20,10 +20,10 @@ export async function POST(req: Request) {
 
     const player = await loadPlayer(userId)
     if (!player) {
-      return NextResponse.json({ ok: true, exists: false })
+      return NextResponse.json({ ok: true, exists: false }, { headers: { "Cache-Control": "no-store" } })
     }
 
-    return NextResponse.json({ ok: true, exists: true, player })
+    return NextResponse.json({ ok: true, exists: true, player }, { headers: { "Cache-Control": "no-store" } })
   } catch {
     return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 })
   }
