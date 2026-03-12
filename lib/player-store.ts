@@ -1,8 +1,8 @@
+import { promises as fs } from "fs"
 import path from "path"
-import Database from "better-sqlite3"
 
-// Серверное хранилище профиля игрока на SQLite.
-// Файл БД лежит в data/players.sqlite относительно корня проекта.
+// Серверное хранилище профиля игрока на JSON-файле.
+// Файл лежит в /var/rps-data/players.json — один общий для всех деплоев.
 
 export type PlayerId = `vk_${number}` | string
 
@@ -45,30 +45,37 @@ export interface StoredPlayer {
   withdrawTodayDate?: string
 }
 
-const DB_RELATIVE_PATH = path.join("data", "players.sqlite")
+const DB_PATH = "/var/rps-data/players.json"
 
 function getDbPath(): string {
-  return path.join(process.cwd(), DB_RELATIVE_PATH)
+  return DB_PATH
 }
 
-// Ленивое подключение к SQLite с автоматическим созданием таблицы.
-let db: Database.Database | null = null
+async function ensureDir() {
+  const dir = path.dirname(getDbPath())
+  await fs.mkdir(dir, { recursive: true })
+}
 
-function getDb(): Database.Database {
-  if (!db) {
-    const dbPath = getDbPath()
-    db = new Database(dbPath)
-    db.pragma("journal_mode = WAL")
-    db.prepare(
-      `
-      CREATE TABLE IF NOT EXISTS players (
-        id TEXT PRIMARY KEY,
-        data TEXT NOT NULL
-      )
-    `.trim()
-    ).run()
+interface PlayerDb {
+  players: Record<string, StoredPlayer>
+}
+
+async function readDb(): Promise<PlayerDb> {
+  await ensureDir()
+  try {
+    const raw = await fs.readFile(getDbPath(), "utf8")
+    const parsed = JSON.parse(raw) as Partial<PlayerDb>
+    return { players: parsed.players ?? {} }
+  } catch {
+    return { players: {} }
   }
-  return db
+}
+
+async function writeDb(db: PlayerDb) {
+  await ensureDir()
+  const tmp = `${getDbPath()}.tmp`
+  await fs.writeFile(tmp, JSON.stringify(db, null, 2), "utf8")
+  await fs.rename(tmp, getDbPath())
 }
 
 export function isValidPlayerId(id: string) {
@@ -76,30 +83,19 @@ export function isValidPlayerId(id: string) {
 }
 
 export async function loadPlayer(userId: PlayerId): Promise<StoredPlayer | null> {
-  const database = getDb()
-  const row = database
-    .prepare<unknown[], { data: string }>("SELECT data FROM players WHERE id = ?")
-    .get(userId)
-  if (!row) return null
-  try {
-    const parsed = JSON.parse(row.data) as StoredPlayer
-    return parsed ?? null
-  } catch {
-    return null
-  }
+  const db = await readDb()
+  const existing = db.players[userId]
+  return existing ?? null
 }
 
 export async function savePlayer(player: StoredPlayer): Promise<StoredPlayer> {
-  const database = getDb()
+  const db = await readDb()
   const safeId = player.id
-  const toStore: StoredPlayer = {
+  db.players[safeId] = {
     ...player,
     id: safeId,
   }
-  const json = JSON.stringify(toStore)
-  database
-    .prepare("INSERT INTO players (id, data) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET data = excluded.data")
-    .run(safeId, json)
-  return toStore
+  await writeDb(db)
+  return db.players[safeId]
 }
 
