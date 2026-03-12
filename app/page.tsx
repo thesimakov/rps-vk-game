@@ -19,7 +19,6 @@ import { BetsSidebar } from "@/components/bets-sidebar"
 import { BetsScreen } from "@/components/bets-screen"
 import { BetResponseDialog } from "@/components/bet-response-dialog"
 import { ParticlesBg } from "@/components/particles-bg"
-import { WithdrawScreen } from "@/components/withdraw-screen"
 import { EntryScreen } from "@/components/entry-screen"
 import { GameLoader } from "@/components/game-loader"
 
@@ -41,7 +40,6 @@ function GameScreen() {
       {screen === "leaderboard" && <LeaderboardScreen />}
       {screen === "profile" && <ProfileScreen />}
       {screen === "referral" && <ReferralScreen />}
-      {screen === "withdraw" && <WithdrawScreen />}
       {screen === "shop" && <ShopScreen />}
     </>
   )
@@ -49,8 +47,8 @@ function GameScreen() {
 
 function GameLayout() {
   const { screen, vkUser, player, setPlayer, isLoading } = useGame()
-  const hideNav = ["matchmaking", "result", "withdraw", "entry"].includes(screen)
-  const showLeftSidebar = !hideNav && screen !== "bets" && screen !== "withdraw" && vkUser != null
+  const hideNav = ["matchmaking", "result", "entry"].includes(screen)
+  const showLeftSidebar = !hideNav && screen !== "bets" && vkUser != null
   const showRightSidebar = !hideNav && vkUser != null
   const showBottomNav = !hideNav && vkUser != null
   const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
