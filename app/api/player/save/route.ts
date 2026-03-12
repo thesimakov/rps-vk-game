@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server"
 import { isValidPlayerId, savePlayer, type StoredPlayer } from "@/lib/player-store"
 
-export const dynamic = "force-dynamic"
-
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
+export const dynamic = "force-static"
 
 export async function POST(req: Request) {
   if (IS_STATIC_EXPORT) {
