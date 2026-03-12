@@ -301,7 +301,7 @@ export function MainMenu() {
       <div className="w-full max-w-md mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <p className="text-sm text-white/95 font-medium leading-tight">
-            Заходи в игру каждый день и получай голоса
+            Заходи в игру каждый день и получай призы
           </p>
           {canClaimGift ? (
             <button

@@ -78,10 +78,18 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
     const appIdRaw = process.env.NEXT_PUBLIC_VK_APP_ID ?? "54475232"
     const appId = Number(appIdRaw) || 54475232
 
+    // Согласно актуальной доке VKWebAppOpenPayForm для голосов,
+    // параметры платежа передаются во вложенном объекте params.
     const payload: Record<string, unknown> = {
       action: "pay-to-service",
       app_id: appId,
-      amount,
+      params: {
+        amount,
+        description: "Пополнение баланса в игре",
+        // поле data можно использовать для передачи order_id / user_id,
+        // в тестовом режиме достаточно любой строки.
+        data: String(amount),
+      },
     }
 
     const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
