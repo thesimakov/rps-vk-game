@@ -2,7 +2,8 @@ import { promises as fs } from "fs"
 import path from "path"
 
 // Серверное хранилище профиля игрока на JSON-файле.
-// Файл лежит в /var/rps-data/players.json — один общий для всех деплоев.
+// В проде по умолчанию файл лежит в /var/rps-data/players.json — один общий для всех деплоев.
+// В разработке используем локальный файл в папке проекта (./data/players.json), чтобы не требовать прав на /var.
 
 export type PlayerId = `vk_${number}` | string
 
@@ -51,7 +52,11 @@ export interface StoredPlayer {
   notes?: string
 }
 
-const DB_PATH = "/var/rps-data/players.json"
+const DB_PATH =
+  process.env.PLAYERS_DB_PATH ||
+  (process.env.NODE_ENV === "development"
+    ? path.join(process.cwd(), "data", "players.json")
+    : "/var/rps-data/players.json")
 
 function getDbPath(): string {
   return DB_PATH
