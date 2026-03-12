@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { isValidPlayerId, loadPlayer } from "@/lib/player-store"
+import { isValidPlayerId, loadPlayer, savePlayer } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 export const dynamic = "force-static"
@@ -20,6 +20,31 @@ export async function POST(req: Request) {
     const player = await loadPlayer(userId)
     if (!player) {
       return NextResponse.json({ ok: true, exists: false }, { headers: { "Cache-Control": "no-store" } })
+    }
+
+    // Проверка статуса блокировки/бана
+    const status = player.status ?? "active"
+    const now = Date.now()
+
+    if (status === "blocked") {
+      return NextResponse.json({ ok: false, error: "blocked" }, { status: 403 })
+    }
+
+    if (status === "banned") {
+      const banUntil = typeof player.banUntil === "number" ? player.banUntil : 0
+      if (banUntil && banUntil > now) {
+        return NextResponse.json({ ok: false, error: "banned", banUntil }, { status: 403 })
+      }
+      // Бан истёк — автоматически разблокируем
+      const cleared = await savePlayer({
+        ...player,
+        status: "active",
+        banUntil: undefined,
+      })
+      return NextResponse.json(
+        { ok: true, exists: true, player: cleared },
+        { headers: { "Cache-Control": "no-store" } }
+      )
     }
 
     return NextResponse.json({ ok: true, exists: true, player }, { headers: { "Cache-Control": "no-store" } })

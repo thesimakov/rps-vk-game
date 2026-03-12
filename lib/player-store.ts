@@ -43,6 +43,12 @@ export interface StoredPlayer {
   withdrawTodayAmount?: number
   /** Дата (YYYY-MM-DD), к которой относится withdrawTodayAmount */
   withdrawTodayDate?: string
+  /** Статус аккаунта: активен, заблокирован навсегда или временно забанен */
+  status?: "active" | "blocked" | "banned"
+  /** До какого момента действует бан (timestamp, ms). После истечения можно снова пускать в игру. */
+  banUntil?: number
+  /** Внутренние заметки для админки/разработчиков */
+  notes?: string
 }
 
 const DB_PATH = "/var/rps-data/players.json"
@@ -92,10 +98,91 @@ export async function savePlayer(player: StoredPlayer): Promise<StoredPlayer> {
   const db = await readDb()
   const safeId = player.id
   db.players[safeId] = {
+    ...db.players[safeId],
     ...player,
     id: safeId,
   }
   await writeDb(db)
   return db.players[safeId]
+}
+
+/** Загрузить всех игроков как массив (для админки). */
+export async function loadAllPlayers(): Promise<StoredPlayer[]> {
+  const db = await readDb()
+  return Object.values(db.players)
+}
+
+/** Поставить игроку статус и опционально banUntil/notes. */
+async function setPlayerStatus(
+  id: PlayerId,
+  status: StoredPlayer["status"],
+  options?: { banUntil?: number; notes?: string }
+): Promise<StoredPlayer | null> {
+  const db = await readDb()
+  const existing = db.players[id]
+  if (!existing) return null
+  const updated: StoredPlayer = {
+    ...existing,
+    status,
+    banUntil: options?.banUntil,
+    notes: options?.notes ?? existing.notes,
+  }
+  db.players[id] = updated
+  await writeDb(db)
+  return updated
+}
+
+/** Заблокировать игрока навсегда (удаление из игры). */
+export async function blockPlayer(id: PlayerId, note?: string) {
+  return setPlayerStatus(id, "blocked", { banUntil: undefined, notes: note })
+}
+
+/** Забанить игрока на сутки от текущего момента. */
+export async function banPlayerForOneDay(id: PlayerId, note?: string) {
+  const now = Date.now()
+  const oneDayMs = 24 * 60 * 60 * 1000
+  const until = now + oneDayMs
+  return setPlayerStatus(id, "banned", { banUntil: until, notes: note })
+}
+
+/** Снять блокировку/бан и вернуть игрока в активное состояние. */
+export async function unblockPlayer(id: PlayerId, note?: string) {
+  return setPlayerStatus(id, "active", { banUntil: undefined, notes: note })
+}
+
+function getBackupDir(): string {
+  const dbPath = getDbPath()
+  const dir = path.dirname(dbPath)
+  return path.join(dir, "backups")
+}
+
+async function ensureBackupDir() {
+  const dir = getBackupDir()
+  await fs.mkdir(dir, { recursive: true })
+}
+
+/** Создать резервную копию players.json в подпапке backups с таймстемпом в имени. */
+export async function backupDb() {
+  await ensureDir()
+  await ensureBackupDir()
+  try {
+    const raw = await fs.readFile(getDbPath(), "utf8")
+    const backupDir = getBackupDir()
+    const ts = new Date()
+    const pad = (n: number) => n.toString().padStart(2, "0")
+    const name = [
+      ts.getFullYear(),
+      pad(ts.getMonth() + 1),
+      pad(ts.getDate()),
+      "-",
+      pad(ts.getHours()),
+      pad(ts.getMinutes()),
+      pad(ts.getSeconds()),
+    ].join("")
+    const backupPath = path.join(backupDir, `players-${name}.json`)
+    await fs.writeFile(backupPath, raw, "utf8")
+  } catch {
+    // если исходного файла ещё нет — просто пропускаем
+  }
 }
 

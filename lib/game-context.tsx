@@ -25,6 +25,7 @@ export type GameScreen =
   | "referral"
   | "shop"
   | "bets"
+  | "admin"
 
 export interface Player {
   id: string
@@ -186,6 +187,8 @@ interface GameState {
   /** Выйти из аккаунта ВК — возврат на экран входа */
   logoutWithVK: () => void
   isLoading: boolean
+  /** Сообщение об ошибке входа (бан/блок), отображается на экране входа */
+  loginErrorMessage: string | null
   bets: BetEntry[]
   pendingBet: PendingBet | null
   betResponse: BetResponse | null
@@ -504,6 +507,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [screen, setScreen] = useState<GameScreen>("entry")
   const [vkUser, setVkUser] = useState<VKUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [loginErrorMessage, setLoginErrorMessage] = useState<string | null>(null)
   const [player, setPlayer] = useState<Player>(DEFAULT_PLAYER)
   const [opponent, setOpponent] = useState<Player | null>(null)
   const [currentBet, setCurrentBet] = useState(5)
@@ -655,23 +659,40 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             hideVkAvatar: p.hideVkAvatar ?? false,
           }))
           // Загрузить/создать профиль игрока на сервере.
-          void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer }>("/api/player/load", {
-            userId: vkId,
-          }).then((res) => {
-            if (!res || !res.ok) return
+          void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
+            "/api/player/load",
+            {
+              userId: vkId,
+            }
+          ).then((res) => {
+            if (!res) return
+            if (!res.ok) {
+              if (res.error === "blocked") {
+                setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
+              } else if (res.error === "banned") {
+                const until = res.banUntil ? new Date(res.banUntil) : null
+                const formatted = until
+                  ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+                  : ""
+                setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
+              }
+              return
+            }
             if (res.player) {
               setPlayer((p) => ({
                 ...p,
                 ...res.player,
               }))
             } else {
-              void postJSON("/api/player/save", { player: toStoredPlayer({
-                ...DEFAULT_PLAYER,
-                id: vkId,
-                name: user.first_name,
-                avatar: user.first_name.charAt(0).toUpperCase(),
-                avatarUrl: user.photo_200 || user.photo_100 || "",
-              }) })
+              void postJSON("/api/player/save", {
+                player: toStoredPlayer({
+                  ...DEFAULT_PLAYER,
+                  id: vkId,
+                  name: user.first_name,
+                  avatar: user.first_name.charAt(0).toUpperCase(),
+                  avatarUrl: user.photo_200 || user.photo_100 || "",
+                }),
+              })
             }
           })
           setScreen("menu")
@@ -709,23 +730,40 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         // ignore
       }
       // Загрузить/создать профиль игрока на сервере.
-      void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer }>("/api/player/load", {
-        userId: vkId,
-      }).then((res) => {
-        if (!res || !res.ok) return
+      void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
+        "/api/player/load",
+        {
+          userId: vkId,
+        }
+      ).then((res) => {
+        if (!res) return
+        if (!res.ok) {
+          if (res.error === "blocked") {
+            setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
+          } else if (res.error === "banned") {
+            const until = res.banUntil ? new Date(res.banUntil) : null
+            const formatted = until
+              ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+              : ""
+            setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
+          }
+          return
+        }
         if (res.player) {
           setPlayer((p) => ({
             ...p,
             ...res.player,
           }))
         } else {
-          void postJSON("/api/player/save", { player: toStoredPlayer({
-            ...DEFAULT_PLAYER,
-            id: vkId,
-            name: session.user.first_name,
-            avatar: session.user.first_name.charAt(0).toUpperCase(),
-            avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
-          }) })
+          void postJSON("/api/player/save", {
+            player: toStoredPlayer({
+              ...DEFAULT_PLAYER,
+              id: vkId,
+              name: session.user.first_name,
+              avatar: session.user.first_name.charAt(0).toUpperCase(),
+              avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
+            }),
+          })
         }
       })
     }
@@ -799,23 +837,40 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     }
     // Загрузить/создать профиль игрока на сервере.
-    void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer }>("/api/player/load", {
-      userId: vkId,
-    }).then((res) => {
-      if (!res || !res.ok) return
+    void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
+      "/api/player/load",
+      {
+        userId: vkId,
+      }
+    ).then((res) => {
+      if (!res) return
+      if (!res.ok) {
+        if (res.error === "blocked") {
+          setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
+        } else if (res.error === "banned") {
+          const until = res.banUntil ? new Date(res.banUntil) : null
+          const formatted = until
+            ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+            : ""
+          setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
+        }
+        return
+      }
       if (res.player) {
         setPlayer((p) => ({
           ...p,
           ...res.player,
         }))
       } else {
-        void postJSON("/api/player/save", { player: toStoredPlayer({
-          ...DEFAULT_PLAYER,
-          id: vkId,
-          name: user.first_name,
-          avatar: user.first_name.charAt(0).toUpperCase(),
-          avatarUrl: user.photo_200 || user.photo_100 || "",
-        }) })
+        void postJSON("/api/player/save", {
+          player: toStoredPlayer({
+            ...DEFAULT_PLAYER,
+            id: vkId,
+            name: user.first_name,
+            avatar: user.first_name.charAt(0).toUpperCase(),
+            avatarUrl: user.photo_200 || user.photo_100 || "",
+          }),
+        })
       }
     })
     setScreen("menu")
@@ -843,6 +898,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
     }
     setVkUser(null)
+    setLoginErrorMessage(null)
     setPlayer((p) => ({ ...p, id: "player1", name: "Игрок", avatar: "И", avatarUrl: "" }))
     setScreen("entry")
   }, [])
@@ -1191,6 +1247,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         loginWithVK,
         logoutWithVK,
         isLoading,
+        loginErrorMessage,
         bets,
         pendingBet,
         betResponse,

@@ -21,6 +21,7 @@ import { BetResponseDialog } from "@/components/bet-response-dialog"
 import { ParticlesBg } from "@/components/particles-bg"
 import { EntryScreen } from "@/components/entry-screen"
 import { GameLoader } from "@/components/game-loader"
+import { AdminScreen } from "@/components/admin-screen"
 
 function GameScreen() {
   const { screen, vkUser } = useGame()
@@ -41,6 +42,7 @@ function GameScreen() {
       {screen === "profile" && <ProfileScreen />}
       {screen === "referral" && <ReferralScreen />}
       {screen === "shop" && <ShopScreen />}
+      {screen === "admin" && <AdminScreen />}
     </>
   )
 }

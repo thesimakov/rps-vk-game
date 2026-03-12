@@ -3,7 +3,7 @@
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useEffect, useMemo, useState } from "react"
-import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5 } from "lucide-react"
+import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield } from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
 
@@ -405,6 +405,19 @@ export function MainMenu() {
           >
             <Crown className="h-5 w-5" />
             <span>Стань ВИП — сниженная комиссия!</span>
+          </button>
+        </div>
+      )}
+
+      {process.env.NEXT_PUBLIC_SHOW_ADMIN === "1" && (
+        <div className="mt-4 w-full max-w-md">
+          <button
+            type="button"
+            onClick={() => setScreen("admin")}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-slate-900/80 border border-emerald-500/60 text-xs text-emerald-300 hover:bg-slate-900"
+          >
+            <Shield className="h-4 w-4" />
+            Панель разработчика (admin)
           </button>
         </div>
       )}
