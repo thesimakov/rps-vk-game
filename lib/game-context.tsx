@@ -205,9 +205,9 @@ interface GameState {
   purchaseWaterCard: () => boolean
   /** Учитывать «траты» для реферальной программы (начисление 10% рефереру) */
   trackSpend: (amount: number, reason: string) => void
-  /** Для отображения: голоса → число для показа (можно переопределить формат) */
+  /** Для отображения: числовое значение баланса (можно переопределить формат) */
   toDisplayAmount: (voices: number) => number
-  /** Подпись валюты: "голосов" и т.п. */
+  /** Подпись валюты (например, "₽") */
   currencyLabel: string
 }
 
@@ -1166,8 +1166,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return true
   }, [player.balance, trackSpend])
 
-  const toDisplayAmount = useCallback((voices: number) => voices, [])
-  const currencyLabel = "голосов"
+  const toDisplayAmount = useCallback((amount: number) => amount, [])
+  const currencyLabel = "₽"
 
   return (
     <GameContext.Provider

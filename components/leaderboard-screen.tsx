@@ -162,10 +162,10 @@ export function LeaderboardScreen() {
           Награды
         </h3>
         <div className="grid grid-cols-2 gap-2 text-base text-muted-foreground font-medium">
-          <span>{"1 место → "}{formatAmount(200)}{" голосов"}</span>
-          <span>{"2 место → "}{formatAmount(100)}{" голосов"}</span>
-          <span>{"3 место → "}{formatAmount(50)}{" голосов"}</span>
-          <span>{"4-10 место → "}{formatAmount(10)}{" голосов"}</span>
+          <span>{"1 место → "}{formatAmount(200)}{" ₽"}</span>
+          <span>{"2 место → "}{formatAmount(100)}{" ₽"}</span>
+          <span>{"3 место → "}{formatAmount(50)}{" ₽"}</span>
+          <span>{"4-10 место → "}{formatAmount(10)}{" ₽"}</span>
         </div>
       </div>
     </div>

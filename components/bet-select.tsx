@@ -56,12 +56,13 @@ export function BetSelect() {
       {/* Balance */}
       <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-accent/20 rounded-full px-5 py-2.5 mb-6">
         <Coins className="h-4 w-4 text-accent" />
-        <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(toDisplayAmount(player.balance))}</span>
-        <span className="text-base font-medium text-muted-foreground">{currencyLabel}</span>
+        <span className="text-base font-extrabold text-accent tabular-nums">
+          {formatAmount(toDisplayAmount(player.balance))} {currencyLabel}
+        </span>
       </div>
 
       <p className="text-muted-foreground text-sm mb-6 text-center font-medium">
-        Выберите ставку и режим: 5–10 голосов — быстрая игра, 25–50 — 3 хода, 100–250 — 5 ходов
+        Выберите ставку и режим: 5–10 ₽ — быстрая игра, 25–50 ₽ — 3 хода, 100–250 ₽ — 5 ходов
       </p>
 
       {/* Сетка: ставка + режим (объединённое поле) */}
@@ -82,9 +83,10 @@ export function BetSelect() {
             >
               <div className="flex items-center gap-1.5">
                 <Coins className={`h-5 w-5 ${canAfford ? "text-accent" : "text-muted-foreground"}`} />
-                <span className="text-base font-extrabold tabular-nums">{formatAmount(toDisplayAmount(value))}</span>
+                <span className="text-base font-extrabold tabular-nums">
+                  {formatAmount(toDisplayAmount(value))} {currencyLabel}
+                </span>
               </div>
-              <span className="text-base font-medium text-muted-foreground">{currencyLabel}</span>
               <span className={`mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>
                 {badge.label}
               </span>

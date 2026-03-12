@@ -143,12 +143,12 @@ const SHOP_ITEMS: ShopItem[] = [
 ]
 
 const VOICE_PACKS = [
-  { amount: 10, price: 10, label: "10 голосов" },
-  { amount: 20, price: 20, label: "20 голосов" },
-  { amount: 30, price: 30, label: "30 голосов" },
-  { amount: 50, price: 50, label: "50 голосов" },
-  { amount: 70, price: 70, label: "70 голосов" },
-  { amount: 100, price: 100, label: "100 голосов" },
+  { amount: 10, price: 10, label: "10 ₽" },
+  { amount: 20, price: 20, label: "20 ₽" },
+  { amount: 30, price: 30, label: "30 ₽" },
+  { amount: 50, price: 50, label: "50 ₽" },
+  { amount: 70, price: 70, label: "70 ₽" },
+  { amount: 100, price: 100, label: "100 ₽" },
 ]
 
 type ChestType = "basic" | "premium"
@@ -166,9 +166,9 @@ interface ChestPrize {
 /** Случайный приз для базового сундука */
 function rollBasicPrize(): ChestPrize {
   const r = Math.random()
-  if (r < 0.28) return { kind: "coins", amount: Math.floor(Math.random() * 8) + 1, label: "Голоса" }
+  if (r < 0.28) return { kind: "coins", amount: Math.floor(Math.random() * 8) + 1, label: "₽" }
   if (r < 0.5) return { kind: "bonus", amount: 2, label: "Бонусы +2" }
-  if (r < 0.72) return { kind: "voices_small", amount: 3 + Math.floor(Math.random() * 5), label: "Голоса" }
+  if (r < 0.72) return { kind: "voices_small", amount: 3 + Math.floor(Math.random() * 5), label: "₽" }
   if (r < 0.9) return { kind: "boost", amount: 1, label: "Быстрый поиск +1" }
   return { kind: "double_bonus", amount: 2, label: "Бонусы +2" }
 }
@@ -176,12 +176,12 @@ function rollBasicPrize(): ChestPrize {
 /** Случайный приз для премиум сундука */
 function rollPremiumPrize(): ChestPrize {
   const r = Math.random()
-  if (r < 0.22) return { kind: "coins", amount: 10 + Math.floor(Math.random() * 21), label: "Голоса" }
+  if (r < 0.22) return { kind: "coins", amount: 10 + Math.floor(Math.random() * 21), label: "₽" }
   if (r < 0.4) return { kind: "bonus", amount: 2, label: "Бонусы +2" }
-  if (r < 0.58) return { kind: "voices_medium", amount: 15 + Math.floor(Math.random() * 16), label: "Голоса" }
+  if (r < 0.58) return { kind: "voices_medium", amount: 15 + Math.floor(Math.random() * 16), label: "₽" }
   if (r < 0.76) return { kind: "boost", amount: Math.random() > 0.5 ? 2 : 1, label: "Быстрый поиск" }
   if (r < 0.9) return { kind: "double_bonus", amount: 2, label: "Бонусы +2" }
-  return { kind: "coins", amount: 20 + Math.floor(Math.random() * 25), label: "Голоса" }
+  return { kind: "coins", amount: 20 + Math.floor(Math.random() * 25), label: "₽" }
 }
 
 /** Выдать N случайных призов для сундука */
@@ -272,7 +272,7 @@ export function ShopScreen() {
   const handleTopUp = async (amount: number) => {
     setTopUpError("")
 
-    // Лимит пополнений: не более 3000 голосов в сутки на пользователя.
+    // Лимит пополнений: не более 3000 ₽ в сутки на пользователя.
     try {
       if (typeof window !== "undefined" && player.id.startsWith("vk_")) {
         const today = new Date().toISOString().slice(0, 10)
@@ -280,7 +280,7 @@ export function ShopScreen() {
         const usedRaw = window.localStorage.getItem(key)
         const used = Number(usedRaw) || 0
         if (used + amount > 3000) {
-          setTopUpError("Лимит пополнения 3000 голосов в сутки уже достигнут или будет превышен этой покупкой.")
+          setTopUpError("Лимит пополнения 3000 ₽ в сутки уже достигнут или будет превышен этой покупкой.")
           return
         }
       }
@@ -464,7 +464,7 @@ export function ShopScreen() {
       setPromoStatus("success")
       const baseText =
         reward.kind === "voices"
-          ? `Начислено ${formatAmount(reward.amount ?? 0)} голосов.`
+          ? `Начислено ${formatAmount(reward.amount ?? 0)} ₽.`
           : reward.kind === "fast_match"
             ? `Начислено ${reward.amount ?? 1} использований быстрого поиска.`
             : reward.kind === "lava_card"
@@ -565,14 +565,14 @@ export function ShopScreen() {
         </div>
       </div>
 
-      {/* Пополнение голосами ВК */}
+      {/* Пополнение баланса через ВК */}
       <div className="w-full max-w-md mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet className="h-5 w-5 text-primary" />
-          <span className="font-bold text-base text-foreground">Пополнить баланс (ВК голоса)</span>
+          <span className="font-bold text-base text-foreground">Пополнить баланс (оплата через ВК)</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Оплата через ВКонтакте — списание голосов с вашего аккаунта.
+          Оплата через ВКонтакте — списание средств с вашего аккаунта.
         </p>
         {topUpError && (
           <p className="text-xs text-red-500 mb-2 font-medium">
@@ -625,11 +625,11 @@ export function ShopScreen() {
         </div>
       </div>
 
-      {/* 100 голосов за приглашение 4 друзей */}
+      {/* Награда за приглашение 4 друзей */}
       <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <UserPlus className="h-5 w-5 text-primary" />
-          <span className="font-bold text-base text-foreground">Получить {INVITE_REWARD} голосов за приглашение 4 друзей</span>
+          <span className="font-bold text-base text-foreground">Получить {INVITE_REWARD} ₽ за приглашение 4 друзей</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           Выберите друзей, пригласите их в игру. Когда они примут приглашение — появятся в ячейках. За 4 принявших приглашение — награда.
@@ -704,7 +704,7 @@ export function ShopScreen() {
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-foreground text-sm font-bold transition-all active:scale-95"
             >
               <Coins className="h-4 w-4" />
-              Получить {INVITE_REWARD} голосов
+              Получить {INVITE_REWARD} ₽
             </button>
           )}
         </div>
@@ -712,12 +712,12 @@ export function ShopScreen() {
 
       {/* Блок «100 голосов — расскажи друзьям» скрыт, так как приложению недоступно создание постов на стене */}
 
-      {/* 40 голосов за подписку на группу ВК */}
+      {/* Награда за подписку на группу ВК */}
       <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <UserPlus className="h-5 w-5 text-secondary" />
           <span className="font-bold text-base text-foreground">
-            Подпишитесь в нашу группу ВК и получите {GROUP_SUB_REWARD} голосов
+            Подпишитесь в нашу группу ВК и получите {GROUP_SUB_REWARD} ₽
           </span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
@@ -744,7 +744,7 @@ export function ShopScreen() {
             ? "Подписка…"
             : player.groupSubscribedRewardClaimed
               ? "Вы уже подписаны"
-              : `Подписаться и получить ${GROUP_SUB_REWARD} голосов`}
+              : `Подписаться и получить ${GROUP_SUB_REWARD} ₽`}
         </button>
       </div>
 
@@ -755,7 +755,7 @@ export function ShopScreen() {
           <span className="font-bold text-base text-foreground">Промокод</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Иногда мы дарим промокоды с голосами, особыми картами или бустами. Введите код сюда, чтобы получить подарок.
+          Иногда мы дарим промокоды с балансом, особыми картами или бустами. Введите код сюда, чтобы получить подарок.
         </p>
         <div className="flex gap-2 mb-2">
           <input
