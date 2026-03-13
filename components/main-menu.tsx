@@ -274,7 +274,7 @@ export function MainMenu() {
             />
           </div>
         )}
-        <div className="flex-1 min-w-0 h-12 flex items-center gap-3 rounded-full bg-amber-400/25 border-2 border-amber-400/70 px-4">
+        <div className="flex-1 min-w-0 h-12 flex items-center gap-3 rounded-full bg-amber-400/25 border-2 border-amber-400/70 px-4 relative">
           <div className="w-8 h-8 rounded-full bg-amber-400/40 flex items-center justify-center flex-shrink-0">
             <Coins className="h-4 w-4 text-amber-500" />
           </div>
@@ -283,7 +283,7 @@ export function MainMenu() {
             <span className="text-base font-medium text-white/90 flex-shrink-0">{currencyLabel}</span>
           </div>
           {player.vip && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-600 text-[10px] font-bold uppercase flex-shrink-0">
+            <span className="absolute right-3 top-0 -translate-y-1/2 sm:static sm:translate-y-0 flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-600 text-[10px] font-bold uppercase flex-shrink-0 z-10">
               <Crown className="h-3 w-3" /> VIP
             </span>
           )}
