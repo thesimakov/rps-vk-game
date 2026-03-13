@@ -602,17 +602,16 @@ export function GameArena() {
                   move.key === "rock"
                     ? "card-medieval-rock"
                     : move.key === "paper"
-                    ? "card-medieval-paper"
-                    : move.key === "scissors"
-                    ? "card-medieval-scissors"
-                    : ""
+                      ? "card-medieval-paper"
+                      : move.key === "scissors"
+                        ? "card-medieval-scissors"
+                        : move.key === "water"
+                          ? "card-medieval-water"
+                          : ""
                 } ${isSelected || player.cardSkin === "gold" ? "card-medieval-selected" : ""} ${
                   move.key === "water" ? "border-sky-500/60" : ""
                 } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
               >
-                {move.key === "water" && (
-                  <span className="card-symbol-icon text-3xl mb-0.5">{move.icon}</span>
-                )}
                 <span className="text-[9px] font-bold text-white drop-shadow-md mt-0.5 uppercase tracking-wide">
                   {move.label}
                 </span>

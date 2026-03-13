@@ -147,10 +147,12 @@ export default function Page() {
     "--card-rock-image": makeUrl("/card-rock.webp"),
     "--card-paper-image": makeUrl("/card-paper.webp"),
     "--card-scissors-image": makeUrl("/card-scissors.webp"),
+    "--card-water-image": makeUrl("/card-water.png"),
     "--card-ancient-back-image": makeUrl("/000.webp"),
     "--card-ancient-rock-image": makeUrl("/001.webp"),
     "--card-ancient-scissors-image": makeUrl("/002.webp"),
     "--card-ancient-paper-image": makeUrl("/003.webp"),
+    "--card-ancient-water-image": makeUrl("/card-water-ancient.png"),
   }
 
   return (

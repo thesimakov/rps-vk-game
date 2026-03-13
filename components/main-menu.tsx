@@ -157,12 +157,25 @@ export function MainMenu() {
         ...p,
         lottoNumbers: undefined,
         lottoDrawnNumbers: numbers,
+        lottoDrawnAt: Date.now(),
         lottoDrawAt: undefined,
         balance: p.balance + bonus,
         ratingPoints: bonus > 0 ? Math.min(1000, (p.ratingPoints ?? 0) + bonus) : p.ratingPoints,
       }
     })
   }, [player.lottoNumbers, player.lottoDrawAt, player.lottoDrawnNumbers, setPlayer])
+
+  // Лото: через сутки после розыгрыша сбрасываем выпавшие числа (автосброс результатов).
+  const LOTTO_RESULTS_TTL_MS = 24 * 60 * 60 * 1000
+  useEffect(() => {
+    if (!player.lottoDrawnNumbers?.length || player.lottoDrawnAt == null) return
+    if (Date.now() - player.lottoDrawnAt < LOTTO_RESULTS_TTL_MS) return
+    setPlayer((p) => ({
+      ...p,
+      lottoDrawnNumbers: undefined,
+      lottoDrawnAt: undefined,
+    }))
+  }, [player.lottoDrawnNumbers, player.lottoDrawnAt, setPlayer])
 
   const handleToggleNumber = (n: number) => {
     setTempSelection((prev) => {
@@ -278,6 +291,7 @@ export function MainMenu() {
         <div className="flex flex-row gap-2 flex-shrink-0">
           <button
             onClick={() => {
+              // После розыгрыша выбор уже сброшен (lottoNumbers undefined) — открываем с пустой сеткой.
               setTempSelection(player.lottoNumbers ?? [])
               setShowLotto(true)
             }}
@@ -494,7 +508,7 @@ export function MainMenu() {
             {player.lottoDrawnNumbers && player.lottoDrawnNumbers.length > 0 && (
               <div className="mt-2 rounded-2xl bg-slate-900/70 border border-slate-700 p-3">
                 <p className="text-xs font-semibold text-white/80 mb-2">
-                  Выпавшие числа:
+                  Выпавшие числа (отображаются 24 ч):
                 </p>
                 <div className="flex flex-wrap gap-1">
                   {player.lottoDrawnNumbers

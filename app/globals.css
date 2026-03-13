@@ -131,6 +131,7 @@
     --card-rock-image: var(--card-ancient-rock-image, var(--card-rock-image));
     --card-scissors-image: var(--card-ancient-scissors-image, var(--card-scissors-image));
     --card-paper-image: var(--card-ancient-paper-image, var(--card-paper-image));
+  --card-water-image: var(--card-ancient-water-image, var(--card-water-image));
   }
   .card-medieval::before,
   .card-medieval::after {
@@ -180,6 +181,13 @@
   /* Лицевая сторона «Ножницы» (webp) */
   .card-medieval-scissors {
     background-image: var(--card-scissors-image, url("/card-scissors.webp"));
+    background-size: cover;
+    background-position: center;
+  }
+
+  /* Лицевая сторона «Вода» (png) — стандартный режим */
+  .card-medieval-water {
+    background-image: var(--card-water-image, url("/card-water.png"));
     background-size: cover;
     background-position: center;
   }

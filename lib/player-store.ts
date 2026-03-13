@@ -40,6 +40,8 @@ export interface StoredPlayer {
   lottoNumbers?: number[]
   lottoDrawAt?: number
   lottoDrawnNumbers?: number[]
+  /** Лото: момент последнего розыгрыша (timestamp). Результаты показываются 24 ч. */
+  lottoDrawnAt?: number
   /** Сколько пользователь уже вывел за сегодня (для лимитов вывода) */
   withdrawTodayAmount?: number
   /** Дата (YYYY-MM-DD), к которой относится withdrawTodayAmount */
