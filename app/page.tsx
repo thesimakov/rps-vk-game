@@ -82,7 +82,7 @@ function GameLayout() {
 
       {showLowBalanceHint && (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center">
-          <div className="pointer-events-auto max-w-md mx-auto rounded-2xl bg-slate-900/95 border border-amber-400/60 px-4 py-3 shadow-xl flex items-center gap-3">
+          <div className="pointer-events-auto max-w-lg mx-auto rounded-2xl bg-slate-900/95 border border-amber-400/60 px-4 py-3 shadow-xl flex items-center gap-3">
             <div className="flex-1">
               <p className="text-xs sm:text-sm text-white/90 leading-snug">
                 Добавь друга, получи за него 10 монет. Чем больше друзей зашли, тем больше монет получи.
@@ -117,7 +117,7 @@ function GameLayout() {
 
         <main className="flex-1 flex justify-center min-w-0">
           <div
-            className={`w-full max-w-md mx-auto px-4 ${
+            className={`w-full max-w-lg mx-auto px-4 ${
               isScrollableScreen ? "min-h-screen max-h-screen overflow-y-auto" : "min-h-screen"
             } ${showBottomNav ? "pb-20" : ""}`}
           >

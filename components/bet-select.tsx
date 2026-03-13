@@ -39,7 +39,7 @@ export function BetSelect() {
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-8">
       {/* Header */}
-      <div className="w-full max-w-md flex items-center mb-8">
+      <div className="w-full max-w-lg flex items-center mb-8">
         <button
           onClick={() => setScreen("menu")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -66,7 +66,7 @@ export function BetSelect() {
       </p>
 
       {/* Сетка: ставка + режим (объединённое поле) */}
-      <div className="w-full max-w-md grid grid-cols-2 gap-3">
+      <div className="w-full max-w-lg grid grid-cols-2 gap-3">
         {BET_OPTIONS.map(({ value, rounds, modeLabel }) => {
           const canAfford = player.balance >= value
           const badge = getTierBadge(rounds)
@@ -99,7 +99,7 @@ export function BetSelect() {
       </div>
 
       {/* Info */}
-      <div className="mt-6 w-full max-w-md bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+      <div className="mt-6 w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <p className="text-sm text-muted-foreground text-center font-medium">
           Ставка × 2 = банк. Комиссия 10% (VIP: 5%).
         </p>

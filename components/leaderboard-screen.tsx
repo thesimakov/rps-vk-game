@@ -27,7 +27,7 @@ export function LeaderboardScreen() {
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-6">
       {/* Header */}
-      <div className="w-full max-w-md flex items-center mb-5">
+      <div className="w-full max-w-lg flex items-center mb-5">
         <button
           onClick={() => setScreen(vkUser ? "menu" : "entry")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -43,7 +43,7 @@ export function LeaderboardScreen() {
       </div>
 
       {/* Player rank badge */}
-      <div className="w-full max-w-md mb-4 bg-primary/8 border border-primary/25 rounded-2xl px-4 py-3 flex items-center justify-between backdrop-blur-sm">
+      <div className="w-full max-w-lg mb-4 bg-primary/8 border border-primary/25 rounded-2xl px-4 py-3 flex items-center justify-between backdrop-blur-sm">
         <div className="flex items-center gap-2">
           <Medal className="h-5 w-5 text-primary" />
           <span className="text-base font-semibold text-foreground">Ваше место в рейтинге</span>
@@ -56,7 +56,7 @@ export function LeaderboardScreen() {
       </p>
 
       {/* Leaderboard */}
-      <div className="w-full max-w-md flex flex-col gap-2">
+      <div className="w-full max-w-lg flex flex-col gap-2">
         {/* Заголовок столбцов */}
         <div className="flex items-center justify-between px-2 text-[10px] uppercase tracking-wide text-muted-foreground">
           <span>Игрок</span>
@@ -156,7 +156,7 @@ export function LeaderboardScreen() {
       </div>
 
       {/* Weekly rewards */}
-      <div className="w-full max-w-md mt-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+      <div className="w-full max-w-lg mt-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <h3 className="text-base font-bold text-foreground mb-3 flex items-center gap-2 uppercase tracking-wide">
           <Crown className="h-4 w-4 text-accent" />
           Награды

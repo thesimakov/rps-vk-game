@@ -126,7 +126,7 @@ export function ReferralScreen() {
 
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-6 pb-24">
-      <div className="w-full max-w-md flex items-center mb-6">
+      <div className="w-full max-w-lg flex items-center mb-6">
         <button
           onClick={() => setScreen("profile")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -141,7 +141,7 @@ export function ReferralScreen() {
       </div>
 
       {!canUse && (
-        <div className="w-full max-w-md bg-card/50 border border-border/30 rounded-2xl p-4">
+        <div className="w-full max-w-lg bg-card/50 border border-border/30 rounded-2xl p-4">
           <p className="text-sm text-muted-foreground font-medium leading-relaxed">
             Реферальная программа доступна после входа через ВК.
           </p>
@@ -150,7 +150,7 @@ export function ReferralScreen() {
 
       {canUse && (
         <>
-          <div className="w-full max-w-md bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+          <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <LinkIcon className="h-4 w-4 text-primary" />
               <span className="font-bold text-foreground">Ваша ссылка</span>
@@ -170,7 +170,7 @@ export function ReferralScreen() {
             {copied === "link" && <p className="mt-2 text-xs text-primary font-bold">Ссылка скопирована</p>}
           </div>
 
-          <div className="w-full max-w-md bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+          <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
             <div className="flex items-center gap-2 mb-2">
               <Users className="h-4 w-4 text-secondary" />
               <span className="font-bold text-foreground">Код приглашения</span>
@@ -193,7 +193,7 @@ export function ReferralScreen() {
             </p>
           </div>
 
-          <div className="w-full max-w-md grid grid-cols-3 gap-3 mb-4">
+          <div className="w-full max-w-lg grid grid-cols-3 gap-3 mb-4">
             <div className="bg-card/50 border border-border/30 rounded-2xl px-3 py-3 flex flex-col items-center">
               <Users className="h-5 w-5 text-primary mb-1" />
               <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">приглашено</span>
@@ -211,7 +211,7 @@ export function ReferralScreen() {
             </div>
           </div>
 
-          <div className="w-full max-w-md bg-card/40 border border-border/30 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
+          <div className="w-full max-w-lg bg-card/40 border border-border/30 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase">Доступно к получению</p>
               <p className="text-base font-extrabold text-foreground tabular-nums">{formatAmount(available)} монет</p>
@@ -237,7 +237,7 @@ export function ReferralScreen() {
             </div>
           </div>
 
-          <div className="w-full max-w-md bg-card/30 border border-border/30 rounded-2xl p-4">
+          <div className="w-full max-w-lg bg-card/30 border border-border/30 rounded-2xl p-4">
             <p className="text-sm font-bold text-foreground mb-3">Последние начисления</p>
             {last.length === 0 && (
               <p className="text-sm text-muted-foreground">Пока нет начислений.</p>

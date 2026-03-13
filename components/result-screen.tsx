@@ -165,7 +165,7 @@ export function ResultScreen() {
 
       {/* Верхняя панель: БАНК | БОНУСЫ | РАУНД — как на арене, закреплена сверху */}
       <div className="sticky top-0 z-10 w-full px-4 py-3 bg-background/85 backdrop-blur-md border-b border-border/30 shrink-0">
-        <div className="flex items-center justify-between w-full max-w-md mx-auto">
+        <div className="flex items-center justify-between w-full max-w-lg mx-auto">
           {/* Банк */}
           <div className="flex flex-col">
             <span className="text-base font-semibold text-white/95 uppercase tracking-wider">
@@ -259,7 +259,7 @@ export function ResultScreen() {
 
       {/* История всех ходов в матче */}
       {rounds.length > 1 && (
-        <div className="flex flex-col items-center gap-2 mb-3 w-full max-w-md mx-auto">
+        <div className="flex flex-col items-center gap-2 mb-3 w-full max-w-lg mx-auto">
           <div className="flex flex-col items-center gap-1">
             <span className="text-[13px] uppercase tracking-wide text-white/60">
               Все ходы в матче
@@ -269,7 +269,7 @@ export function ResultScreen() {
           {isFiveRoundMatch ? (
             // Специальное расположение 5 карт: для каждого игрока 3 сверху, 2 снизу — над своим аватаром,
             // между ними крупный счёт матча.
-            <div className="mt-2 flex items-center justify-between w-full max-w-md mx-auto gap-4">
+            <div className="mt-2 flex items-center justify-between w-full max-w-lg mx-auto gap-4">
               {/* Карты игрока (слева) */}
               <div className="flex flex-col items-center gap-1">
                 <div className="flex items-center justify-center gap-2">
@@ -400,7 +400,7 @@ export function ResultScreen() {
       )}
 
       {/* Две основные карты в стиле средневековья: игрок слева, соперник справа — выезд с боков */}
-      <div className="flex items-end justify-center gap-3 sm:gap-6 w-full max-w-md mx-auto mb-4">
+      <div className="flex items-end justify-center gap-3 sm:gap-6 w-full max-w-lg mx-auto mb-4">
         <div className="result-card-left flex flex-col items-center gap-3" style={{ animationDelay: "0.35s" }}>
           <div
             className={`card-medieval w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0 ${

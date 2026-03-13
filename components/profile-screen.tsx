@@ -33,7 +33,7 @@ export function ProfileScreen() {
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-6 pb-24">
       {/* Header */}
-      <div className="w-full max-w-md flex items-center mb-6">
+      <div className="w-full max-w-lg flex items-center mb-6">
         <button
           onClick={() => setScreen("menu")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -134,7 +134,7 @@ export function ProfileScreen() {
         </div>
         {/* Скрыть аватар ВК за 100 монет */}
         {player.avatarUrl && (
-          <div className="mt-2 w-full max-w-md">
+          <div className="mt-2 w-full max-w-lg">
             {player.hideVkAvatar ? (
               <p className="text-center text-sm text-muted-foreground font-medium flex items-center justify-center gap-1.5">
                 <UserMinus className="h-4 w-4" />
@@ -161,7 +161,7 @@ export function ProfileScreen() {
       </div>
 
       {/* Balance + Bonuses + Rank */}
-      <div className="w-full max-w-md grid grid-cols-3 gap-3 mb-4">
+      <div className="w-full max-w-lg grid grid-cols-3 gap-3 mb-4">
         <div className="bg-card/50 backdrop-blur-sm border border-accent/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
           <Coins className="h-5 w-5 text-accent mb-1" />
           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
@@ -192,7 +192,7 @@ export function ProfileScreen() {
       </div>
 
       {/* Stats */}
-      <div className="w-full max-w-md grid grid-cols-2 gap-3 mb-4">
+      <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-4">
         <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 flex flex-col items-center gap-1">
           <Trophy className="h-4 w-4 text-primary mb-1" />
           <span className="text-base font-extrabold text-foreground tabular-nums">{player.wins}</span>
@@ -216,7 +216,7 @@ export function ProfileScreen() {
       </div>
 
       {/* Weekly earnings */}
-      <div className="w-full max-w-md bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+      <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground font-medium">Заработано за неделю</span>
           <div className="flex items-center gap-1.5">
@@ -228,7 +228,7 @@ export function ProfileScreen() {
 
       {/* Тема карт */}
       {player.hasAncientDeck && (
-        <div className="w-full max-w-md bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+        <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
           <div className="flex items-center justify-between gap-3">
             <div>
               <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -260,7 +260,7 @@ export function ProfileScreen() {
       {!player.vip && (
         <button
           onClick={() => setScreen("shop")}
-          className="w-full max-w-md flex items-center justify-center gap-2 bg-accent/8 border border-accent/25 text-accent font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-accent/15 mb-6"
+          className="w-full max-w-lg flex items-center justify-center gap-2 bg-accent/8 border border-accent/25 text-accent font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-accent/15 mb-6"
         >
           <Crown className="h-4 w-4" />
           <span>{"Купить VIP \u2014 49 монет/мес"}</span>
@@ -270,7 +270,7 @@ export function ProfileScreen() {
       {/* Реферальная программа */}
       <button
         onClick={() => setScreen("referral")}
-        className="w-full max-w-md flex items-center justify-center gap-2 bg-card/50 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/70 active:scale-[0.99] mb-4"
+        className="w-full max-w-lg flex items-center justify-center gap-2 bg-card/50 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/70 active:scale-[0.99] mb-4"
       >
         <Users className="h-5 w-5 text-muted-foreground" />
         <span>Реферальная программа</span>
@@ -280,7 +280,7 @@ export function ProfileScreen() {
       <div className="flex-1 min-h-4" />
       <button
         onClick={logoutWithVK}
-        className="w-full max-w-md flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground font-medium text-sm transition-colors"
+        className="w-full max-w-lg flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground font-medium text-sm transition-colors"
       >
         <LogOut className="h-4 w-4" />
         Выйти

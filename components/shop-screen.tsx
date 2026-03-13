@@ -556,7 +556,7 @@ export function ShopScreen() {
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-6">
       {/* Header */}
-      <div className="w-full max-w-md flex items-center mb-6">
+      <div className="w-full max-w-lg flex items-center mb-6">
         <button
           onClick={() => setScreen("menu")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -574,7 +574,7 @@ export function ShopScreen() {
       </div>
 
       {/* Пополнение баланса через ВК */}
-      <div className="w-full max-w-md mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
+      <div className="w-full max-w-lg mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet className="h-5 w-5 text-primary" />
           <span className="font-bold text-base text-foreground">Пополнить баланс (оплата через ВК)</span>
@@ -634,7 +634,7 @@ export function ShopScreen() {
       </div>
 
       {/* Награда за приглашение 4 друзей */}
-      <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+      <div className="w-full max-w-lg mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <UserPlus className="h-5 w-5 text-primary" />
           <span className="font-bold text-base text-foreground">Получить {INVITE_REWARD} монет за приглашение 4 друзей</span>
@@ -721,7 +721,7 @@ export function ShopScreen() {
       {/* Блок «100 монет — расскажи друзьям» скрыт, так как приложению недоступно создание постов на стене */}
 
       {/* Награда за подписку на группу ВК */}
-      <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+      <div className="w-full max-w-lg mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <UserPlus className="h-5 w-5 text-secondary" />
           <span className="font-bold text-base text-foreground">
@@ -757,7 +757,7 @@ export function ShopScreen() {
       </div>
 
       {/* Промокод */}
-      <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
+      <div className="w-full max-w-lg mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Ticket className="h-5 w-5 text-primary" />
           <span className="font-bold text-base text-foreground">Промокод</span>
@@ -795,7 +795,7 @@ export function ShopScreen() {
       </div>
 
       {/* Items */}
-      <div className="w-full max-w-md flex flex-col gap-2.5">
+      <div className="w-full max-w-lg flex flex-col gap-2.5">
         {SHOP_ITEMS.map((item) => {
           const canAfford = player.balance >= item.price
           const alreadyOwned =

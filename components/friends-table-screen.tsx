@@ -189,7 +189,7 @@ export function FriendsTableScreen() {
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-6">
       {/* Header */}
-      <div className="w-full max-w-md flex items-center mb-6">
+      <div className="w-full max-w-lg flex items-center mb-6">
         <button
           onClick={() => setScreen("menu")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -251,7 +251,7 @@ export function FriendsTableScreen() {
       </div>
 
       {/* Ставка и инфо */}
-      <div className="w-full max-w-md mb-4">
+      <div className="w-full max-w-lg mb-4">
         <label className="text-sm font-bold text-foreground mb-2 block">Ставка ({currencyLabel})</label>
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -283,7 +283,7 @@ export function FriendsTableScreen() {
         type="button"
         onClick={handlePlay}
         disabled={!canStart}
-        className={`w-full max-w-md flex items-center justify-center gap-2 py-3 rounded-2xl text-base font-bold transition-all active:scale-[0.98] ${
+        className={`w-full max-w-lg flex items-center justify-center gap-2 py-3 rounded-2xl text-base font-bold transition-all active:scale-[0.98] ${
           canStart
             ? "bg-sky-500 text-white shadow-lg shadow-sky-500/30"
             : "bg-muted/40 text-muted-foreground cursor-not-allowed"
@@ -293,12 +293,12 @@ export function FriendsTableScreen() {
         Играем
       </button>
 
-      <p className="mt-2 text-xs text-muted-foreground text-center max-w-md">
+      <p className="mt-2 text-xs text-muted-foreground text-center max-w-lg">
         Для начала турнира нужно 9 игроков за столом и достаточный баланс для ставки.
       </p>
 
       {resultText && (
-        <div className="mt-4 w-full max-w-md rounded-2xl bg-card/40 border border-border/40 px-4 py-3 flex items-start gap-2">
+        <div className="mt-4 w-full max-w-lg rounded-2xl bg-card/40 border border-border/40 px-4 py-3 flex items-start gap-2">
           <Crown className="h-5 w-5 text-amber-400 mt-0.5" />
           <p className="text-sm text-foreground">{resultText}</p>
         </div>

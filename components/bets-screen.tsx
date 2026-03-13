@@ -99,7 +99,7 @@ export function BetsScreen() {
 
   return (
     <div className="flex flex-col min-h-screen px-4 py-6">
-      <div className="w-full max-w-md flex items-center mb-6 mx-auto">
+      <div className="w-full max-w-lg flex items-center mb-6 mx-auto">
         <button
           onClick={() => setScreen(vkUser ? "menu" : "entry")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -115,7 +115,7 @@ export function BetsScreen() {
       </div>
 
       {/* Горячая новинка — карта Лава (над блоком ставки) */}
-      <div className="w-full max-w-md mx-auto mb-4">
+      <div className="w-full max-w-lg mx-auto mb-4">
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="h-4 w-4 text-amber-400" />
           <span className="text-base font-bold text-foreground uppercase tracking-wide">Горячая новинка</span>
@@ -139,7 +139,7 @@ export function BetsScreen() {
         </button>
       </div>
 
-      <div className="w-full max-w-md mx-auto flex flex-col gap-4">
+      <div className="w-full max-w-lg mx-auto flex flex-col gap-4">
         {!vkUser && (
           <p className="text-sm text-center py-2 px-3 rounded-xl bg-primary/15 border border-primary/30 text-primary">
             Войдите, чтобы создавать ставки и играть

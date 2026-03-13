@@ -376,7 +376,7 @@ export function GameArena() {
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
       {/* Верхняя панель как в макете: БАНК | БОНУСЫ | РАУНД + сердечки */}
-      <div className="w-full max-w-md mx-auto mb-5">
+      <div className="w-full max-w-lg mx-auto mb-5">
         <div className="flex items-start justify-between gap-4">
           {/* Банк */}
           <div className="flex flex-col">
@@ -426,7 +426,7 @@ export function GameArena() {
       </div>
 
       {/* Соперник: аватар, имя, карта с анимацией переворота */}
-      <div className="flex flex-col items-center gap-2 w-full max-w-md mx-auto">
+      <div className="flex flex-col items-center gap-2 w-full max-w-lg mx-auto">
         {opponentData.vip ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="vip-frame-outer w-16 h-16">
@@ -480,7 +480,7 @@ export function GameArena() {
       </div>
 
       {/* Центр: таймер, реакции и подсказки + локальный счёт раундов */}
-      <div className="flex flex-col items-center justify-center gap-2 my-4 w-full max-w-md mx-auto">
+      <div className="flex flex-col items-center justify-center gap-2 my-4 w-full max-w-lg mx-auto">
         <div className="flex flex-col items-center justify-center gap-2">
           {/* Таймер и иконки-реакции по бокам */}
           <div className="flex items-center justify-center gap-4">
@@ -583,7 +583,7 @@ export function GameArena() {
       </div>
 
       {/* Кнопки выбора: три карты лицевой стороной — игрок сразу видит Камень, Ножницы, Бумагу */}
-      <div className="flex justify-center gap-4 w-full max-w-md mx-auto mb-6">
+      <div className="flex justify-center gap-4 w-full max-w-lg mx-auto mb-6">
         {MOVES.map((move) => {
           const isSelected = selectedMove === move.key
           const isChoosing = phase === "choosing"
@@ -623,7 +623,7 @@ export function GameArena() {
       </div>
 
       {/* Игрок: аватар, имя, баланс */}
-      <div className="mt-auto flex flex-col items-center w-full max-w-md mx-auto pb-2">
+      <div className="mt-auto flex flex-col items-center w-full max-w-lg mx-auto pb-2">
         {player.avatarFrame === "gold" ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="gold-frame-outer w-16 h-16">
