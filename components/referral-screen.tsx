@@ -214,7 +214,7 @@ export function ReferralScreen() {
           <div className="w-full max-w-md bg-card/40 border border-border/30 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-xs text-muted-foreground font-medium uppercase">Доступно к получению</p>
-              <p className="text-base font-extrabold text-foreground tabular-nums">{formatAmount(available)} голосов</p>
+              <p className="text-base font-extrabold text-foreground tabular-nums">{formatAmount(available)} монет</p>
             </div>
             <div className="flex gap-2">
               <button

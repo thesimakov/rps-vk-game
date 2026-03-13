@@ -314,7 +314,7 @@ export function BetsScreen() {
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            У вас нет средств, чтобы поддержать ставку
+            У вас нет монет, чтобы поддержать ставку
             {noMoneyBet ? ` (${formatAmount(toDisplayAmount(noMoneyBet.amount))} ${currencyLabel})` : ""}. Пополните баланс, чтобы принять участие в игре.
           </p>
           <DialogFooter>

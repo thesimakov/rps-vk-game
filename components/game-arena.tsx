@@ -141,7 +141,7 @@ export function GameArena() {
       if (resolvedRef.current) return
       resolvedRef.current = true
 
-      // Правило для робота: до 50 голосов — случайный исход, выше 100 — игрок проигрывает
+      // Правило для робота: до 50 монет — случайный исход, выше 100 монет — игрок проигрывает
       const isBot = opponent?.id?.startsWith("bot-") ?? false
       const oppMove =
         isBot && currentBet > 100 ? getMoveThatBeats(playerMove) : getRandomMove()
@@ -390,7 +390,7 @@ export function GameArena() {
               </span>
             </div>
             <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
-              голосов
+              монет
             </span>
           </div>
 
@@ -622,7 +622,7 @@ export function GameArena() {
         })}
       </div>
 
-      {/* Игрок: аватар, имя, голоса */}
+      {/* Игрок: аватар, имя, баланс */}
       <div className="mt-auto flex flex-col items-center w-full max-w-md mx-auto pb-2">
         {player.avatarFrame === "gold" ? (
           <div className="relative inline-flex flex-shrink-0">
@@ -674,7 +674,7 @@ export function GameArena() {
           </div>
         )}
         <span className="text-base font-bold text-white mt-2">{player.name}</span>
-        <span className="text-base text-white/70">{formatAmount(player.balance)} голосов</span>
+        <span className="text-base text-white/70">{formatAmount(player.balance)} монет</span>
       </div>
 
       {/* Надпись снизу */}

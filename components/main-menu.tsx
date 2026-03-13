@@ -289,8 +289,8 @@ export function MainMenu() {
           <button
             onClick={() => setScreen("shop")}
             className="h-12 w-12 rounded-full bg-amber-400/30 border-2 border-amber-400/60 flex items-center justify-center text-amber-500 hover:bg-amber-400/40 transition-colors"
-            title="Пополнить"
-            aria-label="Пополнить голоса"
+            title="Пополнить баланс"
+            aria-label="Пополнить монеты"
           >
             <Plus className="h-5 w-5" />
           </button>

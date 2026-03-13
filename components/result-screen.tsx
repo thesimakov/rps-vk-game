@@ -231,7 +231,7 @@ export function ResultScreen() {
             <span className="asleep-zzz asleep-zzz-delay-3 text-2xl sm:text-3xl font-black text-white/80">z</span>
           </div>
           <p className="text-white/80 text-sm sm:text-base text-center max-w-xs mb-6 leading-relaxed">
-            Один из игроков не успел выбрать карту. Его голоса переходят тому, кто выбрал.
+            Один из игроков не успел выбрать карту. Его ставка переходит тому, кто выбрал.
           </p>
         </>
       ) : (
@@ -486,7 +486,7 @@ export function ResultScreen() {
         </>
       )}
 
-      {/* Итог матча: сколько голосов выиграно / проиграно */}
+      {/* Итог матча: сколько денег выиграно / проиграно */}
       <div className="flex flex-col items-center mb-8 gap-1">
         <div
           className={`result-earnings-in flex items-center justify-center gap-2 rounded-full border-2 border-amber-400/60 bg-amber-500/20 px-5 py-2.5 w-fit mx-auto ${

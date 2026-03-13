@@ -3,7 +3,7 @@ import path from "path"
 
 export type PromoUserId = `vk_${number}` | string
 
-export type PromoRewardKind = "voices" | "fast_match" | "lava_card" | "water_card"
+export type PromoRewardKind = "rubles" | "fast_match" | "lava_card" | "water_card"
 
 export interface PromoReward {
   kind: PromoRewardKind

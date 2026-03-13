@@ -116,7 +116,7 @@ const SHOP_ITEMS: ShopItem[] = [
   {
     id: "tournament-entry",
     name: "Турнир дня",
-    description: "16 игроков, призовой фонд 500+ голосов",
+    description: "16 игроков, призовой фонд 500+ монет",
     price: 25,
     icon: <Crown className="h-5 w-5" />,
     category: "tournament",
@@ -143,18 +143,18 @@ const SHOP_ITEMS: ShopItem[] = [
 ]
 
 const VOICE_PACKS = [
-  { amount: 10, price: 10, label: "10 ₽" },
-  { amount: 20, price: 20, label: "20 ₽" },
-  { amount: 30, price: 30, label: "30 ₽" },
-  { amount: 50, price: 50, label: "50 ₽" },
-  { amount: 70, price: 70, label: "70 ₽" },
-  { amount: 100, price: 100, label: "100 ₽" },
+  { amount: 10, price: 10, label: "10 монет" },
+  { amount: 20, price: 20, label: "20 монет" },
+  { amount: 30, price: 30, label: "30 монет" },
+  { amount: 50, price: 50, label: "50 монет" },
+  { amount: 70, price: 70, label: "70 монет" },
+  { amount: 100, price: 100, label: "100 монет" },
 ]
 
 type ChestType = "basic" | "premium"
 
 /** Типы призов из сундуков */
-type PrizeKind = "coins" | "bonus" | "voices_small" | "voices_medium" | "boost" | "double_bonus"
+type PrizeKind = "coins" | "bonus" | "rubles_small" | "rubles_medium" | "boost" | "double_bonus"
 
 interface ChestPrize {
   kind: PrizeKind
@@ -166,9 +166,9 @@ interface ChestPrize {
 /** Случайный приз для базового сундука */
 function rollBasicPrize(): ChestPrize {
   const r = Math.random()
-  if (r < 0.28) return { kind: "coins", amount: Math.floor(Math.random() * 8) + 1, label: "₽" }
+  if (r < 0.28) return { kind: "coins", amount: Math.floor(Math.random() * 8) + 1, label: "монет" }
   if (r < 0.5) return { kind: "bonus", amount: 2, label: "Бонусы +2" }
-  if (r < 0.72) return { kind: "voices_small", amount: 3 + Math.floor(Math.random() * 5), label: "₽" }
+  if (r < 0.72) return { kind: "rubles_small", amount: 3 + Math.floor(Math.random() * 5), label: "монет" }
   if (r < 0.9) return { kind: "boost", amount: 1, label: "Быстрый поиск +1" }
   return { kind: "double_bonus", amount: 2, label: "Бонусы +2" }
 }
@@ -176,12 +176,12 @@ function rollBasicPrize(): ChestPrize {
 /** Случайный приз для премиум сундука */
 function rollPremiumPrize(): ChestPrize {
   const r = Math.random()
-  if (r < 0.22) return { kind: "coins", amount: 10 + Math.floor(Math.random() * 21), label: "₽" }
+  if (r < 0.22) return { kind: "coins", amount: 10 + Math.floor(Math.random() * 21), label: "монет" }
   if (r < 0.4) return { kind: "bonus", amount: 2, label: "Бонусы +2" }
-  if (r < 0.58) return { kind: "voices_medium", amount: 15 + Math.floor(Math.random() * 16), label: "₽" }
+  if (r < 0.58) return { kind: "rubles_medium", amount: 15 + Math.floor(Math.random() * 16), label: "монет" }
   if (r < 0.76) return { kind: "boost", amount: Math.random() > 0.5 ? 2 : 1, label: "Быстрый поиск" }
   if (r < 0.9) return { kind: "double_bonus", amount: 2, label: "Бонусы +2" }
-  return { kind: "coins", amount: 20 + Math.floor(Math.random() * 25), label: "₽" }
+  return { kind: "coins", amount: 20 + Math.floor(Math.random() * 25), label: "монет" }
 }
 
 /** Выдать N случайных призов для сундука */
@@ -196,8 +196,8 @@ function applyPrize(prize: ChestPrize, player: { balance: number; fastMatchBoost
   let fastMatchBoosts = player.fastMatchBoosts ?? 0
   switch (prize.kind) {
     case "coins":
-    case "voices_small":
-    case "voices_medium":
+    case "rubles_small":
+    case "rubles_medium":
       balance += prize.amount ?? 0
       break
     case "bonus":
@@ -272,7 +272,7 @@ export function ShopScreen() {
   const handleTopUp = async (amount: number) => {
     setTopUpError("")
 
-    // Лимит пополнений: не более 3000 ₽ в сутки на пользователя.
+    // Лимит пополнений: не более 3000 монет в сутки на пользователя.
     try {
       if (typeof window !== "undefined" && player.id.startsWith("vk_")) {
         const today = new Date().toISOString().slice(0, 10)
@@ -280,7 +280,7 @@ export function ShopScreen() {
         const usedRaw = window.localStorage.getItem(key)
         const used = Number(usedRaw) || 0
         if (used + amount > 3000) {
-          setTopUpError("Лимит пополнения 3000 ₽ в сутки уже достигнут или будет превышен этой покупкой.")
+          setTopUpError("Лимит пополнения 3000 монет в сутки уже достигнут или будет превышен этой покупкой.")
           return
         }
       }
@@ -440,7 +440,7 @@ export function ShopScreen() {
       const json = (await res.json()) as {
         ok: boolean
         error?: string
-        reward?: { kind: "voices" | "fast_match" | "lava_card" | "water_card"; amount?: number }
+        reward?: { kind: "rubles" | "fast_match" | "lava_card" | "water_card"; amount?: number }
       }
       if (!json.ok || !json.reward) {
         const msg =
@@ -458,7 +458,7 @@ export function ShopScreen() {
       setPlayer((p) => {
         const amount = reward.amount ?? 0
         const updated = { ...p }
-        if (reward.kind === "voices") {
+        if (reward.kind === "rubles") {
           updated.balance = p.balance + amount
         } else if (reward.kind === "fast_match") {
           updated.fastMatchBoosts = (p.fastMatchBoosts ?? 0) + (amount || 1)
@@ -471,8 +471,8 @@ export function ShopScreen() {
       })
       setPromoStatus("success")
       const baseText =
-        reward.kind === "voices"
-          ? `Начислено ${formatAmount(reward.amount ?? 0)} ₽.`
+        reward.kind === "rubles"
+          ? `Начислено ${formatAmount(reward.amount ?? 0)} монет.`
           : reward.kind === "fast_match"
             ? `Начислено ${reward.amount ?? 1} использований быстрого поиска.`
             : reward.kind === "lava_card"
@@ -637,7 +637,7 @@ export function ShopScreen() {
       <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <UserPlus className="h-5 w-5 text-primary" />
-          <span className="font-bold text-base text-foreground">Получить {INVITE_REWARD} ₽ за приглашение 4 друзей</span>
+          <span className="font-bold text-base text-foreground">Получить {INVITE_REWARD} монет за приглашение 4 друзей</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           Выберите друзей, пригласите их в игру. Когда они примут приглашение — появятся в ячейках. За 4 принявших приглашение — награда.
@@ -712,20 +712,20 @@ export function ShopScreen() {
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-accent text-accent-foreground text-sm font-bold transition-all active:scale-95"
             >
               <Coins className="h-4 w-4" />
-              Получить {INVITE_REWARD} ₽
+              Получить {INVITE_REWARD} монет
             </button>
           )}
         </div>
       </div>
 
-      {/* Блок «100 голосов — расскажи друзьям» скрыт, так как приложению недоступно создание постов на стене */}
+      {/* Блок «100 монет — расскажи друзьям» скрыт, так как приложению недоступно создание постов на стене */}
 
       {/* Награда за подписку на группу ВК */}
       <div className="w-full max-w-md mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <UserPlus className="h-5 w-5 text-secondary" />
           <span className="font-bold text-base text-foreground">
-            Подпишитесь в нашу группу ВК и получите {GROUP_SUB_REWARD} ₽
+            Подпишитесь в нашу группу ВК и получите {GROUP_SUB_REWARD} монет
           </span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
@@ -752,7 +752,7 @@ export function ShopScreen() {
             ? "Подписка…"
             : player.groupSubscribedRewardClaimed
               ? "Вы уже подписаны"
-              : `Подписаться и получить ${GROUP_SUB_REWARD} ₽`}
+              : `Подписаться и получить ${GROUP_SUB_REWARD} монет`}
         </button>
       </div>
 
@@ -959,7 +959,7 @@ export function ShopScreen() {
                     key={i}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-card/80 border border-border/50"
                   >
-                    {prize.kind === "coins" || prize.kind === "voices_small" || prize.kind === "voices_medium" ? (
+                    {prize.kind === "coins" || prize.kind === "rubles_small" || prize.kind === "rubles_medium" ? (
                       <>
                         <Coins className="w-6 h-6 text-accent shrink-0" />
                         <span className="font-bold text-base text-accent">+{formatAmount(toDisplayAmount(prize.amount ?? 0))} {currencyLabel}</span>

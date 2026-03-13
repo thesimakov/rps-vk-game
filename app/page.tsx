@@ -85,7 +85,7 @@ function GameLayout() {
           <div className="pointer-events-auto max-w-md mx-auto rounded-2xl bg-slate-900/95 border border-amber-400/60 px-4 py-3 shadow-xl flex items-center gap-3">
             <div className="flex-1">
               <p className="text-xs sm:text-sm text-white/90 leading-snug">
-                Добавь друга, получи за него 10 голосов. Чем больше друзей зашли, тем больше голосов получи.
+                Добавь друга, получи за него 10 монет. Чем больше друзей зашли, тем больше монет получи.
               </p>
               <button
                 type="button"

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 
 // Подготовка данных для VKWebAppOpenPayForm.
-// Универсально: можно использовать как для голосов ВК, так и для VK Pay / карт,
+// Универсально: можно использовать как для внутриигровых платежей ВК, так и для VK Pay / карт,
 // в зависимости от значения поля "method" в теле запроса.
 //
 // Конкретные поля (action, params, merchant_id, sign, order_id и т.п.) должны
@@ -24,7 +24,7 @@ function getSecretKey() {
   return typeof key === "string" && key.trim() ? key : "dev-secret"
 }
 
-type PaymentMethod = "vk_voices"
+type PaymentMethod = "vk_balance"
 
 function generateOrderId(userId: string, amount: number) {
   const base = `${userId || "anon"}:${amount}:${Date.now()}:${Math.random()}`
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
 
     const amount = Number(body.amount)
     const userId = typeof body.userId === "string" ? body.userId : ""
-    const method: PaymentMethod = "vk_voices"
+    const method: PaymentMethod = "vk_balance"
     const description = typeof body.description === "string" ? body.description.slice(0, 128) : "Пополнение баланса"
 
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -68,7 +68,7 @@ export async function POST(req: Request) {
     const orderId = generateOrderId(userId, amount)
 
     // Базовый payload для VKWebAppOpenPayForm. При необходимости скорректируйте
-    // поля под конкретный режим (голоса / VK Pay) согласно доке.
+    // поля под конкретный режим (виртуальная валюта / VK Pay) согласно доке.
     const basePayload: Record<string, unknown> = {
       action: "pay-to-service",
       app_id: Number(appId),

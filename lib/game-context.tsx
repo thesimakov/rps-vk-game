@@ -39,7 +39,7 @@ export interface Player {
   weekEarnings: number
   /** Рейтинговые бонусы (очки), полученные за победы */
   ratingPoints?: number
-  /** Суммарные покупки голосов за всё время (для банка турнира сезона) */
+  /** Суммарные покупки монет за всё время (для банка турнира сезона) */
   totalPurchases?: number
   vip: boolean
   /** Осталось матчей с приоритетом поиска (покупка «Быстрый поиск») */
@@ -56,7 +56,7 @@ export interface Player {
   avatarFrame?: string
   /** Участие в турнире дня */
   tournamentEntry?: boolean
-  /** Скрыть аватар из ВК (купили за 100 голосов) */
+  /** Скрыть аватар из ВК (купили за 100 монет) */
   hideVkAvatar?: boolean
   /** Карта «Лава»: осталось использований (5 за покупку) */
   lavaCardUses?: number
@@ -66,9 +66,9 @@ export interface Player {
   extraTimerUntil?: number
   /** Приглашённые друзья (до 4 слотов). Когда друг принимает приглашение — появляется в ячейке. */
   invitedFriends?: Array<{ id: number; first_name: string; last_name: string; photo_200: string } | null>
-  /** Награда 100 голосов за 4 приглашённых друга уже получена */
+  /** Награда 100 монет за 4 приглашённых друга уже получена */
   invitedRewardClaimed?: boolean
-  /** Награда 100 голосов за пост «расскажи друзьям» уже получена */
+  /** Награда 100 монет за пост «расскажи друзьям» уже получена */
   wallPostRewardClaimed?: boolean
   /** Награда за подписку на группу ВК уже получена */
   groupSubscribedRewardClaimed?: boolean
@@ -179,7 +179,7 @@ interface GameState {
   /** Тренд рейтинга: вырос — зелёный, упал — красный */
   rankTrend: "up" | "down" | null
   leaderboardVersion: number
-  /** Покупка буста рейтинга: 250 голосов → +100 к недельным очкам */
+  /** Покупка буста рейтинга: 250 монет → +100 к недельным очкам */
   purchaseRankBoost: () => boolean
   vkUser: VKUser | null
   /** Войти через ВК: внутри мини-приложения использует VK Bridge, на своём сервере — OAuth редирект */
@@ -209,8 +209,8 @@ interface GameState {
   /** Учитывать «траты» для реферальной программы (начисление 10% рефереру) */
   trackSpend: (amount: number, reason: string) => void
   /** Для отображения: числовое значение баланса (можно переопределить формат) */
-  toDisplayAmount: (voices: number) => number
-  /** Подпись валюты (например, "₽") */
+  toDisplayAmount: (amount: number) => number
+  /** Подпись валюты (например, "монет") */
   currencyLabel: string
 }
 
@@ -348,7 +348,7 @@ export function getFillerBetEntries(count: number): BetEntry[] {
   })
 }
 
-/** Интервал обновления рейтинга — каждые 30 секунд (видно изменение голосов и мест) */
+/** Интервал обновления рейтинга — каждые 30 секунд (видно изменение очков и мест) */
 const LEADERBOARD_UPDATE_MS = 30 * 1000
 
 /** Сохранение в localStorage: версия для совместимости при будущих обновлениях */
@@ -1223,7 +1223,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [player.balance, trackSpend])
 
   const toDisplayAmount = useCallback((amount: number) => amount, [])
-  const currencyLabel = "₽"
+  const currencyLabel = "монет"
 
   return (
     <GameContext.Provider

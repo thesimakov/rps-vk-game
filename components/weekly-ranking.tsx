@@ -102,7 +102,7 @@ export function WeeklyRanking() {
             Банк турнира
           </span>
           <span className="text-sm font-extrabold text-amber-100 tabular-nums">
-            {seasonBank} голосов
+            {seasonBank} монет
           </span>
         </div>
       </div>
@@ -237,7 +237,7 @@ export function WeeklyRanking() {
         </div>
       </div>
 
-      {/* Увеличить рейтинг: 250 голосов → +100 бонус */}
+      {/* Увеличить рейтинг: 250 монет → +100 бонус */}
       <button
         onClick={() => canBuyBoost && purchaseRankBoost()}
         disabled={!canBuyBoost}
@@ -246,7 +246,7 @@ export function WeeklyRanking() {
         Увеличить рейтинг
       </button>
       <p className="text-[10px] text-muted-foreground text-center px-1">
-        +100 бонус за 250 голосов
+        +100 бонус за 250 монет
       </p>
 
       <button

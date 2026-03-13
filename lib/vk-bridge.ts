@@ -52,7 +52,7 @@ export async function getVKUser(): Promise<VKUser | null> {
 }
 
 /**
- * Покупка внутриигрового баланса: открывает форму оплаты VK (VKWebAppOpenPayForm).
+ * Покупка внутриигровых монет: открывает форму оплаты VK (VKWebAppOpenPayForm).
  * — При отмене пользователем или ошибке ВК возвращает false (баланс не начислять).
  * — Подпись/проверка платежа должны выполняться на бэкенде (см. docs/VK_INTEGRATION.md),
  *   здесь мы отвечаем только за корректное открытие формы.
@@ -78,14 +78,14 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
     const appIdRaw = process.env.NEXT_PUBLIC_VK_APP_ID ?? "54475232"
     const appId = Number(appIdRaw) || 54475232
 
-    // Согласно актуальной доке VKWebAppOpenPayForm для голосов,
+    // Согласно актуальной доке VKWebAppOpenPayForm для внутриигровых платежей,
     // параметры платежа передаются во вложенном объекте params.
     const payload: Record<string, unknown> = {
       action: "pay-to-service",
       app_id: appId,
       params: {
         amount,
-        description: "Пополнение баланса в игре",
+        description: "Пополнение монет в игре",
         // поле data можно использовать для передачи order_id / user_id,
         // в тестовом режиме достаточно любой строки.
         data: String(amount),
@@ -110,10 +110,10 @@ export async function showVKPayment(amount: number): Promise<boolean> {
 }
 
 /**
- * Заявка на вывод голосов.
+ * Заявка на вывод виртуальных монет (внутриигрового баланса).
  * В продакшене: POST на бэкенд (amount, user_id); бэкенд проверяет лимиты и создаёт заявку.
  * Списывать баланс на клиенте только после успешного ответа бэкенда (заявка принята).
- * Иначе при сбое пользователь теряет голоса без вывода. См. docs/VK_INTEGRATION.md
+ * Иначе при сбое пользователь теряет баланс без вывода. См. docs/VK_INTEGRATION.md
  */
 export async function requestWithdraw(amount: number): Promise<{ ok: boolean; balance?: number; error?: string }> {
   if (amount < 10) return { ok: false, error: "invalid_amount" }

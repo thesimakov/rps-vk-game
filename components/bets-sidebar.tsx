@@ -282,11 +282,11 @@ export function BetsSidebar() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Wallet className="h-5 w-5 text-accent" />
-              Недостаточно голосов
+              Недостаточно средств
             </DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            У вас нет денег на поддержать ставку{noMoneyBet ? ` (${formatAmount(toDisplayAmount(noMoneyBet.amount))} ${currencyLabel})` : ""}. Пополните баланс, чтобы принять участие в игре.
+            У вас нет монет, чтобы поддержать ставку{noMoneyBet ? ` (${formatAmount(toDisplayAmount(noMoneyBet.amount))} ${currencyLabel})` : ""}. Пополните баланс, чтобы принять участие в игре.
           </p>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNoMoneyBet(null)}>
