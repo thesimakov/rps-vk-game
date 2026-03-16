@@ -414,8 +414,6 @@ export function ShopScreen() {
           balance: p.balance + GROUP_SUB_REWARD,
           groupSubscribedRewardClaimed: true,
         }))
-      } else {
-        setGroupSubError("Не удалось подписаться на группу. Проверьте, что указана верная группа и действие доступно этому приложению.")
       }
     } finally {
       setGroupSubLoading(false)
