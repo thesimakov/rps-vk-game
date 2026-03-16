@@ -27,8 +27,8 @@ function getAppId() {
 function getSecretKey() {
   // Поддерживаем и новое имя VK_SECRET_KEY, и старое VK_APP_SECRET_KEY.
   const key = process.env.VK_SECRET_KEY ?? process.env.VK_APP_SECRET_KEY
-  // Если секрет не задан в окружении, используем dev-значение, чтобы не блокировать оплату в тесте.
-  return typeof key === "string" && key.trim() ? key : "dev-secret"
+  // В продакшене секрет ОБЯЗАТЕЛЕН: без него подпись будет неверной и ВК вернёт ошибку авторизации.
+  return typeof key === "string" && key.trim() ? key.trim() : ""
 }
 
 function generateOrderId(userId: string, amount: number) {
@@ -67,6 +67,9 @@ export async function POST(req: Request) {
     }
 
     const secret = getSecretKey()
+    if (!secret) {
+      return NextResponse.json({ ok: false, error: "no_secret" }, { status: 500 })
+    }
 
     const orderId = generateOrderId(userId, amount)
 
