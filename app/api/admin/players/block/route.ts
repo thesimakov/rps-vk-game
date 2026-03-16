@@ -3,14 +3,20 @@ import { backupDb, blockPlayer, isValidPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 const ADMIN_SECRET = process.env.ADMIN_SECRET
+const PUBLIC_ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN
 export const dynamic = "force-static"
 
 function isAuthorized(request: Request): boolean {
-  if (!ADMIN_SECRET) return false
   const header = request.headers.get("x-admin-token") || request.headers.get("authorization")
   if (!header) return false
-  if (header === ADMIN_SECRET) return true
-  if (header.startsWith("Bearer ") && header.slice("Bearer ".length) === ADMIN_SECRET) return true
+  if (ADMIN_SECRET) {
+    if (header === ADMIN_SECRET) return true
+    if (header.startsWith("Bearer ") && header.slice("Bearer ".length) === ADMIN_SECRET) return true
+  }
+  if (PUBLIC_ADMIN_TOKEN) {
+    if (header === PUBLIC_ADMIN_TOKEN) return true
+    if (header.startsWith("Bearer ") && header.slice("Bearer ".length) === PUBLIC_ADMIN_TOKEN) return true
+  }
   return false
 }
 
