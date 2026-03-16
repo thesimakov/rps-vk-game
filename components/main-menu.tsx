@@ -419,7 +419,7 @@ export function MainMenu() {
             className="w-full flex items-center justify-center gap-2 bg-amber-400/25 border-2 border-amber-400/50 text-amber-400 font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-amber-400/35"
           >
             <Crown className="h-5 w-5" />
-            <span>Стань ВИП — сниженная комиссия!</span>
+            <span>Стань ВИП и выделяйся в игре!</span>
           </button>
         </div>
       )}
