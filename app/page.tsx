@@ -54,8 +54,6 @@ function GameLayout() {
   const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
 
   const showLowBalanceHint = vkUser != null && player.balance < 50 && !hideLowBalanceHint
-  // Все экраны, кроме стартового entry, делаем прокручиваемыми (включая главное меню).
-  const isScrollableScreen = screen !== "entry"
 
   const handleLowBalanceInvite = async () => {
     try {
@@ -116,9 +114,9 @@ function GameLayout() {
 
         <main className="flex-1 flex justify-center min-w-0">
           <div
-            className={`w-full max-w-lg mx-auto px-4 ${
-              isScrollableScreen ? "min-h-screen max-h-screen overflow-y-auto" : "min-h-screen"
-            } ${showBottomNav ? "pb-20" : ""}`}
+            className={`w-full max-w-lg mx-auto px-4 min-h-screen max-h-screen overflow-y-auto ${
+              showBottomNav ? "pb-20" : ""
+            }`}
           >
             <GameScreen />
           </div>
