@@ -157,6 +157,17 @@ export async function unblockPlayer(id: PlayerId, note?: string) {
   return setPlayerStatus(id, "active", { banUntil: undefined, notes: note })
 }
 
+/** Полностью удалить игрока из базы (без возможности восстановления, кроме как из бэкапа). */
+export async function deletePlayer(id: PlayerId): Promise<boolean> {
+  const db = await readDb()
+  if (!db.players[id]) {
+    return false
+  }
+  delete db.players[id]
+  await writeDb(db)
+  return true
+}
+
 function getBackupDir(): string {
   const dbPath = getDbPath()
   const dir = path.dirname(dbPath)

@@ -87,6 +87,21 @@ export function AdminStandaloneScreen() {
     setPlayers((prev) => prev.map((p) => (p.id === id ? res.player! : p)))
   }
 
+  const handleDelete = async (id: string) => {
+    setIsBusyId(id)
+    setError(null)
+    const res = await fetchJSON<{ ok: boolean; error?: string }>("/api/admin/players/delete", {
+      method: "POST",
+      body: JSON.stringify({ id }),
+    })
+    setIsBusyId(null)
+    if (!res || !res.ok) {
+      setError("Не удалось удалить игрока.")
+      return
+    }
+    setPlayers((prev) => prev.filter((p) => p.id !== id))
+  }
+
   const handleBackup = async () => {
     setError(null)
     const res = await fetchJSON<{ ok: boolean; error?: string }>("/api/admin/players/backup", {
@@ -224,7 +239,7 @@ export function AdminStandaloneScreen() {
                           <button
                             type="button"
                             disabled={isBusyId === p.id}
-                            onClick={() => void handleAction(p.id, "block")}
+                            onClick={() => void handleDelete(p.id)}
                             className="px-2 py-1 rounded-full bg-red-600/25 text-red-100 border border-red-500/70 hover:bg-red-600/35 disabled:opacity-60 disabled:cursor-not-allowed"
                           >
                             Удалить
