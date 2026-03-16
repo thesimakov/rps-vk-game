@@ -52,14 +52,13 @@ export async function getVKUser(): Promise<VKUser | null> {
 }
 
 /**
- * Покупка внутриигровых монет через виртуальные товары ВК.
+ * Покупка внутриигровых монет через виртуальные товары ВКонтакте (голоса).
  *
- * Поток:
- * 1) Запрашиваем на бэкенде параметры и подпись для VKWebAppOpenPayForm (`/api/payment/sign`).
- * 2) Открываем форму оплаты с currency = "votes" (виртуальная валюта ВК), без VK Pay.
+ * Используем VKWebAppShowOrderBox, как в инструкции по virtual goods:
+ * https://dev.vk.com/ru/api/payments/virtual-goods/vk
  *
- * Возвращает true, если форма успешно открылась и не вернула явный result === false.
- * Баланс должен начисляться только после серверного подтверждения платежа.
+ * В этом случае списание идёт из внутреннего баланса пользователя (голоса),
+ * а не через VK Pay-форму.
  */
 export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (typeof window === "undefined") return false
@@ -67,8 +66,6 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
 
-    // Если Bridge ещё не инициализирован (например, покупка вызвана раньше initVKBridge),
-    // пробуем выполнить VKWebAppInit локально.
     if (!bridgeReady) {
       try {
         await vkBridge.default.send("VKWebAppInit")
@@ -79,63 +76,22 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
       }
     }
 
-    // user_id можно использовать при генерации order_id / подписи на бэкенде.
-    let userId = ""
-    try {
-      userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
-    } catch {
-      userId = ""
-    }
+    // Для виртуальных товаров используется "товар" (item) с фиксированным ID.
+    // Привяжем его к количеству монет, чтобы модераторам было понятно.
+    const item = `coins_${amount}` // этот же ID нужно указать в настройках виртуальных товаров ВК
 
-    // Запрашиваем параметры и подпись для виртуального товара.
-    const signRes = await fetch("/api/payment/sign", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ amount, userId }),
+    const result = await vkBridge.default.send("VKWebAppShowOrderBox", {
+      type: "item",
+      item,
+      quantity: 1,
     })
 
-    if (!signRes.ok) {
-      console.error("[VK] payment/sign failed with status", signRes.status)
-      return false
+    console.log("[VK] VKWebAppShowOrderBox result:", result)
+    // При успехе bridge возвращает true, при отмене/ошибке — false.
+    if (typeof result === "boolean") {
+      return result
     }
-
-    const signJson = (await signRes.json()) as {
-      ok?: boolean
-      app_id?: number
-      order_id?: string
-      sign?: string
-      error?: string
-    }
-
-    if (!signJson.ok || !signJson.app_id || !signJson.order_id || !signJson.sign) {
-      console.error("[VK] payment/sign error:", signJson.error)
-      return false
-    }
-    const appId = signJson.app_id
-    const orderId = signJson.order_id
-    const sign = signJson.sign
-
-    // Формируем payload для VKWebAppOpenPayForm для виртуальных товаров:
-    // оплата голосами (currency: "votes"), без VK Pay.
-    const payload: Record<string, unknown> = {
-      app_id: appId,
-      action: "pay-to-service",
-      params: {
-        amount,
-        description: "Пополнение монет в игре",
-        order_id: orderId,
-        currency: "votes",
-        // data можно использовать для своих меток (user_id и т.п.)
-        data: userId || "",
-        sign,
-      },
-    }
-
-    const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
-    console.log("[VK] VKWebAppOpenPayForm result:", result)
-    const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
-
-    // Здесь возвращаем только факт успешного открытия/завершения формы.
+    const ok = result && typeof result === "object" ? (result as { success?: boolean }).success : undefined
     return ok !== false
   } catch (e) {
     console.error("[VK] purchaseVKVoices error:", e)
@@ -143,7 +99,7 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
   }
 }
 
-/** @deprecated Use purchaseVKVoices */
+/** @deprecated */
 export async function showVKPayment(amount: number): Promise<boolean> {
   return purchaseVKVoices(amount)
 }
