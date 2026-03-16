@@ -2,8 +2,19 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 
 // Подготовка данных для VKWebAppOpenPayForm для ПЛАТЕЖЕЙ ВИРТУАЛЬНОЙ ВАЛЮТОЙ (virtual goods).
-// Здесь формируем payload для вызова bridge с currency = "votes",
-// как в инструкции «Продажа виртуальных товаров ВКонтакте».
+// Здесь считаем, что сам вызов bridge будет иметь вид:
+// VKWebAppOpenPayForm({
+//   app_id,
+//   action: "pay-to-service",
+//   params: {
+//     amount,
+//     description,
+//     order_id,
+//     currency: "votes",
+//     data,
+//     sign,
+//   }
+// })
 
 export const dynamic = "force-static"
 
@@ -59,28 +70,23 @@ export async function POST(req: Request) {
 
     const orderId = generateOrderId(userId, amount)
 
-    // Базовый payload для VKWebAppOpenPayForm в режиме продажи виртуальных товаров:
-    // action: "pay-to-service", currency: "votes".
-    const basePayload: Record<string, unknown> = {
-      action: "pay-to-service",
-      app_id: Number(appId),
+    // Базовые поля, которые будут подписаны и переданы во вложенном params.
+    const signPayloadData: Record<string, unknown> = {
       amount,
       description,
       order_id: orderId,
       user_id: userId,
       currency: "votes",
+      app_id: Number(appId),
     }
 
-    const sign = signPayload(basePayload, secret)
+    const sign = signPayload(signPayloadData, secret)
 
     return NextResponse.json({
       ok: true,
       app_id: Number(appId),
       order_id: orderId,
-      payload: {
-        ...basePayload,
-        sign,
-      },
+      sign,
     })
   } catch {
     return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 })

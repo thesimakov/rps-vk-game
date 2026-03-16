@@ -103,18 +103,35 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
       ok?: boolean
       app_id?: number
       order_id?: string
-      payload?: Record<string, unknown>
+      sign?: string
       error?: string
     }
 
-    if (!signJson.ok || !signJson.payload) {
+    if (!signJson.ok || !signJson.app_id || !signJson.order_id || !signJson.sign) {
       console.error("[VK] payment/sign error:", signJson.error)
       return false
     }
+    const appId = signJson.app_id
+    const orderId = signJson.order_id
+    const sign = signJson.sign
 
-    // Бэкенд уже вернул корректный payload для VKWebAppOpenPayForm
-    // с action: "pay-to-service", currency: "votes" и подписью.
-    const result = await vkBridge.default.send("VKWebAppOpenPayForm", signJson.payload)
+    // Формируем payload для VKWebAppOpenPayForm для виртуальных товаров:
+    // оплата голосами (currency: "votes"), без VK Pay.
+    const payload: Record<string, unknown> = {
+      app_id: appId,
+      action: "pay-to-service",
+      params: {
+        amount,
+        description: "Пополнение монет в игре",
+        order_id: orderId,
+        currency: "votes",
+        // data можно использовать для своих меток (user_id и т.п.)
+        data: userId || "",
+        sign,
+      },
+    }
+
+    const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
     console.log("[VK] VKWebAppOpenPayForm result:", result)
     const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
 
