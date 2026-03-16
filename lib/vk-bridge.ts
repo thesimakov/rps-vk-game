@@ -52,10 +52,14 @@ export async function getVKUser(): Promise<VKUser | null> {
 }
 
 /**
- * Покупка внутриигровых монет: открывает форму оплаты VK (VKWebAppOpenPayForm).
- * — При отмене пользователем или ошибке ВК возвращает false (баланс не начислять).
- * — Подпись/проверка платежа должны выполняться на бэкенде (см. docs/VK_INTEGRATION.md),
- *   здесь мы отвечаем только за корректное открытие формы.
+ * Покупка внутриигровых монет через виртуальные товары ВК.
+ *
+ * Поток:
+ * 1) Запрашиваем на бэкенде параметры и подпись для VKWebAppOpenPayForm (`/api/payment/sign`).
+ * 2) Открываем форму оплаты с currency = "votes" (виртуальная валюта ВК), без VK Pay.
+ *
+ * Возвращает true, если форма успешно открылась и не вернула явный result === false.
+ * Баланс должен начисляться только после серверного подтверждения платежа.
  */
 export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (typeof window === "undefined") return false
@@ -75,24 +79,42 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
       }
     }
 
-    const appIdRaw = process.env.NEXT_PUBLIC_VK_APP_ID ?? "54475232"
-    const appId = Number(appIdRaw) || 54475232
-
-    // Согласно актуальной доке VKWebAppOpenPayForm для внутриигровых платежей,
-    // параметры платежа передаются во вложенном объекте params.
-    const payload: Record<string, unknown> = {
-      action: "pay-to-service",
-      app_id: appId,
-      params: {
-        amount,
-        description: "Пополнение монет в игре",
-        // поле data можно использовать для передачи order_id / user_id,
-        // в тестовом режиме достаточно любой строки.
-        data: String(amount),
-      },
+    // user_id можно использовать при генерации order_id / подписи на бэкенде.
+    let userId = ""
+    try {
+      userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
+    } catch {
+      userId = ""
     }
 
-    const result = await vkBridge.default.send("VKWebAppOpenPayForm", payload)
+    // Запрашиваем параметры и подпись для виртуального товара.
+    const signRes = await fetch("/api/payment/sign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount, userId }),
+    })
+
+    if (!signRes.ok) {
+      console.error("[VK] payment/sign failed with status", signRes.status)
+      return false
+    }
+
+    const signJson = (await signRes.json()) as {
+      ok?: boolean
+      app_id?: number
+      order_id?: string
+      payload?: Record<string, unknown>
+      error?: string
+    }
+
+    if (!signJson.ok || !signJson.payload) {
+      console.error("[VK] payment/sign error:", signJson.error)
+      return false
+    }
+
+    // Бэкенд уже вернул корректный payload для VKWebAppOpenPayForm
+    // с action: "pay-to-service", currency: "votes" и подписью.
+    const result = await vkBridge.default.send("VKWebAppOpenPayForm", signJson.payload)
     console.log("[VK] VKWebAppOpenPayForm result:", result)
     const ok = result && typeof result === "object" ? (result as { result?: boolean }).result : undefined
 

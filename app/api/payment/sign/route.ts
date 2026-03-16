@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 
-// Подготовка данных для VKWebAppOpenPayForm.
-// Универсально: можно использовать как для внутриигровых платежей ВК, так и для VK Pay / карт,
-// в зависимости от значения поля "method" в теле запроса.
-//
-// Конкретные поля (action, params, merchant_id, sign, order_id и т.п.) должны
-// соответствовать актуальной документации:
-// https://dev.vk.com/bridge/VKWebAppOpenPayForm
+// Подготовка данных для VKWebAppOpenPayForm для ПЛАТЕЖЕЙ ВИРТУАЛЬНОЙ ВАЛЮТОЙ (virtual goods).
+// Здесь формируем payload для вызова bridge с currency = "votes",
+// как в инструкции «Продажа виртуальных товаров ВКонтакте».
 
 export const dynamic = "force-static"
 
@@ -23,8 +19,6 @@ function getSecretKey() {
   // Если секрет не задан в окружении, используем dev-значение, чтобы не блокировать оплату в тесте.
   return typeof key === "string" && key.trim() ? key : "dev-secret"
 }
-
-type PaymentMethod = "vk_balance"
 
 function generateOrderId(userId: string, amount: number) {
   const base = `${userId || "anon"}:${amount}:${Date.now()}:${Math.random()}`
@@ -44,14 +38,12 @@ export async function POST(req: Request) {
     const body = (await req.json()) as {
       amount?: number
       userId?: string
-      method?: PaymentMethod
       description?: string
       currency?: string
     }
 
     const amount = Number(body.amount)
     const userId = typeof body.userId === "string" ? body.userId : ""
-    const method: PaymentMethod = "vk_balance"
     const description = typeof body.description === "string" ? body.description.slice(0, 128) : "Пополнение баланса"
 
     if (!Number.isFinite(amount) || amount <= 0) {
@@ -67,8 +59,8 @@ export async function POST(req: Request) {
 
     const orderId = generateOrderId(userId, amount)
 
-    // Базовый payload для VKWebAppOpenPayForm. При необходимости скорректируйте
-    // поля под конкретный режим (виртуальная валюта / VK Pay) согласно доке.
+    // Базовый payload для VKWebAppOpenPayForm в режиме продажи виртуальных товаров:
+    // action: "pay-to-service", currency: "votes".
     const basePayload: Record<string, unknown> = {
       action: "pay-to-service",
       app_id: Number(appId),
@@ -85,7 +77,6 @@ export async function POST(req: Request) {
       ok: true,
       app_id: Number(appId),
       order_id: orderId,
-      method,
       payload: {
         ...basePayload,
         sign,
