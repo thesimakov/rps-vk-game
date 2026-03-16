@@ -27,8 +27,6 @@ function GameScreen() {
   const { screen, vkUser } = useGame()
   const isEntry = screen === "entry" || (screen === "menu" && !vkUser)
 
-  const isScrollableScreen = !["menu", "entry"].includes(screen)
-
   return (
     <>
       {isEntry && <EntryScreen />}
@@ -56,7 +54,8 @@ function GameLayout() {
   const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
 
   const showLowBalanceHint = vkUser != null && player.balance < 50 && !hideLowBalanceHint
-  const isScrollableScreen = !["menu", "entry"].includes(screen)
+  // Все экраны, кроме стартового entry, делаем прокручиваемыми (включая главное меню).
+  const isScrollableScreen = screen !== "entry"
 
   const handleLowBalanceInvite = async () => {
     try {
