@@ -16,7 +16,30 @@ import { NextResponse } from "next/server"
 // - начисление средств/товаров пользователю при успешной оплате;
 // - корректные ответы в формате, описанном в доке «Платежи виртуальной валютой».
 //
-export const dynamic = "force-static"
+export const dynamic = "force-dynamic"
+
+type VkCatalogItem = {
+  itemId: string
+  amount: number
+  votes: number
+}
+
+const CATALOG: VkCatalogItem[] = [
+  { itemId: "coins_100", amount: 100, votes: 1 },
+  { itemId: "coins_200", amount: 200, votes: 2 },
+  { itemId: "coins_300", amount: 300, votes: 3 },
+  { itemId: "coins_500", amount: 500, votes: 5 },
+  { itemId: "coins_700", amount: 700, votes: 7 },
+  { itemId: "coins_1000", amount: 1000, votes: 10 },
+]
+
+function toAppOrderId(orderId: string): number {
+  const direct = Number(orderId)
+  if (Number.isFinite(direct) && direct > 0) return Math.floor(direct)
+  let hash = 0
+  for (let i = 0; i < orderId.length; i += 1) hash = (hash * 31 + orderId.charCodeAt(i)) >>> 0
+  return (hash % 900000000) + 100000000
+}
 
 export async function POST(req: Request) {
   try {
@@ -27,6 +50,7 @@ export async function POST(req: Request) {
     const rawNotificationType = params.get("notification_type") ?? ""
     const userId = params.get("user_id") ?? ""
     const orderId = params.get("order_id") ?? ""
+    const itemId = params.get("item") ?? ""
 
     // Поддержка тестового режима платежей:
     // В тестовом режиме ВК добавляет к notification_type постфикс "_test",
@@ -37,8 +61,40 @@ export async function POST(req: Request) {
       ? rawNotificationType.slice(0, -"_test".length)
       : rawNotificationType
 
-    // Здесь можно добавить логирование или запись в отдельный лог-файл/БД.
-    // Пока просто возвращаем базовый ответ, чтобы URL считался «живым».
+    if (notificationType === "get_item") {
+      const item = CATALOG.find((i) => i.itemId === itemId)
+      if (!item) {
+        return NextResponse.json({
+          error: {
+            error_code: 20,
+            error_msg: `Unknown item: ${itemId}`,
+            critical: false,
+          },
+        })
+      }
+
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://vk.com"
+      return NextResponse.json({
+        response: {
+          item_id: item.itemId,
+          title: `${item.amount} монет`,
+          price: item.votes,
+          photo_url: `${baseUrl}/logo.png`,
+        },
+      })
+    }
+
+    if (notificationType === "order_status_change") {
+      // Подтверждаем заказ ВК. Здесь же можно начислять монеты в БД.
+      return NextResponse.json({
+        response: {
+          order_id: orderId,
+          app_order_id: toAppOrderId(orderId),
+        },
+      })
+    }
+
+    // Для прочих служебных типов оставляем "живой" ответ для диагностики.
 
     return NextResponse.json({
       ok: true,
