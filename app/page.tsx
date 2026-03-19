@@ -46,12 +46,35 @@ function GameScreen() {
 }
 
 function GameLayout() {
-  const { screen, vkUser, player, setPlayer, isLoading } = useGame()
+  const { screen, vkUser, player, setPlayer, isLoading, loadingStage, loadingProgress } = useGame()
+  const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
+  const [showLoader, setShowLoader] = useState(true)
+
+  useEffect(() => {
+    if (isLoading) {
+      setShowLoader(true)
+      return
+    }
+    const t = setTimeout(() => setShowLoader(false), 320)
+    return () => clearTimeout(t)
+  }, [isLoading])
+
+  if (showLoader) {
+    return (
+      <div className="relative min-h-screen">
+        <ParticlesBg />
+        <GameLoader
+          stage={isLoading ? loadingStage : "Запуск игры..."}
+          progress={isLoading ? loadingProgress : 100}
+        />
+      </div>
+    )
+  }
+
   const hideNav = ["matchmaking", "result", "entry"].includes(screen)
   const showLeftSidebar = !hideNav && screen !== "bets" && vkUser != null
   const showRightSidebar = !hideNav && vkUser != null
   const showBottomNav = !hideNav && vkUser != null
-  const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
 
   const showLowBalanceHint = vkUser != null && player.balance < 50 && !hideLowBalanceHint
 
@@ -72,10 +95,6 @@ function GameLayout() {
     <div className="relative min-h-screen">
       <ParticlesBg />
       <BetResponseDialog />
-
-      {isLoading && (
-        <GameLoader />
-      )}
 
       {showLowBalanceHint && (
         <div className="pointer-events-none fixed inset-x-0 top-4 z-40 flex justify-center">

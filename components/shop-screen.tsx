@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, joinVKGroup, VK_VOICE_PACKS } from "@/lib/vk-bridge"
+import { canPurchaseItem, isItemOwned, type ShopItemId } from "@/lib/shop-rules"
 import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass, Ticket } from "lucide-react"
 
 const INVITED_SLOTS = 4
@@ -211,6 +212,7 @@ function normalizeInvitedSlots(
 export function ShopScreen() {
   const { setScreen, player, setPlayer, vkUser, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend, toDisplayAmount, currencyLabel } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
+  const [buyingItemId, setBuyingItemId] = useState<string | null>(null)
   const [topUpError, setTopUpError] = useState<string>("")
   const [openingChest, setOpeningChest] = useState<{ type: ChestType; prizes: ChestPrize[] } | null>(null)
   const [chestPhase, setChestPhase] = useState<"fly" | "open" | "reward" | "collect">("fly")
@@ -227,6 +229,38 @@ export function ShopScreen() {
   const invitedCount = invitedSlots.filter(Boolean).length
   const canClaimInviteReward = invitedCount >= INVITED_SLOTS && !player.invitedRewardClaimed
   const canClaimGroupReward = !player.groupSubscribedRewardClaimed
+
+  const getItemById = (itemId: ShopItemId) => SHOP_ITEMS.find((item) => item.id === itemId)
+
+  const isOwned = (itemId: ShopItemId, p = player) =>
+    isItemOwned(itemId, {
+      balance: p.balance,
+      vip: p.vip,
+      victoryAnimation: p.victoryAnimation,
+      cardSkin: p.cardSkin,
+      avatarFrame: p.avatarFrame,
+      tournamentEntry: p.tournamentEntry,
+      hasAncientDeck: p.hasAncientDeck,
+    })
+
+  const canBuyItem = (itemId: ShopItemId, p = player) => {
+    const item = getItemById(itemId)
+    if (!item) return false
+    return canPurchaseItem({
+      itemId,
+      price: item.price,
+      state: {
+        balance: p.balance,
+        vip: p.vip,
+        victoryAnimation: p.victoryAnimation,
+        cardSkin: p.cardSkin,
+        avatarFrame: p.avatarFrame,
+        tournamentEntry: p.tournamentEntry,
+        hasAncientDeck: p.hasAncientDeck,
+      },
+      lavaCardStock,
+    })
+  }
 
   useEffect(() => {
     if (!openingChest) return
@@ -446,71 +480,83 @@ export function ShopScreen() {
     }
   }
 
-  const handleBuy = (itemId: string, price: number) => {
+  const handleBuy = (itemId: ShopItemId) => {
+    if (buyingItemId) return
+    const item = getItemById(itemId)
+    if (!item) return
+    const price = item.price
+    if (!canBuyItem(itemId)) return
+
     if (itemId === "lava-card") {
+      setBuyingItemId(itemId)
       purchaseLavaCard()
+      setTimeout(() => setBuyingItemId(null), 300)
       return
     }
     if (itemId === "water-card") {
+      setBuyingItemId(itemId)
       purchaseWaterCard()
+      setTimeout(() => setBuyingItemId(null), 300)
       return
     }
 
     if (itemId === "chest-basic" || itemId === "chest-premium") {
+      setBuyingItemId(itemId)
       trackSpend(price, itemId)
       const type: ChestType = itemId === "chest-basic" ? "basic" : "premium"
       const count = type === "premium" ? 3 : 2
       const prizes = rollChestPrizes(type, count)
-      setPlayer((p) => ({ ...p, balance: p.balance - price }))
+      setPlayer((p) => {
+        if (p.balance < price) return p
+        return { ...p, balance: p.balance - price }
+      })
       setOpeningChest({ type, prizes })
+      setTimeout(() => setBuyingItemId(null), 300)
       return
     }
 
+    setBuyingItemId(itemId)
     trackSpend(price, itemId)
     setPlayer((p) => {
-      if (p.balance < price) return p
-      const updated = { ...p, balance: p.balance - price }
+      if (!canBuyItem(itemId, p)) return p
       switch (itemId) {
         case "vip":
-          updated.vip = true
-          break
+          return { ...p, balance: p.balance - price, vip: true }
         case "fast-match":
-          updated.fastMatchBoosts = (p.fastMatchBoosts ?? 0) + 10
-          break
+          return {
+            ...p,
+            balance: p.balance - price,
+            fastMatchBoosts: (p.fastMatchBoosts ?? 0) + 10,
+          }
         case "victory-anim":
-          updated.victoryAnimation = "fire"
-          break
+          return { ...p, balance: p.balance - price, victoryAnimation: "fire" }
         case "card-skin":
-          updated.cardSkin = "gold"
-          break
+          return { ...p, balance: p.balance - price, cardSkin: "gold" }
         case "card-set-ancient":
-          updated.hasAncientDeck = true
-          // по умолчанию сразу включаем тему при первой покупке
-          if (!p.cardDeck) updated.cardDeck = "ancient-rus"
-          break
+          return {
+            ...p,
+            balance: p.balance - price,
+            hasAncientDeck: true,
+            cardDeck: p.cardDeck ?? "ancient-rus",
+          }
         case "frame-neon":
-          updated.avatarFrame = "neon"
-          break
+          return { ...p, balance: p.balance - price, avatarFrame: "neon" }
         case "frame-gold":
-          updated.avatarFrame = "gold"
-          break
+          return { ...p, balance: p.balance - price, avatarFrame: "gold" }
         case "tournament-entry":
-          updated.tournamentEntry = true
-          updated.balance += 50
-          break
+          return { ...p, balance: p.balance - price, tournamentEntry: true }
         case "timer-plus-10": {
           const now = Date.now()
           const current = p.extraTimerUntil && p.extraTimerUntil > now ? p.extraTimerUntil : now
           const oneDay = 24 * 60 * 60 * 1000
-          updated.extraTimerUntil = current + oneDay
-          break
+          return { ...p, balance: p.balance - price, extraTimerUntil: current + oneDay }
         }
         default:
           // неизвестный id — ничего не покупаем
           return p
       }
-      return updated
     })
+    setTimeout(() => setBuyingItemId(null), 300)
   }
 
   return (
@@ -537,10 +583,10 @@ export function ShopScreen() {
       <div className="w-full max-w-lg mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet className="h-5 w-5 text-primary" />
-          <span className="font-bold text-base text-foreground">Пополнить баланс (голоса ВК)</span>
+          <span className="font-bold text-base text-foreground">Пополнить баланс</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Каждая покупка имеет фиксированную стоимость в голосах.
+          Выберите удобный пакет пополнения.
         </p>
         <p className="text-xs text-muted-foreground mb-3">
           Внутренний курс: 1 монета = 0,1 руб.
@@ -564,7 +610,7 @@ export function ShopScreen() {
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
             >
               <Coins className="h-4 w-4" />
-              {topUpLoading === pack.amount ? "..." : `${pack.amount} монет · ${pack.votes} голос${pack.votes === 1 ? "" : pack.votes < 5 ? "а" : "ов"}`}
+              {topUpLoading === pack.amount ? "..." : `${pack.amount} монет`}
             </button>
           ))}
         </div>
@@ -734,22 +780,10 @@ export function ShopScreen() {
       {/* Items */}
       <div className="w-full max-w-lg flex flex-col gap-2.5">
         {SHOP_ITEMS.map((item) => {
-          const canAfford = player.balance >= item.price
-          const alreadyOwned =
-            (item.id === "vip" && player.vip) ||
-            (item.id === "victory-anim" && player.victoryAnimation) ||
-            (item.id === "card-skin" && player.cardSkin) ||
-            (item.id === "frame-neon" && player.avatarFrame === "neon") ||
-            (item.id === "frame-gold" && player.avatarFrame === "gold") ||
-            (item.id === "tournament-entry" && player.tournamentEntry) ||
-            (item.id === "card-set-ancient" && player.hasAncientDeck)
-          const lavaOutOfStock = item.id === "lava-card" && lavaCardStock <= 0
-          const canBuy =
-            item.id === "lava-card"
-              ? canAfford && !lavaOutOfStock
-              : item.id === "water-card"
-                ? canAfford
-                : canAfford && !alreadyOwned
+          const itemId = item.id as ShopItemId
+          const alreadyOwned = isOwned(itemId)
+          const lavaOutOfStock = itemId === "lava-card" && lavaCardStock <= 0
+          const canBuy = canBuyItem(itemId)
           return (
             <div
               key={item.id}
@@ -767,15 +801,15 @@ export function ShopScreen() {
               </div>
               <button
                 type="button"
-                onClick={() => handleBuy(item.id, item.price)}
-                disabled={!canBuy}
+                onClick={() => handleBuy(itemId)}
+                disabled={!canBuy || !!buyingItemId}
                 className={`flex items-center gap-1 px-3.5 py-2 rounded-xl text-base font-bold transition-all flex-shrink-0 ${
                   canBuy
                     ? "bg-primary text-primary-foreground cursor-pointer active:scale-95 shadow-md shadow-primary/20"
                     : "bg-muted/30 text-muted-foreground border border-border/30 cursor-not-allowed"
                 }`}
               >
-                {item.id === "lava-card" && lavaOutOfStock ? "Нет в наличии" : alreadyOwned ? "Куплено" : (
+                {buyingItemId === item.id ? "Покупка..." : item.id === "lava-card" && lavaOutOfStock ? "Нет в наличии" : alreadyOwned ? "Куплено" : (
                   <>
                     <Coins className="h-3 w-3" />
                     {formatAmount(toDisplayAmount(item.price))} {currencyLabel}

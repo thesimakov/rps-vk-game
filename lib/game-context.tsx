@@ -186,6 +186,8 @@ interface GameState {
   /** Выйти из аккаунта ВК — возврат на экран входа */
   logoutWithVK: () => void
   isLoading: boolean
+  loadingStage: string
+  loadingProgress: number
   /** Сообщение об ошибке входа (бан/блок), отображается на экране входа */
   loginErrorMessage: string | null
   bets: BetEntry[]
@@ -353,6 +355,8 @@ const LEADERBOARD_UPDATE_MS = 30 * 1000
 /** Сохранение в localStorage: версия для совместимости при будущих обновлениях */
 const SAVE_STORAGE_KEY = "rps_vk_save"
 const SAVE_VERSION = 2
+const BRIDGE_INIT_TIMEOUT_MS = 6000
+const AUTH_RESOLVE_TIMEOUT_MS = 7000
 
 async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | null> {
   try {
@@ -527,7 +531,10 @@ function shuffleEarnings(entries: Omit<LeaderboardEntry, "rank">[]): Omit<Leader
 export function GameProvider({ children }: { children: React.ReactNode }) {
   const [screen, setScreen] = useState<GameScreen>("entry")
   const [vkUser, setVkUser] = useState<VKUser | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [bridgeInitialized, setBridgeInitialized] = useState(false)
+  const [authResolved, setAuthResolved] = useState(false)
+  const [bridgeTimedOut, setBridgeTimedOut] = useState(false)
+  const [authTimedOut, setAuthTimedOut] = useState(false)
   const [loginErrorMessage, setLoginErrorMessage] = useState<string | null>(null)
   const [player, setPlayer] = useState<Player>(DEFAULT_PLAYER)
   const [opponent, setOpponent] = useState<Player | null>(null)
@@ -633,7 +640,26 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   // Инициализация VK Bridge
   useEffect(() => {
-    initVKBridge().finally(() => setIsLoading(false))
+    let active = true
+    let settled = false
+    const timeout = setTimeout(() => {
+      if (!active || settled) return
+      settled = true
+      setBridgeTimedOut(true)
+      setBridgeInitialized(true)
+    }, BRIDGE_INIT_TIMEOUT_MS)
+
+    void initVKBridge().finally(() => {
+      if (!active || settled) return
+      settled = true
+      clearTimeout(timeout)
+      setBridgeInitialized(true)
+    })
+
+    return () => {
+      active = false
+      clearTimeout(timeout)
+    }
   }, [])
 
   const trackSpend = useCallback(
@@ -754,9 +780,48 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [hydrateVkPlayer])
 
   useEffect(() => {
-    if (isLoading || vkUser || !getBridgeReady()) return
-    void loginWithVKBridge()
-  }, [isLoading, vkUser, loginWithVKBridge])
+    if (!bridgeInitialized) return
+    if (vkUser) {
+      setAuthResolved(true)
+      return
+    }
+    if (!getBridgeReady()) {
+      setAuthResolved(true)
+      return
+    }
+
+    let active = true
+    let settled = false
+    const authFallbackTimer = setTimeout(() => {
+      if (!active || settled) return
+      settled = true
+      setAuthTimedOut(true)
+      setAuthResolved(true)
+    }, AUTH_RESOLVE_TIMEOUT_MS)
+    void loginWithVKBridge().finally(() => {
+      if (!active || settled) return
+      settled = true
+      clearTimeout(authFallbackTimer)
+      setAuthResolved(true)
+    })
+    return () => {
+      clearTimeout(authFallbackTimer)
+      active = false
+    }
+  }, [bridgeInitialized, vkUser, loginWithVKBridge])
+
+  const isLoading = !hasLoadedSave || !bridgeInitialized || !authResolved
+  const loadingStage =
+    bridgeTimedOut || authTimedOut
+      ? "VK недоступен, запускаем в безопасном режиме..."
+      : !hasLoadedSave
+        ? "Загрузка сохранений..."
+        : !bridgeInitialized
+          ? "Инициализация VK Bridge..."
+          : !authResolved
+            ? "Авторизация в VK..."
+            : "Запуск игры..."
+  const loadingProgress = !hasLoadedSave ? 25 : !bridgeInitialized ? 50 : !authResolved ? 75 : 100
 
   const loginWithVK = useCallback(async () => {
     await loginWithVKBridge()
@@ -1120,6 +1185,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         loginWithVK,
         logoutWithVK,
         isLoading,
+        loadingStage,
+        loadingProgress,
         loginErrorMessage,
         bets,
         pendingBet,
