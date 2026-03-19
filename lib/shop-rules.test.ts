@@ -22,6 +22,8 @@ describe("shop rules", () => {
     expect(isItemOwned("frame-neon", { ...baseState, avatarFrame: "gold" })).toBe(false)
     expect(isItemOwned("frame-gold", { ...baseState, avatarFrame: "gold" })).toBe(true)
     expect(isItemOwned("frame-gold", { ...baseState, avatarFrame: "neon" })).toBe(false)
+    expect(isItemOwned("frame-neon", { ...baseState, hasNeonFrame: true, avatarFrame: "gold" })).toBe(true)
+    expect(isItemOwned("frame-gold", { ...baseState, hasGoldFrame: true, avatarFrame: "neon" })).toBe(true)
   })
 
   it("does not allow already-owned cosmetic/tournament items", () => {

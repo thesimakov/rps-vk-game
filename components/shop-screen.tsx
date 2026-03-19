@@ -250,6 +250,8 @@ export function ShopScreen() {
       victoryAnimation: p.victoryAnimation,
       cardSkin: p.cardSkin,
       avatarFrame: p.avatarFrame,
+      hasNeonFrame: p.hasNeonFrame,
+      hasGoldFrame: p.hasGoldFrame,
       tournamentEntry: p.tournamentEntry,
       hasAncientDeck: p.hasAncientDeck,
       timerPlus10BoughtAt: p.timerPlus10BoughtAt,
@@ -267,6 +269,8 @@ export function ShopScreen() {
         victoryAnimation: p.victoryAnimation,
         cardSkin: p.cardSkin,
         avatarFrame: p.avatarFrame,
+        hasNeonFrame: p.hasNeonFrame,
+        hasGoldFrame: p.hasGoldFrame,
         tournamentEntry: p.tournamentEntry,
         hasAncientDeck: p.hasAncientDeck,
         timerPlus10BoughtAt: p.timerPlus10BoughtAt,
@@ -561,9 +565,9 @@ export function ShopScreen() {
             cardDeck: p.cardDeck ?? "ancient-rus",
           }
         case "frame-neon":
-          return { ...p, balance: p.balance - price, avatarFrame: "neon" }
+          return { ...p, balance: p.balance - price, avatarFrame: "neon", hasNeonFrame: true }
         case "frame-gold":
-          return { ...p, balance: p.balance - price, avatarFrame: "gold" }
+          return { ...p, balance: p.balance - price, avatarFrame: "gold", hasGoldFrame: true }
         case "tournament-entry":
           return { ...p, balance: p.balance - price, tournamentEntry: true }
         case "timer-plus-10": {
@@ -808,6 +812,7 @@ export function ShopScreen() {
         {SHOP_ITEMS.map((item) => {
           const itemId = item.id as ShopItemId
           const alreadyOwned = isOwned(itemId)
+          const showPermanentOwnedBadge = (itemId === "frame-neon" || itemId === "frame-gold") && alreadyOwned
           const lavaOutOfStock = itemId === "lava-card" && lavaCardStock <= 0
           const canBuy = canBuyItem(itemId)
           return (
@@ -819,7 +824,14 @@ export function ShopScreen() {
                 {item.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-bold text-foreground">{item.name}</h3>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="text-base font-bold text-foreground">{item.name}</h3>
+                  {showPermanentOwnedBadge && (
+                    <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                      Куплено навсегда
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-muted-foreground font-medium leading-relaxed">{item.description}</p>
                 {item.id === "lava-card" && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">В наличии: {lavaCardStock} из 3</p>

@@ -22,6 +22,8 @@ export interface ShopEligibilityState {
   victoryAnimation?: string
   cardSkin?: string
   avatarFrame?: string
+  hasNeonFrame?: boolean
+  hasGoldFrame?: boolean
   tournamentEntry?: boolean
   hasAncientDeck?: boolean
   timerPlus10BoughtAt?: number
@@ -34,8 +36,8 @@ export function isItemOwned(itemId: ShopItemId, state: ShopEligibilityState) {
     (itemId === "vip" && !!state.vip) ||
     (itemId === "victory-anim" && !!state.victoryAnimation) ||
     (itemId === "card-skin" && !!state.cardSkin) ||
-    (itemId === "frame-neon" && state.avatarFrame === "neon") ||
-    (itemId === "frame-gold" && state.avatarFrame === "gold") ||
+    (itemId === "frame-neon" && (!!state.hasNeonFrame || state.avatarFrame === "neon")) ||
+    (itemId === "frame-gold" && (!!state.hasGoldFrame || state.avatarFrame === "gold")) ||
     (itemId === "tournament-entry" && !!state.tournamentEntry) ||
     (itemId === "card-set-ancient" && !!state.hasAncientDeck)
   )

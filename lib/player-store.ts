@@ -26,6 +26,8 @@ export interface StoredPlayer {
   cardDeck?: "ancient-rus"
   hasAncientDeck?: boolean
   avatarFrame?: string
+  hasNeonFrame?: boolean
+  hasGoldFrame?: boolean
   tournamentEntry?: boolean
   hideVkAvatar?: boolean
   lavaCardUses?: number

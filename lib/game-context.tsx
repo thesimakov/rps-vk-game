@@ -45,6 +45,10 @@ export interface Player {
   hasAncientDeck?: boolean
   /** Рамка аватара: "neon" и т.д. */
   avatarFrame?: string
+  /** Рамка «Неон» куплена */
+  hasNeonFrame?: boolean
+  /** Рамка «Золото» куплена */
+  hasGoldFrame?: boolean
   /** Участие в турнире дня */
   tournamentEntry?: boolean
   /** Скрыть аватар из ВК (купили за 100 монет) */
@@ -394,6 +398,8 @@ function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
     cardDeck: player.cardDeck,
     hasAncientDeck: player.hasAncientDeck,
     avatarFrame: player.avatarFrame,
+    hasNeonFrame: player.hasNeonFrame,
+    hasGoldFrame: player.hasGoldFrame,
     tournamentEntry: player.tournamentEntry,
     hideVkAvatar: player.hideVkAvatar,
     lavaCardUses: player.lavaCardUses,
@@ -432,6 +438,8 @@ const DEFAULT_PLAYER: Player = {
   groupSubscribedRewardClaimed: false,
   cardDeck: undefined,
   hasAncientDeck: false,
+  hasNeonFrame: false,
+  hasGoldFrame: false,
   extraTimerUntil: undefined,
   timerPlus10BoughtAt: undefined,
   welcomeGiftClaimed: false,
@@ -497,6 +505,8 @@ function saveState(player: Player, lavaCardStock: number) {
           cardDeck: player.cardDeck,
           hasAncientDeck: player.hasAncientDeck,
           avatarFrame: player.avatarFrame,
+          hasNeonFrame: player.hasNeonFrame,
+          hasGoldFrame: player.hasGoldFrame,
           tournamentEntry: player.tournamentEntry,
           hideVkAvatar: player.hideVkAvatar,
           lavaCardUses: player.lavaCardUses,
