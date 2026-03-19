@@ -2,15 +2,6 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
-import {
-  parseVKHashFragment,
-  fetchVKUserByToken,
-  saveVKOAuthSession,
-  getStoredVKOAuthSession,
-  clearVKOAuthSession,
-  getVKOAuthRedirectUrl,
-  isVKOAuthConfigured,
-} from "@/lib/vk-oauth"
 
 export type Move = "rock" | "scissors" | "paper" | "water"
 export type GameScreen =
@@ -184,7 +175,7 @@ interface GameState {
   /** Покупка буста рейтинга: 250 монет → +100 к недельным очкам */
   purchaseRankBoost: () => boolean
   vkUser: VKUser | null
-  /** Войти через ВК: внутри мини-приложения использует VK Bridge, на своём сервере — OAuth редирект */
+  /** Войти через ВК (VK Bridge) */
   loginWithVK: () => Promise<void>
   /** Выйти из аккаунта ВК — возврат на экран входа */
   logoutWithVK: () => void
@@ -614,7 +605,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hasLoadedSave, vkUser, player])
 
-  // Инициализация VK Bridge; при запуске на своём сервере — проверка OAuth callback или сохранённой сессии
+  // Инициализация VK Bridge
   useEffect(() => {
     initVKBridge().finally(() => setIsLoading(false))
   }, [])
@@ -630,148 +621,62 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     [player.id, vkUser]
   )
 
-  // На своём сервере (без Bridge): обработать возврат из VK OAuth или восстановить сессию из localStorage,
-  // затем загрузить/создать профиль игрока на сервере.
-  useEffect(() => {
-    if (isLoading || getBridgeReady()) return
-    const hash = typeof window !== "undefined" ? window.location.hash : ""
-    const parsed = parseVKHashFragment(hash)
-    if (parsed) {
-      fetchVKUserByToken(parsed.access_token, parsed.user_id).then((user) => {
-        if (user) {
-          const expires_at = parsed.expires_in ? Math.floor(Date.now() / 1000) + parsed.expires_in : 0
-          saveVKOAuthSession({
-            access_token: parsed.access_token,
-            user_id: parsed.user_id,
-            expires_at,
-            user,
-          })
-          try {
-            const vkId = `vk_${parsed.user_id}`
-            window.localStorage.setItem("rps_vk_user_id", vkId)
-          } catch {
-            // ignore
-          }
-          const vkId = `vk_${user.id}`
-          setVkUser(user)
-          setPlayer((p) => ({
-            ...p,
-            id: vkId,
-            name: user.first_name,
-            avatar: user.first_name.charAt(0).toUpperCase(),
-            avatarUrl: user.photo_200 || user.photo_100 || "",
-            hideVkAvatar: p.hideVkAvatar ?? false,
-          }))
-          // Загрузить/создать профиль игрока на сервере.
-          void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
-            "/api/player/load",
-            {
-              userId: vkId,
-            }
-          ).then((res) => {
-            if (!res) return
-            if (!res.ok) {
-              if (res.error === "blocked") {
-                setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
-              } else if (res.error === "banned") {
-                const until = res.banUntil ? new Date(res.banUntil) : null
-                const formatted = until
-                  ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-                  : ""
-                setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
-              }
-              return
-            }
-            if (res.player) {
-              setPlayer((p) => ({
-                ...p,
-                ...res.player,
-              }))
-            } else {
-              void postJSON("/api/player/save", {
-                player: toStoredPlayer({
-                  ...DEFAULT_PLAYER,
-                  id: vkId,
-                  name: user.first_name,
-                  avatar: user.first_name.charAt(0).toUpperCase(),
-                  avatarUrl: user.photo_200 || user.photo_100 || "",
-                }),
-              })
-            }
-          })
-          setScreen("menu")
-          try {
-            window.dispatchEvent(new Event("rps_vk_login_success"))
-          } catch {
-            // ignore
-          }
-          window.history.replaceState(null, "", window.location.pathname + window.location.search)
-        }
-      })
-      return
-    }
-    const session = getStoredVKOAuthSession()
-    if (session) {
-      const vkId = `vk_${session.user.id}`
-      setVkUser(session.user)
-      setPlayer((p) => ({
-        ...p,
-        id: vkId,
-        name: session.user.first_name,
-        avatar: session.user.first_name.charAt(0).toUpperCase(),
-        avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
-        hideVkAvatar: p.hideVkAvatar ?? false,
-      }))
+  const hydrateVkPlayer = useCallback(async (user: VKUser) => {
+    const vkId = `vk_${user.id}`
+    setVkUser(user)
+    setPlayer((p) => ({
+      ...p,
+      id: vkId,
+      name: user.first_name,
+      avatar: user.first_name.charAt(0).toUpperCase(),
+      avatarUrl: user.photo_200 || user.photo_100 || "",
+      hideVkAvatar: p.hideVkAvatar ?? false,
+    }))
+
+    if (typeof window !== "undefined") {
       try {
         window.localStorage.setItem("rps_vk_user_id", vkId)
       } catch {
         // ignore
       }
-      setScreen("menu")
       try {
         window.dispatchEvent(new Event("rps_vk_login_success"))
       } catch {
         // ignore
       }
-      // Загрузить/создать профиль игрока на сервере.
-      void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
-        "/api/player/load",
-        {
-          userId: vkId,
-        }
-      ).then((res) => {
-        if (!res) return
-        if (!res.ok) {
-          if (res.error === "blocked") {
-            setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
-          } else if (res.error === "banned") {
-            const until = res.banUntil ? new Date(res.banUntil) : null
-            const formatted = until
-              ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-              : ""
-            setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
-          }
-          return
-        }
-        if (res.player) {
-          setPlayer((p) => ({
-            ...p,
-            ...res.player,
-          }))
-        } else {
-          void postJSON("/api/player/save", {
-            player: toStoredPlayer({
-              ...DEFAULT_PLAYER,
-              id: vkId,
-              name: session.user.first_name,
-              avatar: session.user.first_name.charAt(0).toUpperCase(),
-              avatarUrl: session.user.photo_200 || session.user.photo_100 || "",
-            }),
-          })
-        }
-      })
     }
-  }, [isLoading])
+
+    const res = await postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
+      "/api/player/load",
+      { userId: vkId }
+    )
+    if (!res) return
+    if (!res.ok) {
+      if (res.error === "blocked") {
+        setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
+      } else if (res.error === "banned") {
+        const until = res.banUntil ? new Date(res.banUntil) : null
+        const formatted = until
+          ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
+          : ""
+        setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
+      }
+      return
+    }
+    if (res.player) {
+      setPlayer((p) => ({ ...p, ...res.player }))
+      return
+    }
+    void postJSON("/api/player/save", {
+      player: toStoredPlayer({
+        ...DEFAULT_PLAYER,
+        id: vkId,
+        name: user.first_name,
+        avatar: user.first_name.charAt(0).toUpperCase(),
+        avatarUrl: user.photo_200 || user.photo_100 || "",
+      }),
+    })
+  }, [])
 
   // Реферальная привязка: если открыли ссылку с ?ref=vk_123 — привязать реферера один раз.
   useEffect(() => {
@@ -818,82 +723,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const loginWithVKBridge = useCallback(async () => {
     const user = await getVKUser()
     if (!user) return
-    const vkId = `vk_${user.id}`
-    setVkUser(user)
-    setPlayer((p) => ({
-      ...p,
-      id: vkId,
-      name: user.first_name,
-      avatar: user.first_name.charAt(0).toUpperCase(),
-      avatarUrl: user.photo_200 || user.photo_100 || "",
-      hideVkAvatar: p.hideVkAvatar ?? false,
-    }))
-    if (typeof window !== "undefined") {
-      try {
-        window.localStorage.setItem("rps_vk_user_id", vkId)
-      } catch {
-        // ignore
-      }
-      try {
-        window.dispatchEvent(new Event("rps_vk_login_success"))
-      } catch {
-        // ignore
-      }
-    }
-    // Загрузить/создать профиль игрока на сервере.
-    void postJSON<{ ok: boolean; exists?: boolean; player?: import("./player-store").StoredPlayer; error?: string; banUntil?: number }>(
-      "/api/player/load",
-      {
-        userId: vkId,
-      }
-    ).then((res) => {
-      if (!res) return
-      if (!res.ok) {
-        if (res.error === "blocked") {
-          setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
-        } else if (res.error === "banned") {
-          const until = res.banUntil ? new Date(res.banUntil) : null
-          const formatted = until
-            ? ` до ${until.toLocaleString("ru-RU", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`
-            : ""
-          setLoginErrorMessage(`Ваш аккаунт временно заблокирован на сутки${formatted}. Попробуйте зайти позже.`)
-        }
-        return
-      }
-      if (res.player) {
-        setPlayer((p) => ({
-          ...p,
-          ...res.player,
-        }))
-      } else {
-        void postJSON("/api/player/save", {
-          player: toStoredPlayer({
-            ...DEFAULT_PLAYER,
-            id: vkId,
-            name: user.first_name,
-            avatar: user.first_name.charAt(0).toUpperCase(),
-            avatarUrl: user.photo_200 || user.photo_100 || "",
-          }),
-        })
-      }
-    })
+    await hydrateVkPlayer(user)
     setScreen("menu")
-  }, [])
+  }, [hydrateVkPlayer])
+
+  useEffect(() => {
+    if (isLoading || vkUser || !getBridgeReady()) return
+    void loginWithVKBridge()
+  }, [isLoading, vkUser, loginWithVKBridge])
 
   const loginWithVK = useCallback(async () => {
-    if (getBridgeReady()) {
-      await loginWithVKBridge()
-      return
-    }
-    // Без VK Bridge — редирект в OAuth на своём домене
-    if (typeof window !== "undefined") {
-      const url = getVKOAuthRedirectUrl()
-      window.location.href = url
-    }
+    await loginWithVKBridge()
   }, [loginWithVKBridge])
 
   const logoutWithVK = useCallback(() => {
-    clearVKOAuthSession()
     if (typeof window !== "undefined") {
       try {
         window.localStorage.removeItem("rps_vk_user_id")
@@ -930,7 +773,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       avatar: player.avatar,
       avatarUrl: player.avatarUrl,
       wins: player.wins,
-      earnings: player.ratingPoints ?? 0,
+      earnings: player.weekEarnings ?? 0,
       vip: player.vip,
       isPlayer: true,
     }
@@ -945,7 +788,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       avatar: player.avatar,
       avatarUrl: player.avatarUrl,
       wins: player.wins,
-      earnings: player.ratingPoints ?? 0,
+      earnings: player.weekEarnings ?? 0,
       vip: player.vip,
       isPlayer: true,
     }
@@ -956,7 +799,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const ranked: LeaderboardEntry[] = all.map((e, i) => ({ ...e, rank: i + 1 }))
     setDisplayLeaderboard(ranked)
     setLeaderboardVersion((v) => v + 1)
-  }, [player.id, player.name, player.avatar, player.avatarUrl, player.wins, player.ratingPoints, player.vip])
+  }, [player.id, player.name, player.avatar, player.avatarUrl, player.wins, player.weekEarnings, player.vip])
 
   useEffect(() => {
     const playerEntry: Omit<LeaderboardEntry, "rank"> = {
@@ -965,14 +808,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       avatar: player.avatar,
       avatarUrl: player.avatarUrl,
       wins: player.wins,
-      earnings: player.ratingPoints ?? 0,
+      earnings: player.weekEarnings ?? 0,
       vip: player.vip,
       isPlayer: true,
     }
     const base = leaderboardDataRef.current.filter((e) => e.id !== player.id)
     const all = [...base, playerEntry].sort((a, b) => b.earnings - a.earnings)
     setDisplayLeaderboard(all.map((e, i) => ({ ...e, rank: i + 1 })))
-  }, [player.wins, player.ratingPoints, player.id, player.name, player.avatar, player.avatarUrl, player.vip])
+  }, [player.wins, player.weekEarnings, player.id, player.name, player.avatar, player.avatarUrl, player.vip])
 
   useEffect(() => {
     const t = setInterval(updateLeaderboardData, LEADERBOARD_UPDATE_MS)
@@ -987,7 +830,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const rankTrendRef = useRef<{ rank: number; earnings: number } | null>(null)
   const [rankTrend, setRankTrend] = useState<"up" | "down" | null>(null)
   useEffect(() => {
-    const earnings = player.ratingPoints ?? 0
+    const earnings = player.weekEarnings ?? 0
     const prev = rankTrendRef.current
     if (prev === null) {
       rankTrendRef.current = { rank: playerRank, earnings }
@@ -998,7 +841,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     else if (playerRank > prev.rank || earnings < prev.earnings) setRankTrend("down")
     else setRankTrend(null)
     rankTrendRef.current = { rank: playerRank, earnings }
-  }, [playerRank, player.ratingPoints])
+  }, [playerRank, player.weekEarnings])
 
   const purchaseRankBoost = useCallback(() => {
     const cost = 250

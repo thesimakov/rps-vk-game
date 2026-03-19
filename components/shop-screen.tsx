@@ -3,14 +3,12 @@
 import { useState, useEffect, useRef } from "react"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, showWallPostBox, joinVKGroup } from "@/lib/vk-bridge"
+import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, joinVKGroup, VK_VOICE_PACKS } from "@/lib/vk-bridge"
 import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass, Ticket } from "lucide-react"
 
 const INVITED_SLOTS = 4
 const INVITE_REWARD = 100
-const WALL_POST_REWARD = 100
 const GROUP_SUB_REWARD = 40
-const ENABLE_WALL_POST_REWARD = false
 
 interface ShopItem {
   id: string
@@ -142,15 +140,6 @@ const SHOP_ITEMS: ShopItem[] = [
   },
 ]
 
-const VOICE_PACKS = [
-  { amount: 10, price: 10, label: "10 монет" },
-  { amount: 20, price: 20, label: "20 монет" },
-  { amount: 30, price: 30, label: "30 монет" },
-  { amount: 50, price: 50, label: "50 монет" },
-  { amount: 70, price: 70, label: "70 монет" },
-  { amount: 100, price: 100, label: "100 монет" },
-]
-
 type ChestType = "basic" | "premium"
 
 /** Типы призов из сундуков */
@@ -222,12 +211,10 @@ function normalizeInvitedSlots(
 export function ShopScreen() {
   const { setScreen, player, setPlayer, vkUser, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend, toDisplayAmount, currencyLabel } = useGame()
   const [topUpLoading, setTopUpLoading] = useState<number | null>(null)
-  const [customTopUp, setCustomTopUp] = useState("")
   const [topUpError, setTopUpError] = useState<string>("")
   const [openingChest, setOpeningChest] = useState<{ type: ChestType; prizes: ChestPrize[] } | null>(null)
   const [chestPhase, setChestPhase] = useState<"fly" | "open" | "reward" | "collect">("fly")
   const [inviteLoading, setInviteLoading] = useState(false)
-  const [wallPostLoading, setWallPostLoading] = useState(false)
   const [groupSubLoading, setGroupSubLoading] = useState(false)
   const [groupSubError, setGroupSubError] = useState("")
   const [promoCode, setPromoCode] = useState("")
@@ -239,7 +226,6 @@ export function ShopScreen() {
   const invitedSlots = normalizeInvitedSlots(player.invitedFriends)
   const invitedCount = invitedSlots.filter(Boolean).length
   const canClaimInviteReward = invitedCount >= INVITED_SLOTS && !player.invitedRewardClaimed
-  const canClaimWallPostReward = !player.wallPostRewardClaimed
   const canClaimGroupReward = !player.groupSubscribedRewardClaimed
 
   useEffect(() => {
@@ -379,29 +365,6 @@ export function ShopScreen() {
     setPlayer((p) => ({ ...p, balance: p.balance + INVITE_REWARD, invitedRewardClaimed: true }))
   }
 
-  const buildWallPostMessage = () => {
-    const name = player.name || "Игрок"
-    const base =
-      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}` : ""
-    const ref = player.id?.startsWith("vk_") ? `?ref=${encodeURIComponent(player.id)}` : ""
-    const appLink = `${base}${ref}`
-    return `Играй со мной в игру «Камень, ножницы, бумага»! ${name} приглашает тебя — переходи по ссылке и сыграем: ${appLink}`
-  }
-
-  const handleWallPostAndReward = async () => {
-    if (!canClaimWallPostReward) return
-    setWallPostLoading(true)
-    try {
-      const message = buildWallPostMessage()
-      const postId = await showWallPostBox(message)
-      if (postId != null) {
-        setPlayer((p) => ({ ...p, balance: p.balance + WALL_POST_REWARD, wallPostRewardClaimed: true }))
-      }
-    } finally {
-      setWallPostLoading(false)
-    }
-  }
-
   const handleGroupSubscribe = async () => {
     if (!canClaimGroupReward) return
     setGroupSubError("")
@@ -484,8 +447,6 @@ export function ShopScreen() {
   }
 
   const handleBuy = (itemId: string, price: number) => {
-    if (player.balance < price) return
-
     if (itemId === "lava-card") {
       purchaseLavaCard()
       return
@@ -507,6 +468,7 @@ export function ShopScreen() {
 
     trackSpend(price, itemId)
     setPlayer((p) => {
+      if (p.balance < price) return p
       const updated = { ...p, balance: p.balance - price }
       switch (itemId) {
         case "vip":
@@ -575,10 +537,10 @@ export function ShopScreen() {
       <div className="w-full max-w-lg mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">
           <Wallet className="h-5 w-5 text-primary" />
-          <span className="font-bold text-base text-foreground">Пополнить баланс (оплата через ВК)</span>
+          <span className="font-bold text-base text-foreground">Пополнить баланс (голоса ВК)</span>
         </div>
         <p className="text-xs text-muted-foreground mb-3">
-          Оплата через ВКонтакте — списание средств с вашего аккаунта.
+          Каждая покупка имеет фиксированную стоимость в голосах.
         </p>
         {topUpError && (
           <p className="text-xs text-red-500 mb-2 font-medium">
@@ -591,7 +553,7 @@ export function ShopScreen() {
           </p>
         )}
         <div className="flex flex-wrap gap-2">
-          {VOICE_PACKS.map((pack) => (
+          {VK_VOICE_PACKS.map((pack) => (
             <button
               key={pack.amount}
               onClick={() => handleTopUp(pack.amount)}
@@ -599,35 +561,9 @@ export function ShopScreen() {
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
             >
               <Coins className="h-4 w-4" />
-              {topUpLoading === pack.amount ? "..." : pack.label}
+              {topUpLoading === pack.amount ? "..." : `${pack.amount} монет · ${pack.votes} голос${pack.votes === 1 ? "" : pack.votes < 5 ? "а" : "ов"}`}
             </button>
           ))}
-          {/* Кнопка "Другое" с произвольной суммой */}
-          <div className="flex items-center gap-1">
-            <input
-              type="number"
-              min={1}
-              max={10000}
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={customTopUp}
-              onChange={(e) => setCustomTopUp(e.target.value.replace(/[^\d]/g, ""))}
-              className="w-24 px-2 py-1.5 rounded-xl bg-background/80 border border-border/50 text-xs text-foreground placeholder:text-muted-foreground"
-              placeholder="Сумма"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                const val = Number(customTopUp)
-                if (!Number.isFinite(val) || val <= 0) return
-                handleTopUp(val)
-              }}
-              disabled={topUpLoading !== null || !customTopUp || Number(customTopUp) <= 0}
-              className="px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
-            >
-              Другое
-            </button>
-          </div>
         </div>
       </div>
 

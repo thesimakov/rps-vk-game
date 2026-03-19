@@ -1,6 +1,7 @@
 "use client"
 
 import { useGame } from "@/lib/game-context"
+import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { Trophy, Skull, Minus, Coins, RotateCcw, ArrowRight, Zap, Heart, Hammer, Scissors, FileText, Moon, Sun, Droplets } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
@@ -32,11 +33,11 @@ function OutcomeIcon({ playerMove, opponentMove, outcome }: { playerMove: string
   const winner = outcome === "win" ? playerMove : opponentMove
   const loser = outcome === "win" ? opponentMove : playerMove
   const cls = "h-8 w-8 text-white/70"
-  if (winner === "rock" && loser === "scissors") return <Hammer className={cls} title="Камень бьёт ножницы" />
-  if (winner === "scissors" && loser === "paper") return <Scissors className={cls} title="Ножницы режут бумагу" />
-  if (winner === "paper" && loser === "rock") return <FileText className={cls} title="Бумага накрывает камень" />
-  if (winner === "water" && loser === "rock") return <Droplets className={cls} title="Вода размыла камень" />
-  if (winner === "paper" && loser === "water") return <FileText className={cls} title="Бумага впитала воду" />
+  if (winner === "rock" && loser === "scissors") return <Hammer className={cls} aria-label="Камень бьёт ножницы" />
+  if (winner === "scissors" && loser === "paper") return <Scissors className={cls} aria-label="Ножницы режут бумагу" />
+  if (winner === "paper" && loser === "rock") return <FileText className={cls} aria-label="Бумага накрывает камень" />
+  if (winner === "water" && loser === "rock") return <Droplets className={cls} aria-label="Вода размыла камень" />
+  if (winner === "paper" && loser === "water") return <FileText className={cls} aria-label="Бумага впитала воду" />
   return <Minus className={cls} />
 }
 
@@ -103,7 +104,18 @@ export function ResultScreen() {
 
   const playerMoveInfo = lastResult.playerMove ? MOVE_LABELS[lastResult.playerMove] : { icon: "?", label: "?" }
   const opponentMoveInfo = lastResult.opponentMove ? MOVE_LABELS[lastResult.opponentMove] : { icon: "?", label: "?" }
-  const opponentData = opponent ?? { name: "Соперник", avatar: "?", avatarUrl: "" }
+  const opponentData: Player = opponent ?? {
+    id: "opponent",
+    name: "Соперник",
+    avatar: "?",
+    avatarUrl: "",
+    balance: 0,
+    wins: 0,
+    losses: 0,
+    weekWins: 0,
+    weekEarnings: 0,
+    vip: false,
+  }
   const rounds = lastResult.rounds ?? []
   const playerRoundsWon = rounds.filter((r) => r.outcome === "win").length
   const opponentRoundsWon = rounds.filter((r) => r.outcome === "loss").length

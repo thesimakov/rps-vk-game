@@ -7,7 +7,8 @@
     "dev": "WATCHPACK_POLLING=true next dev --hostname 127.0.0.1",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "typecheck": "tsc --noEmit",
+    "lint": "pnpm run typecheck"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

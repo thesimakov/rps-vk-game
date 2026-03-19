@@ -139,7 +139,8 @@ function GameLayout() {
 export default function Page() {
   const basePath = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
   const makeUrl = (file: string) => `url("${basePath}${file}")`
-  const styleVars: CSSProperties = {
+  type CardCssVars = CSSProperties & Record<`--${string}`, string>
+  const styleVars: CardCssVars = {
     "--card-back-image": makeUrl("/card-back.webp"),
     "--card-rock-image": makeUrl("/card-rock.webp"),
     "--card-paper-image": makeUrl("/card-paper.webp"),

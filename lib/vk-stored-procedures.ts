@@ -43,10 +43,14 @@ export async function callStoredProcedure<T = unknown>(
   const method = `execute.${procedureName}`
   const apiVersion = options?.apiVersion ?? VK_API_VERSION
 
-  const sendParams: Record<string, string | number | boolean> = {
-    ...params,
-    v: apiVersion,
-  }
+  const sendParams: Record<string, string | number> = Object.entries(params).reduce(
+    (acc, [key, value]) => {
+      if (value == null) return acc
+      acc[key] = typeof value === "boolean" ? Number(value) : value
+      return acc
+    },
+    { v: apiVersion } as Record<string, string | number>
+  )
   if (options?.funcVersion != null) {
     sendParams.func_v = options.funcVersion
   }
@@ -56,7 +60,7 @@ export async function callStoredProcedure<T = unknown>(
     const result = await vkBridge.default.send("VKWebAppCallAPIMethod", {
       method,
       params: sendParams,
-    })
+    } as never)
 
     const data = result && typeof result === "object" ? (result as { response?: T; error?: { error_code: number; error_msg?: string } }) : {}
     return data

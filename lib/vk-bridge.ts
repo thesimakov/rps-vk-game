@@ -19,10 +19,31 @@ export interface VKUser {
 }
 
 let bridgeReady = false
+let launchParamsLoaded = false
+let startParams = new URLSearchParams()
+
+function ensureStartParams() {
+  if (typeof window === "undefined" || launchParamsLoaded) return
+  launchParamsLoaded = true
+  try {
+    const hash = window.location.hash?.replace(/^#/, "") ?? ""
+    const query = window.location.search?.replace(/^\?/, "") ?? ""
+    const merged = [query, hash].filter(Boolean).join("&")
+    startParams = new URLSearchParams(merged)
+  } catch {
+    startParams = new URLSearchParams()
+  }
+}
+
+function getStartParam(name: string): string | null {
+  ensureStartParams()
+  return startParams.get(name)
+}
 
 /** Инициализация VK Bridge. Вызывать при загрузке приложения (уже в GameProvider). */
 export async function initVKBridge(): Promise<void> {
   if (typeof window === "undefined") return
+  ensureStartParams()
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
     await vkBridge.default.send("VKWebAppInit")
@@ -51,6 +72,21 @@ export async function getVKUser(): Promise<VKUser | null> {
   }
 }
 
+export interface VKVoicePack {
+  amount: number
+  votes: number
+  itemId: string
+}
+
+export const VK_VOICE_PACKS: VKVoicePack[] = [
+  { amount: 10, votes: 1, itemId: "coins_10" },
+  { amount: 20, votes: 2, itemId: "coins_20" },
+  { amount: 30, votes: 3, itemId: "coins_30" },
+  { amount: 50, votes: 5, itemId: "coins_50" },
+  { amount: 70, votes: 7, itemId: "coins_70" },
+  { amount: 100, votes: 10, itemId: "coins_100" },
+]
+
 /**
  * Покупка внутриигровых монет через виртуальные товары ВКонтакте (голоса).
  *
@@ -62,6 +98,8 @@ export async function getVKUser(): Promise<VKUser | null> {
  */
 export async function purchaseVKVoices(amount: number): Promise<boolean> {
   if (typeof window === "undefined") return false
+  const pack = VK_VOICE_PACKS.find((p) => p.amount === amount)
+  if (!pack) return false
 
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
@@ -76,14 +114,9 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
       }
     }
 
-    // Для виртуальных товаров используется "товар" (item) с фиксированным ID.
-    // Привяжем его к количеству монет, чтобы модераторам было понятно.
-    const item = `coins_${amount}` // этот же ID нужно указать в настройках виртуальных товаров ВК
-
     const result = await vkBridge.default.send("VKWebAppShowOrderBox", {
       type: "item",
-      item,
-      quantity: 1,
+      item: pack.itemId,
     })
 
     console.log("[VK] VKWebAppShowOrderBox result:", result)
@@ -141,7 +174,9 @@ export async function requestWithdraw(amount: number): Promise<{ ok: boolean; ba
 
 export function isVKEnvironment(): boolean {
   if (typeof window === "undefined") return false
-  return window.location.search.includes("vk_") || bridgeReady
+  const vkPlatform = getStartParam("vk_platform")
+  const viewerId = getStartParam("vk_user_id") || getStartParam("viewer_id")
+  return Boolean(vkPlatform || viewerId || bridgeReady)
 }
 
 /** Данные друга из VKWebAppGetFriends (multi) */

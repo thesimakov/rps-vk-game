@@ -153,6 +153,7 @@ export function FriendsTableScreen() {
         wins: winnerIsHost ? p.wins + 1 : p.wins,
         losses: !winnerIsHost ? p.losses + 1 : p.losses,
         weekWins: winnerIsHost ? p.weekWins + 1 : p.weekWins,
+        weekEarnings: p.weekEarnings + Math.max(0, earnings),
         ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonus),
       }))
 

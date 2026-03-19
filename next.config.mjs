@@ -22,9 +22,6 @@ const nextConfig = {
   basePath: basePathEnv || undefined,
   assetPrefix: basePathEnv || undefined,
   output: isExport ? "export" : undefined,
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   images: {
     unoptimized: true,
     remotePatterns: [

@@ -1,6 +1,7 @@
 "use client"
 
 import { useGame, type Move, type MatchRoundSummary } from "@/lib/game-context"
+import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown } from "lucide-react"
@@ -226,6 +227,7 @@ export function GameArena() {
               wins: outcome === "win" ? p.wins + 1 : p.wins,
               losses: outcome === "loss" ? p.losses + 1 : p.losses,
               weekWins: outcome === "win" ? p.weekWins + 1 : p.weekWins,
+              weekEarnings: p.weekEarnings + Math.max(0, earningsInner),
               ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonusInner),
             }
             if (playerMove === "water") {
@@ -286,6 +288,7 @@ export function GameArena() {
                   wins: finalOutcome === "win" ? p.wins + 1 : p.wins,
                   losses: finalOutcome === "loss" ? p.losses + 1 : p.losses,
                   weekWins: finalOutcome === "win" ? p.weekWins + 1 : p.weekWins,
+                  weekEarnings: p.weekEarnings + Math.max(0, finalEarnings),
                   ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + matchBonus),
                 }
                 return next
@@ -367,7 +370,18 @@ export function GameArena() {
     resolveRound(move)
   }
 
-  const opponentData = opponent ?? { name: "Соперник", avatar: "?", avatarUrl: "" }
+  const opponentData: Player = opponent ?? {
+    id: "opponent",
+    name: "Соперник",
+    avatar: "?",
+    avatarUrl: "",
+    balance: 0,
+    wins: 0,
+    losses: 0,
+    weekWins: 0,
+    weekEarnings: 0,
+    vip: false,
+  }
   const timerDanger = timeLeft <= 5
   /** Сердечки = сколько ходов осталось (после победы/поражения один ход засчитывается) */
   const movesLeft = Math.max(0, totalRounds - roundCount + 1)

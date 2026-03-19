@@ -22,7 +22,7 @@ export function WeeklyRanking() {
   const playerEntry = leaderboard.find((e) => e.isPlayer)
   const rankLabel = playerRank >= 1000 ? `${Math.floor(playerRank / 1000)}K` : String(playerRank)
   const winsLabel = playerEntry ? playerEntry.wins : player.weekWins
-  const earningsLabel = playerEntry ? playerEntry.earnings : player.ratingPoints ?? 0
+  const earningsLabel = playerEntry ? playerEntry.earnings : player.weekEarnings ?? 0
   const canBuyBoost = player.balance >= 250
   const seasonBank = Math.floor(((player.totalPurchases ?? 0) * 0.1))
 
@@ -125,7 +125,7 @@ export function WeeklyRanking() {
           Игрок
         </span>
         <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-          Бонусы
+          Заработано
         </span>
       </div>
 
