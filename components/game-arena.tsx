@@ -534,8 +534,10 @@ export function GameArena() {
   /** Сердечки = сколько ходов осталось (после победы/поражения один ход засчитывается) */
   const movesLeft = Math.max(0, totalRounds - roundCount + 1)
   const bankAmount = getEffectiveStake(roundCount) * 2
+  const playerStakeNow = getEffectiveStake(roundCount)
+  const isBlindLuckMode = activeMode === "blind_luck" || !!weeklyRules?.hideOpponentBet
   const stakeMultiplier = Math.max(1, Math.round(getEffectiveStake(roundCount) / Math.max(1, currentBet)))
-  const bankDisplay = formatAmount(bankAmount)
+  const bankDisplay = isBlindLuckMode ? `${formatAmount(playerStakeNow)} + ?` : formatAmount(bankAmount)
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
@@ -561,7 +563,7 @@ export function GameArena() {
               </span>
             </div>
             <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
-              монет
+              {isBlindLuckMode ? "моя ставка + скрытая" : "монет"}
             </span>
             {isTimeMoneyMode && (
               <span className="mt-1 inline-flex w-fit px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 animate-pulse">
