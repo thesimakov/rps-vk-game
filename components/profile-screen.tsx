@@ -215,10 +215,10 @@ export function ProfileScreen() {
         </div>
       </div>
 
-      {/* Weekly earnings */}
+      {/* Weekly amount */}
       <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground font-medium">Заработано за неделю</span>
+          <span className="text-sm text-muted-foreground font-medium">За неделю</span>
           <div className="flex items-center gap-1.5">
             <Coins className="h-3.5 w-3.5 text-accent" />
             <span className="text-base font-extrabold text-primary tabular-nums">{formatAmount(toDisplayAmount(player.weekEarnings))}</span>
@@ -263,7 +263,7 @@ export function ProfileScreen() {
           className="w-full max-w-lg flex items-center justify-center gap-2 bg-accent/8 border border-accent/25 text-accent font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-accent/15 mb-6"
         >
           <Crown className="h-4 w-4" />
-          <span>{"Купить VIP \u2014 49 монет/мес"}</span>
+          <span>{"Купить VIP \u2014 50 монет/мес"}</span>
         </button>
       )}
 

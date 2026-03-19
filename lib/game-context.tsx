@@ -79,6 +79,8 @@ export interface Player {
   lottoPendingPrize?: number
   /** Лото: совпавшие числа последнего розыгрыша (для подсветки и объяснения результата). */
   lottoMatchedNumbers?: number[]
+  /** Приветственный бонус за первый вход уже получен */
+  welcomeGiftClaimed?: boolean
 }
 
 export interface LeaderboardEntry {
@@ -403,6 +405,7 @@ function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
     lottoDrawnAt: player.lottoDrawnAt,
     lottoPendingPrize: player.lottoPendingPrize,
     lottoMatchedNumbers: player.lottoMatchedNumbers,
+    welcomeGiftClaimed: player.welcomeGiftClaimed,
   }
 }
 
@@ -423,6 +426,7 @@ const DEFAULT_PLAYER: Player = {
   cardDeck: undefined,
   hasAncientDeck: false,
   extraTimerUntil: undefined,
+  welcomeGiftClaimed: false,
 }
 
 function loadSavedState(): {
@@ -489,6 +493,7 @@ function saveState(player: Player, lavaCardStock: number) {
           lottoDrawnAt: player.lottoDrawnAt,
           lottoPendingPrize: player.lottoPendingPrize,
           lottoMatchedNumbers: player.lottoMatchedNumbers,
+          welcomeGiftClaimed: player.welcomeGiftClaimed,
         },
         lavaCardStock,
       })
@@ -1065,7 +1070,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return true
   }, [lavaCardStock, player.balance, trackSpend])
 
-  const WATER_CARD_PRICE = 20
+  const WATER_CARD_PRICE = 500
   const purchaseWaterCard = useCallback(() => {
     if (player.balance < WATER_CARD_PRICE) return false
     trackSpend(WATER_CARD_PRICE, "water-card")

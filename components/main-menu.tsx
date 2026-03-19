@@ -19,6 +19,7 @@ const DAILY_REWARDS = [
   { day: 6, amount: 1, icon: "gift" as const }, // премиум сундук
   { day: 7, amount: 300, icon: "coin" as const },
 ]
+const FIRST_LOGIN_GIFT = 100
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000
 
@@ -85,6 +86,7 @@ export function MainMenu() {
   const [now, setNow] = useState(() => Date.now())
   const [showLotto, setShowLotto] = useState(false)
   const [tempSelection, setTempSelection] = useState<number[]>([])
+  const [showWelcomeGiftModal, setShowWelcomeGiftModal] = useState(false)
 
   const rating = player.ratingPoints ?? 0
   const levelNumber = Math.floor(rating / LEVEL_STEPS)
@@ -112,6 +114,12 @@ export function MainMenu() {
       return () => clearTimeout(t)
     }
   }, [canClaimGift, now])
+
+  useEffect(() => {
+    if (!player.welcomeGiftClaimed) {
+      setShowWelcomeGiftModal(true)
+    }
+  }, [player.welcomeGiftClaimed])
 
   const handleClaimDaily = () => {
     if (!canClaimGift) return
@@ -562,6 +570,32 @@ export function MainMenu() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showWelcomeGiftModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/75 backdrop-blur-sm px-4">
+          <div className="w-full max-w-md rounded-3xl bg-slate-900/95 border border-amber-400/40 shadow-2xl p-5">
+            <h2 className="text-lg font-black text-amber-300 mb-2">Добро пожаловать!</h2>
+            <p className="text-sm text-white/85 leading-relaxed">
+              За первый вход дарим <span className="font-bold text-amber-300">{FIRST_LOGIN_GIFT} монет</span>.
+            </p>
+            <p className="mt-2 text-xs text-white/60">Внутренний курс: 1 монета = 0,1 руб.</p>
+            <button
+              type="button"
+              onClick={() => {
+                setPlayer((p) => ({
+                  ...p,
+                  balance: p.balance + FIRST_LOGIN_GIFT,
+                  welcomeGiftClaimed: true,
+                }))
+                setShowWelcomeGiftModal(false)
+              }}
+              className="mt-4 w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold"
+            >
+              Получить
+            </button>
           </div>
         </div>
       )}

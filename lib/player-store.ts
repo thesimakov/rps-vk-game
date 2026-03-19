@@ -46,6 +46,8 @@ export interface StoredPlayer {
   lottoPendingPrize?: number
   /** Лото: совпавшие числа последнего розыгрыша. */
   lottoMatchedNumbers?: number[]
+  /** Приветственный бонус за первый вход уже получен */
+  welcomeGiftClaimed?: boolean
   /** Сколько пользователь уже вывел за сегодня (для лимитов вывода) */
   withdrawTodayAmount?: number
   /** Дата (YYYY-MM-DD), к которой относится withdrawTodayAmount */

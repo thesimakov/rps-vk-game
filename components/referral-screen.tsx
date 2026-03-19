@@ -206,14 +206,14 @@ export function ReferralScreen() {
             </div>
             <div className="bg-card/50 border border-border/30 rounded-2xl px-3 py-3 flex flex-col items-center">
               <HandCoins className="h-5 w-5 text-secondary mb-1" />
-              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">заработано</span>
+              <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">получено</span>
               <span className="mt-1 text-lg font-extrabold text-foreground tabular-nums">{formatAmount(totalEarned)}</span>
             </div>
           </div>
 
           <div className="w-full max-w-lg bg-card/40 border border-border/30 rounded-2xl p-4 mb-4 flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs text-muted-foreground font-medium uppercase">Доступно к получению</p>
+              <p className="text-xs text-muted-foreground font-medium uppercase">Использование</p>
               <p className="text-base font-extrabold text-foreground tabular-nums">{formatAmount(available)} монет</p>
             </div>
             <div className="flex gap-2">

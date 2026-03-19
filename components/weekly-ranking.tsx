@@ -125,7 +125,7 @@ export function WeeklyRanking() {
           Игрок
         </span>
         <span className="text-[10px] text-muted-foreground uppercase tracking-wide">
-          Заработано
+          Получено
         </span>
       </div>
 

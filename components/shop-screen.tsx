@@ -25,7 +25,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "vip",
     name: "VIP Статус",
     description: "Комиссия 5%, цветной ник, приоритет",
-    price: 49,
+    price: 50,
     icon: <Crown className="h-5 w-5" />,
     category: "premium",
     color: "text-accent",
@@ -34,7 +34,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "timer-plus-10",
     name: "Таймер +10 секунд (1 день)",
     description: "Увеличивает время выбора хода до 25 секунд на сутки.",
-    price: 10,
+    price: 5,
     icon: <Hourglass className="h-5 w-5" />,
     category: "boost",
     color: "text-secondary",
@@ -61,7 +61,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "chest-basic",
     name: "Базовый сундук",
     description: "Шанс получить бонусы или аватарку",
-    price: 5,
+    price: 20,
     icon: <Box className="h-5 w-5" />,
     category: "chest",
     color: "text-primary",
@@ -70,7 +70,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "chest-premium",
     name: "Премиум сундук",
     description: "Гарантированный бонус или редкость",
-    price: 25,
+    price: 50,
     icon: <Box className="h-5 w-5" />,
     category: "chest",
     color: "text-accent",
@@ -97,7 +97,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "frame-neon",
     name: "Рамка: Неон",
     description: "Неоновая рамка аватара",
-    price: 10,
+    price: 150,
     icon: <Sparkles className="h-5 w-5" />,
     category: "cosmetic",
     color: "text-primary",
@@ -106,7 +106,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "frame-gold",
     name: "Рамка: Золото",
     description: "Золотая рамка аватара с анимацией",
-    price: 25,
+    price: 150,
     icon: <Palette className="h-5 w-5" />,
     category: "cosmetic",
     color: "text-accent",
@@ -133,7 +133,7 @@ const SHOP_ITEMS: ShopItem[] = [
     id: "water-card",
     name: "Карта «Вода»",
     description: "Побеждает камень. Проигрывает бумаге. Ничья с ножницами. 3 использования.",
-    price: 20,
+    price: 500,
     icon: <Droplets className="h-5 w-5" />,
     category: "special",
     color: "text-primary",
@@ -541,6 +541,9 @@ export function ShopScreen() {
         </div>
         <p className="text-xs text-muted-foreground mb-3">
           Каждая покупка имеет фиксированную стоимость в голосах.
+        </p>
+        <p className="text-xs text-muted-foreground mb-3">
+          Внутренний курс: 1 монета = 0,1 руб.
         </p>
         {topUpError && (
           <p className="text-xs text-red-500 mb-2 font-medium">
