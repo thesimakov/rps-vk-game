@@ -14,8 +14,8 @@
   "quests": [
     {
       "id": "daily_play_5",
-      "title": "Play 5 matches",
-      "description": "Finish 5 matches in one day",
+      "title": "Сыграть 5 матчей",
+      "description": "Завершите 5 матчей за один день",
       "reset": "daily",
       "points": 30,
       "rewards": [{ "kind": "event_tokens", "amount": 5 }, { "kind": "xp", "amount": 30 }],
@@ -23,8 +23,8 @@
     },
     {
       "id": "daily_scissors_10",
-      "title": "Throw scissors 10 times",
-      "description": "Use scissors in rounds 10 times",
+      "title": "Выбросить ножницы 10 раз",
+      "description": "Используйте ножницы в раундах 10 раз",
       "reset": "daily",
       "points": 25,
       "rewards": [{ "kind": "event_tokens", "amount": 5 }, { "kind": "xp", "amount": 25 }],
@@ -32,8 +32,8 @@
     },
     {
       "id": "weekly_streak_3",
-      "title": "Win 3 in a row",
-      "description": "Reach a 3 match win streak this week",
+      "title": "Выиграть 3 матча подряд",
+      "description": "Достигните серии из 3 побед за неделю",
       "reset": "weekly",
       "points": 80,
       "rewards": [{ "kind": "event_tokens", "amount": 15 }, { "kind": "xp", "amount": 80 }],
@@ -41,8 +41,8 @@
     },
     {
       "id": "weekly_bet_50_voices",
-      "title": "Bet 50 voices",
-      "description": "Accumulate 50 voices in bets this week",
+      "title": "Сделать ставки на 50 голосов",
+      "description": "Накопите 50 голосов в ставках за неделю",
       "reset": "weekly",
       "points": 100,
       "rewards": [{ "kind": "event_tokens", "amount": 20 }, { "kind": "xp", "amount": 100 }],
@@ -50,8 +50,8 @@
     },
     {
       "id": "monthly_skin_win",
-      "title": "Win with New Year paper skin",
-      "description": "Win one match with skin newyear_paper",
+      "title": "Победить со скином «Новогодняя бумага»",
+      "description": "Выиграйте 1 матч со скином newyear_paper",
       "reset": "monthly",
       "points": 180,
       "rewards": [{ "kind": "event_tokens", "amount": 40 }, { "kind": "xp", "amount": 150 }],
@@ -59,8 +59,8 @@
     },
     {
       "id": "monthly_boss_kill",
-      "title": "Defeat weekly boss",
-      "description": "Beat the boss during boss week",
+      "title": "Победить босса недели",
+      "description": "Победите босса во время босс-недели",
       "reset": "monthly",
       "eventOnly": "boss_week",
       "points": 220,
@@ -110,8 +110,8 @@
       "week": 1,
       "id": "tournament_of_elements",
       "mode": "elements_tournament",
-      "title": "Tournament of Elements",
-      "description": "Only fire, water and rock are available. Win rewards are doubled.",
+      "title": "Турнир стихий",
+      "description": "Доступны только Огонь, Вода и Камень. Награды за победы удвоены.",
       "rewardsMultiplier": 2,
       "tokenRewardPerWin": 5
     },
@@ -119,8 +119,8 @@
       "week": 2,
       "id": "time_is_money",
       "mode": "time_is_money",
-      "title": "Time Is Money",
-      "description": "Bet doubles every 2 rounds in streak modes.",
+      "title": "Время — деньги",
+      "description": "Ставка автоматически удваивается каждые 2 раунда.",
       "rewardsMultiplier": 1.5,
       "tokenRewardPerWin": 4
     },
@@ -129,7 +129,7 @@
       "id": "blind_luck",
       "mode": "blind_luck",
       "title": "Слепая удача",
-      "description": "Opponent bet is hidden until round end.",
+      "description": "Ставка соперника скрыта до конца раунда.",
       "rewardsMultiplier": 1.2,
       "tokenRewardPerWin": 7
     },
@@ -137,8 +137,8 @@
       "week": 4,
       "id": "boss_week",
       "mode": "boss_week",
-      "title": "Boss Week",
-      "description": "Defeat adaptive NPC boss for guaranteed rare chest.",
+      "title": "Босс-неделя",
+      "description": "Победите адаптивного NPC-босса и получите гарантированный редкий сундук.",
       "rewardsMultiplier": 1,
       "tokenRewardPerWin": 10
     }
@@ -146,22 +146,22 @@
   "achievements": [
     {
       "id": "matches_1000",
-      "title": "Thousand Battles",
-      "description": "Play 1000 matches",
+      "title": "Тысяча битв",
+      "description": "Сыграйте 1000 матчей",
       "condition": { "kind": "play_matches", "target": 1000 },
       "rewards": [{ "kind": "title", "titleId": "legend" }]
     },
     {
       "id": "rock_wins_100",
-      "title": "Rock Master",
-      "description": "Win 100 rounds using rock",
+      "title": "Мастер камня",
+      "description": "Выиграйте 100 раундов с камнем",
       "condition": { "kind": "throw_move", "target": 100, "move": "rock" },
       "rewards": [{ "kind": "title", "titleId": "rock_master" }]
     },
     {
       "id": "bank_1000",
-      "title": "High Roller",
-      "description": "Capture a bank of 1000 voices in one match",
+      "title": "Высокие ставки",
+      "description": "Заберите банк 1000 голосов в одном матче",
       "condition": { "kind": "bet_voices_total", "target": 1000 },
       "rewards": [{ "kind": "title", "titleId": "high_roller" }]
     }

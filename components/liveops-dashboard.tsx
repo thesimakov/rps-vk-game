@@ -65,11 +65,17 @@ function rewardText(r: RewardDto) {
   if (r.kind === "coins") return `Монеты +${r.amount ?? 0}`
   if (r.kind === "voices") return `Голоса +${r.amount ?? 0}`
   if (r.kind === "event_tokens") return `Жетоны +${r.amount ?? 0}`
-  if (r.kind === "xp") return `XP +${r.amount ?? 0}`
+  if (r.kind === "xp") return `Опыт +${r.amount ?? 0}`
   if (r.kind === "boost_double_win") return `Буст x2: +${r.amount ?? 0}`
-  if (r.kind === "skin") return `Скин: ${r.skinId ?? "unknown"}`
-  if (r.kind === "title") return `Титул: ${r.titleId ?? "unknown"}`
+  if (r.kind === "skin") return `Скин: ${r.skinId ?? "неизвестно"}`
+  if (r.kind === "title") return `Титул: ${r.titleId ?? "неизвестно"}`
   return r.kind
+}
+
+function resetLabel(reset: "daily" | "weekly" | "monthly") {
+  if (reset === "daily") return "Ежедневно"
+  if (reset === "weekly") return "Еженедельно"
+  return "Ежемесячно"
 }
 
 export function LiveOpsDashboard() {
@@ -91,7 +97,7 @@ export function LiveOpsDashboard() {
         setPlayer((p) => ({ ...p, liveOpsState: res.liveOpsState as unknown as typeof p.liveOpsState }))
       }
     } catch {
-      setError("Не удалось загрузить liveops прогресс")
+      setError("Не удалось загрузить прогресс событий")
     } finally {
       setLoading(false)
     }
@@ -157,7 +163,7 @@ export function LiveOpsDashboard() {
       await unlockPremiumPass(player.id)
       await reload()
     } catch {
-      setError("Не удалось открыть premium pass")
+      setError("Не удалось открыть премиум-пропуск")
     } finally {
       setBusyKey(null)
     }
@@ -169,7 +175,7 @@ export function LiveOpsDashboard() {
       await claimPassLevel(player.id, level, premium)
       await reload()
     } catch {
-      setError("Не удалось забрать награду pass")
+      setError("Не удалось забрать награду пропуска")
     } finally {
       setBusyKey(null)
     }
@@ -215,7 +221,7 @@ export function LiveOpsDashboard() {
 
       <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">Battle Pass</p>
+          <p className="text-sm font-semibold text-foreground">Боевой пропуск</p>
           <span className="text-xs text-muted-foreground">
             Уровень {pass?.level ?? 0}/{maxLevel}
           </span>
@@ -233,7 +239,7 @@ export function LiveOpsDashboard() {
             onClick={() => void onUnlockPremium()}
             className="mt-3 px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-200 text-xs font-semibold disabled:opacity-50"
           >
-            Открыть Premium за 15 голосов
+            Открыть премиум за 15 голосов
           </button>
         )}
         <div className="mt-3 space-y-2 max-h-48 overflow-auto">
@@ -255,7 +261,7 @@ export function LiveOpsDashboard() {
                     onClick={() => void onClaimPass(lvl.level, false)}
                     className="text-[11px] px-2 py-1 rounded-md border border-emerald-400/40 text-emerald-300 disabled:opacity-50"
                   >
-                    {freeClaimed ? "Получено" : "Забрать Free"}
+                    {freeClaimed ? "Получено" : "Забрать (бесплатно)"}
                   </button>
                   <button
                     type="button"
@@ -263,7 +269,7 @@ export function LiveOpsDashboard() {
                     onClick={() => void onClaimPass(lvl.level, true)}
                     className="text-[11px] px-2 py-1 rounded-md border border-amber-400/40 text-amber-300 disabled:opacity-50"
                   >
-                    {premClaimed ? "Получено" : "Забрать Premium"}
+                    {premClaimed ? "Получено" : "Забрать (премиум)"}
                   </button>
                 </div>
               </div>
@@ -284,10 +290,10 @@ export function LiveOpsDashboard() {
               <div key={q.id} className="rounded-xl border border-border/30 p-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-foreground">{q.title}</span>
-                  <span className="text-[10px] text-muted-foreground uppercase">{q.reset}</span>
+                  <span className="text-[10px] text-muted-foreground uppercase">{resetLabel(q.reset)}</span>
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-1">
-                  {value}/{q.condition.target} | +{q.points} pass xp
+                  {value}/{q.condition.target} | +{q.points} очков пропуска
                 </p>
                 <button
                   type="button"
