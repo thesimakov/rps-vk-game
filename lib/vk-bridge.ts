@@ -127,7 +127,7 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
         if (result) return true
       } else {
         const ok = result && typeof result === "object" ? (result as { success?: boolean }).success : undefined
-        if (ok !== false) return true
+        if (ok === true) return true
       }
     } catch (e) {
       console.error("[VK] VKWebAppShowOrderBox error:", e)
@@ -182,7 +182,7 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
         payFormResult && typeof payFormResult === "object"
           ? (payFormResult as { success?: boolean }).success
           : undefined
-      return success !== false
+      return success === true
     } catch (e) {
       console.error("[VK] VKWebAppOpenPayForm fallback error:", e)
       return false
