@@ -115,18 +115,78 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
       }
     }
 
-    const result = await vkBridge.default.send("VKWebAppShowOrderBox", {
-      type: "item",
-      item: pack.itemId,
-    })
+    // Основной сценарий: оплата виртуального товара из каталога приложения.
+    try {
+      const result = await vkBridge.default.send("VKWebAppShowOrderBox", {
+        type: "item",
+        item: pack.itemId,
+      })
 
-    console.log("[VK] VKWebAppShowOrderBox result:", result)
-    // При успехе bridge возвращает true, при отмене/ошибке — false.
-    if (typeof result === "boolean") {
-      return result
+      console.log("[VK] VKWebAppShowOrderBox result:", result)
+      if (typeof result === "boolean") {
+        if (result) return true
+      } else {
+        const ok = result && typeof result === "object" ? (result as { success?: boolean }).success : undefined
+        if (ok !== false) return true
+      }
+    } catch (e) {
+      console.error("[VK] VKWebAppShowOrderBox error:", e)
     }
-    const ok = result && typeof result === "object" ? (result as { success?: boolean }).success : undefined
-    return ok !== false
+
+    // Фолбэк для web/prod окружений: пробуем pay-to-service с серверной подписью.
+    try {
+      const userId = typeof window !== "undefined" ? window.localStorage.getItem("rps_vk_user_id") ?? "" : ""
+      const signRes = await fetch("/api/payment/sign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: pack.votes,
+          userId,
+          description: `Пакет ${pack.amount} монет`,
+          currency: "votes",
+        }),
+      })
+
+      if (!signRes.ok) {
+        console.error("[VK] payment sign request failed:", signRes.status)
+        return false
+      }
+
+      const signData = (await signRes.json()) as {
+        ok?: boolean
+        app_id?: number
+        order_id?: string
+        sign?: string
+      }
+      if (!signData.ok || !signData.app_id || !signData.order_id || !signData.sign) {
+        console.error("[VK] invalid sign payload:", signData)
+        return false
+      }
+
+      const payFormResult = await vkBridge.default.send("VKWebAppOpenPayForm" as any, {
+        app_id: signData.app_id,
+        action: "pay-to-service",
+        params: {
+          amount: pack.votes,
+          description: `Пакет ${pack.amount} монет`,
+          order_id: signData.order_id,
+          currency: "votes",
+          data: pack.itemId,
+          sign: signData.sign,
+        },
+      } as any)
+
+      console.log("[VK] VKWebAppOpenPayForm result:", payFormResult)
+      if (typeof payFormResult === "boolean") return payFormResult
+      const success =
+        payFormResult && typeof payFormResult === "object"
+          ? (payFormResult as { success?: boolean }).success
+          : undefined
+      return success !== false
+    } catch (e) {
+      console.error("[VK] VKWebAppOpenPayForm fallback error:", e)
+      return false
+    }
   } catch (e) {
     console.error("[VK] purchaseVKVoices error:", e)
     return false
