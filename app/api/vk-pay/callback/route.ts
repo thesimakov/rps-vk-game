@@ -16,7 +16,8 @@ import { NextResponse } from "next/server"
 // - начисление средств/товаров пользователю при успешной оплате;
 // - корректные ответы в формате, описанном в доке «Платежи виртуальной валютой».
 //
-export const dynamic = "force-dynamic"
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
+export const dynamic = "force-static"
 
 type VkCatalogItem = {
   itemId: string
@@ -42,6 +43,9 @@ function toAppOrderId(orderId: string): number {
 }
 
 export async function POST(req: Request) {
+  if (IS_STATIC_EXPORT) {
+    return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
+  }
   try {
     // Попробуем прочитать тело как x-www-form-urlencoded (формат нотификаций ВК).
     const text = await req.text()
