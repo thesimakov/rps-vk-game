@@ -2,8 +2,10 @@
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
+import type { LiveOpsState } from "@/lib/liveops/types"
 
-export type Move = "rock" | "scissors" | "paper" | "water"
+export type Move = "rock" | "scissors" | "paper" | "water" | "fire"
+export type WeeklyMode = "elements_tournament" | "time_is_money" | "blind_luck" | "boss_week"
 export type GameScreen =
   | "entry"
   | "menu"
@@ -11,6 +13,7 @@ export type GameScreen =
   | "matchmaking"
   | "arena"
   | "result"
+  | "boss-reward"
   | "leaderboard"
   | "profile"
   | "referral"
@@ -87,6 +90,46 @@ export interface Player {
   lottoMatchedNumbers?: number[]
   /** Приветственный бонус за первый вход уже получен */
   welcomeGiftClaimed?: boolean
+  /** Баланс голосов VK (серверная синхронизация). */
+  vkVoicesBalance?: number
+  /** Полный прогресс liveops (daily/quests/pass/events/achievements). */
+  liveOpsState?: LiveOpsState
+  /** Активный титул игрока, показывается возле ника в матчах. */
+  activeTitleId?: string
+  /** Выбранный режим события для следующего матча. */
+  activeWeeklyMode?: WeeklyMode
+  /** Ожидающая награда за победу над боссом. */
+  bossChestPending?: {
+    rarity: "rare" | "epic" | "legendary"
+    rewardId: string
+    rewardLabel: string
+    rewardCoins: number
+    rewardRating: number
+    createdAt: number
+  }
+  /** Счётчик pity-system: сколько сундуков подряд без legendary. */
+  bossChestPityCounter?: number
+  /** История последних наград из сундуков босса (до 10). */
+  bossChestHistory?: Array<{
+    rarity: "rare" | "epic" | "legendary"
+    rewardId: string
+    rewardLabel: string
+    rewardCoins: number
+    rewardRating: number
+    openedAt: number
+  }>
+}
+
+export interface WeeklyRules {
+  event: {
+    mode: WeeklyMode
+    title: string
+    description: string
+  }
+  allowedMoves: Move[]
+  hideOpponentBet: boolean
+  autoStakeDoubleEveryRounds: number
+  hasBossNpc: boolean
 }
 
 export interface LeaderboardEntry {
@@ -189,6 +232,8 @@ interface GameState {
   vkUser: VKUser | null
   /** Войти через ВК (VK Bridge) */
   loginWithVK: () => Promise<void>
+  /** Войти локально без ВК (гостевой режим) */
+  loginWithoutVK: () => void
   /** Выйти из аккаунта ВК — возврат на экран входа */
   logoutWithVK: () => void
   isLoading: boolean
@@ -219,6 +264,7 @@ interface GameState {
   toDisplayAmount: (amount: number) => number
   /** Подпись валюты (например, "монет") */
   currencyLabel: string
+  weeklyRules: WeeklyRules | null
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -419,6 +465,12 @@ function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
     lottoPendingPrize: player.lottoPendingPrize,
     lottoMatchedNumbers: player.lottoMatchedNumbers,
     welcomeGiftClaimed: player.welcomeGiftClaimed,
+    vkVoicesBalance: player.vkVoicesBalance,
+    liveOpsState: player.liveOpsState,
+    activeTitleId: player.activeTitleId,
+    bossChestPending: player.bossChestPending,
+    bossChestPityCounter: player.bossChestPityCounter,
+    bossChestHistory: player.bossChestHistory,
   }
 }
 
@@ -443,6 +495,13 @@ const DEFAULT_PLAYER: Player = {
   extraTimerUntil: undefined,
   timerPlus10BoughtAt: undefined,
   welcomeGiftClaimed: false,
+  vkVoicesBalance: 0,
+  liveOpsState: undefined,
+  activeTitleId: undefined,
+  activeWeeklyMode: undefined,
+  bossChestPending: undefined,
+  bossChestPityCounter: 0,
+  bossChestHistory: [],
 }
 
 function loadSavedState(): {
@@ -526,6 +585,13 @@ function saveState(player: Player, lavaCardStock: number) {
           lottoPendingPrize: player.lottoPendingPrize,
           lottoMatchedNumbers: player.lottoMatchedNumbers,
           welcomeGiftClaimed: player.welcomeGiftClaimed,
+          vkVoicesBalance: player.vkVoicesBalance,
+          liveOpsState: player.liveOpsState,
+          activeTitleId: player.activeTitleId,
+          activeWeeklyMode: player.activeWeeklyMode,
+          bossChestPending: player.bossChestPending,
+          bossChestPityCounter: player.bossChestPityCounter,
+          bossChestHistory: player.bossChestHistory,
         },
         lavaCardStock,
       })
@@ -561,6 +627,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [leaderboardVersion, setLeaderboardVersion] = useState(0)
   const [totalRounds, setTotalRounds] = useState<1 | 3 | 5>(1)
   const [lavaCardStock, setLavaCardStock] = useState(3)
+  const [weeklyRules, setWeeklyRules] = useState<WeeklyRules | null>(null)
   const [hasLoadedSave, setHasLoadedSave] = useState(false)
   const leaderboardDataRef = useRef(
     STATIC_LEADERBOARD.map((e) => ({ ...e }))
@@ -652,6 +719,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       controller.abort()
     }
   }, [hasLoadedSave, vkUser, player])
+
+  // Загружаем серверные weekly-правила события.
+  useEffect(() => {
+    let active = true
+    const loadWeeklyRules = async () => {
+      const res = await postJSON<{ ok: boolean; rules?: WeeklyRules }>("/api/liveops/weekly-rules", {})
+      if (!active || !res?.ok || !res.rules) return
+      setWeeklyRules(res.rules)
+      setPlayer((p) => ({
+        ...p,
+        activeWeeklyMode: p.activeWeeklyMode ?? res.rules!.event.mode,
+      }))
+    }
+    void loadWeeklyRules()
+    return () => {
+      active = false
+    }
+  }, [setPlayer])
 
   // Инициализация VK Bridge
   useEffect(() => {
@@ -841,6 +926,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const loginWithVK = useCallback(async () => {
     await loginWithVKBridge()
   }, [loginWithVKBridge])
+
+  const loginWithoutVK = useCallback(() => {
+    setLoginErrorMessage(null)
+    setVkUser({
+      id: 0,
+      first_name: "Гость",
+      last_name: "",
+      photo_100: "",
+      photo_200: "",
+    })
+    setPlayer((p) => ({
+      ...p,
+      id: p.id && !p.id.startsWith("vk_") ? p.id : "guest_player",
+      name: p.name || "Гость",
+      avatar: (p.name || "Гость").charAt(0).toUpperCase(),
+      avatarUrl: "",
+    }))
+    setScreen("menu")
+  }, [])
 
   const logoutWithVK = useCallback(() => {
     if (typeof window !== "undefined") {
@@ -1198,6 +1302,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         purchaseRankBoost,
         vkUser,
         loginWithVK,
+        loginWithoutVK,
         logoutWithVK,
         isLoading,
         loadingStage,
@@ -1220,6 +1325,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         trackSpend,
         toDisplayAmount,
         currencyLabel,
+        weeklyRules,
       }}
     >
       {children}

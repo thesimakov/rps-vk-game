@@ -131,11 +131,9 @@ export function FriendsTableScreen() {
       const winner = participants[winnerIndex]
       const winnerIsHost = winner && winner.isHost
 
-      // Экономика: ставка ×2, комиссия 10% (VIP: 5%), бонусы = 10% от выигрыша
+      // Экономика: ставка ×2, без комиссии, бонусы = 10% от выигрыша
       const pot = bet * 2
-      const commissionRate = player.vip ? 0.05 : 0.1
-      const commission = Math.ceil(pot * commissionRate)
-      const winnings = pot - commission
+      const winnings = pot
 
       let earnings = 0
       let bonus = 0
@@ -274,8 +272,7 @@ export function FriendsTableScreen() {
           </div>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Комиссия {player.vip ? "5%" : "10%"} с банка. Победитель турнира получает чистый выигрыш,
-          как в обычной игре.
+          Без комиссии с банка. Победитель турнира получает полный выигрыш, как в обычной игре.
         </p>
       </div>
 

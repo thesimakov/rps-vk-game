@@ -9,6 +9,7 @@ import { BetSelect } from "@/components/bet-select"
 import { Matchmaking } from "@/components/matchmaking"
 import { GameArena } from "@/components/game-arena"
 import { ResultScreen } from "@/components/result-screen"
+import { BossRewardScreen } from "@/components/boss-reward-screen"
 import { LeaderboardScreen } from "@/components/leaderboard-screen"
 import { ProfileScreen } from "@/components/profile-screen"
 import { ReferralScreen } from "@/components/referral-screen"
@@ -36,6 +37,7 @@ function GameScreen() {
       {screen === "matchmaking" && <Matchmaking />}
       {screen === "arena" && <GameArena />}
       {screen === "result" && <ResultScreen />}
+      {screen === "boss-reward" && <BossRewardScreen />}
       {screen === "leaderboard" && <LeaderboardScreen />}
       {screen === "profile" && <ProfileScreen />}
       {screen === "referral" && <ReferralScreen />}
@@ -76,7 +78,8 @@ function GameLayout() {
   const showRightSidebar = !hideNav && vkUser != null
   const showBottomNav = !hideNav && vkUser != null
 
-  const showLowBalanceHint = vkUser != null && player.balance < 50 && !hideLowBalanceHint
+  const isVkPlayer = player.id.startsWith("vk_")
+  const showLowBalanceHint = vkUser != null && isVkPlayer && player.balance < 50 && !hideLowBalanceHint
 
   const handleLowBalanceInvite = async () => {
     try {

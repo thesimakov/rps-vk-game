@@ -10,11 +10,28 @@ const NORMAL_SEARCH_MS = 2500
 const FAST_SEARCH_MS = 800
 
 export function Matchmaking() {
-  const { setScreen, opponent, currentBet, player, setPlayer, toDisplayAmount, currencyLabel } = useGame()
+  const { setScreen, opponent, setOpponent, currentBet, player, setPlayer, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
   const [dots, setDots] = useState("")
   const [progress, setProgress] = useState(0)
   const useFastSearch = (player.fastMatchBoosts ?? 0) > 0
   const searchMs = useFastSearch ? FAST_SEARCH_MS : NORMAL_SEARCH_MS
+  const isBossWeek = (player.activeWeeklyMode ?? weeklyRules?.event.mode) === "boss_week"
+
+  useEffect(() => {
+    if (!isBossWeek) return
+    setOpponent({
+      id: "boss-npc",
+      name: "Босс Эхо",
+      avatar: "Б",
+      avatarUrl: "",
+      balance: 10000,
+      wins: 999,
+      losses: 10,
+      weekWins: 999,
+      weekEarnings: 9999,
+      vip: true,
+    })
+  }, [isBossWeek, setOpponent])
 
   useEffect(() => {
     const dotInterval = setInterval(() => {
@@ -41,7 +58,9 @@ export function Matchmaking() {
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8">
       <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-accent/20 rounded-full px-5 py-2.5 mb-10">
         <Coins className="h-4 w-4 text-accent" />
-        <span className="text-base font-extrabold text-accent tabular-nums">{formatAmount(toDisplayAmount(currentBet))}</span>
+        <span className="text-base font-extrabold text-accent tabular-nums">
+          {formatAmount(toDisplayAmount(currentBet))}
+        </span>
         <span className="text-base font-medium text-muted-foreground">{currencyLabel}</span>
       </div>
       <div className="relative mb-8">
@@ -51,7 +70,9 @@ export function Matchmaking() {
         </div>
         <div className="absolute -inset-4 bg-primary/6 rounded-full blur-2xl" />
       </div>
-      <h2 className="text-base font-bold text-foreground mb-2">Ищем соперника{dots}</h2>
+      <h2 className="text-base font-bold text-foreground mb-2">
+        {isBossWeek ? `Ищем Босса${dots}` : `Ищем соперника${dots}`}
+      </h2>
       {opponent && (
         <div className="flex items-center gap-3 mb-6 px-4 py-2 rounded-2xl bg-card/40 border border-border/30">
           {opponent.vip ? (
@@ -79,7 +100,9 @@ export function Matchmaking() {
               variant="destructive"
             />
           )}
-          <p className="text-base font-semibold text-foreground">Найден: {opponent.name}</p>
+          <p className="text-base font-semibold text-foreground">
+            {isBossWeek ? `Найден: ${opponent.name} (сложный ИИ)` : `Найден: ${opponent.name}`}
+          </p>
         </div>
       )}
       {!opponent && (

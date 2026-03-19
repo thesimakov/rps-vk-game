@@ -1,0 +1,169 @@
+{
+  "seasonId": "battle_month_2026_03",
+  "seasonDays": 30,
+  "streakRestoreCostVoices": 3,
+  "dailyRewards": [
+    { "day": 1, "rewards": [{ "kind": "coins", "amount": 50 }, { "kind": "xp", "amount": 20 }] },
+    { "day": 2, "rewards": [{ "kind": "coins", "amount": 75 }, { "kind": "xp", "amount": 25 }] },
+    { "day": 3, "rewards": [{ "kind": "coins", "amount": 100 }, { "kind": "event_tokens", "amount": 5 }] },
+    { "day": 4, "rewards": [{ "kind": "coins", "amount": 125 }, { "kind": "boost_double_win", "amount": 1 }] },
+    { "day": 5, "rewards": [{ "kind": "coins", "amount": 150 }, { "kind": "xp", "amount": 50 }] },
+    { "day": 6, "rewards": [{ "kind": "coins", "amount": 200 }, { "kind": "skin", "skinId": "golden_rock" }] },
+    { "day": 7, "rewards": [{ "kind": "voices", "amount": 1 }, { "kind": "boost_double_win", "amount": 2 }] }
+  ],
+  "quests": [
+    {
+      "id": "daily_play_5",
+      "title": "Play 5 matches",
+      "description": "Finish 5 matches in one day",
+      "reset": "daily",
+      "points": 30,
+      "rewards": [{ "kind": "event_tokens", "amount": 5 }, { "kind": "xp", "amount": 30 }],
+      "condition": { "kind": "play_matches", "target": 5 }
+    },
+    {
+      "id": "daily_scissors_10",
+      "title": "Throw scissors 10 times",
+      "description": "Use scissors in rounds 10 times",
+      "reset": "daily",
+      "points": 25,
+      "rewards": [{ "kind": "event_tokens", "amount": 5 }, { "kind": "xp", "amount": 25 }],
+      "condition": { "kind": "throw_move", "target": 10, "move": "scissors" }
+    },
+    {
+      "id": "weekly_streak_3",
+      "title": "Win 3 in a row",
+      "description": "Reach a 3 match win streak this week",
+      "reset": "weekly",
+      "points": 80,
+      "rewards": [{ "kind": "event_tokens", "amount": 15 }, { "kind": "xp", "amount": 80 }],
+      "condition": { "kind": "win_streak", "target": 3 }
+    },
+    {
+      "id": "weekly_bet_50_voices",
+      "title": "Bet 50 voices",
+      "description": "Accumulate 50 voices in bets this week",
+      "reset": "weekly",
+      "points": 100,
+      "rewards": [{ "kind": "event_tokens", "amount": 20 }, { "kind": "xp", "amount": 100 }],
+      "condition": { "kind": "bet_voices_total", "target": 50 }
+    },
+    {
+      "id": "monthly_skin_win",
+      "title": "Win with New Year paper skin",
+      "description": "Win one match with skin newyear_paper",
+      "reset": "monthly",
+      "points": 180,
+      "rewards": [{ "kind": "event_tokens", "amount": 40 }, { "kind": "xp", "amount": 150 }],
+      "condition": { "kind": "win_with_skin", "target": 1, "skinId": "newyear_paper" }
+    },
+    {
+      "id": "monthly_boss_kill",
+      "title": "Defeat weekly boss",
+      "description": "Beat the boss during boss week",
+      "reset": "monthly",
+      "eventOnly": "boss_week",
+      "points": 220,
+      "rewards": [{ "kind": "event_tokens", "amount": 60 }, { "kind": "skin", "skinId": "boss_hunter_badge" }],
+      "condition": { "kind": "defeat_boss", "target": 1 }
+    }
+  ],
+  "pass": {
+    "maxLevel": 30,
+    "pointsPerLevel": 100,
+    "freePremiumUnlockCostVoices": 15,
+    "levels": [
+      { "level": 1, "freeRewards": [{ "kind": "coins", "amount": 100 }], "premiumRewards": [{ "kind": "coins", "amount": 200 }] },
+      { "level": 2, "freeRewards": [{ "kind": "event_tokens", "amount": 5 }], "premiumRewards": [{ "kind": "event_tokens", "amount": 10 }] },
+      { "level": 3, "freeRewards": [{ "kind": "boost_double_win", "amount": 1 }], "premiumRewards": [{ "kind": "boost_double_win", "amount": 2 }] },
+      { "level": 4, "freeRewards": [{ "kind": "coins", "amount": 120 }], "premiumRewards": [{ "kind": "coins", "amount": 260 }] },
+      { "level": 5, "freeRewards": [{ "kind": "skin", "skinId": "ember_paper" }], "premiumRewards": [{ "kind": "skin", "skinId": "glacier_scissors" }] },
+      { "level": 6, "freeRewards": [{ "kind": "coins", "amount": 140 }], "premiumRewards": [{ "kind": "coins", "amount": 300 }] },
+      { "level": 7, "freeRewards": [{ "kind": "event_tokens", "amount": 8 }], "premiumRewards": [{ "kind": "event_tokens", "amount": 14 }] },
+      { "level": 8, "freeRewards": [{ "kind": "xp", "amount": 80 }], "premiumRewards": [{ "kind": "xp", "amount": 150 }] },
+      { "level": 9, "freeRewards": [{ "kind": "coins", "amount": 180 }], "premiumRewards": [{ "kind": "coins", "amount": 320 }] },
+      { "level": 10, "freeRewards": [{ "kind": "skin", "skinId": "storm_rock" }], "premiumRewards": [{ "kind": "frame", "frameId": "thunder_frame" }] },
+      { "level": 11, "freeRewards": [{ "kind": "coins", "amount": 200 }], "premiumRewards": [{ "kind": "coins", "amount": 350 }] },
+      { "level": 12, "freeRewards": [{ "kind": "event_tokens", "amount": 10 }], "premiumRewards": [{ "kind": "event_tokens", "amount": 18 }] },
+      { "level": 13, "freeRewards": [{ "kind": "xp", "amount": 120 }], "premiumRewards": [{ "kind": "xp", "amount": 200 }] },
+      { "level": 14, "freeRewards": [{ "kind": "boost_double_win", "amount": 2 }], "premiumRewards": [{ "kind": "boost_double_win", "amount": 3 }] },
+      { "level": 15, "freeRewards": [{ "kind": "skin", "skinId": "jade_paper" }], "premiumRewards": [{ "kind": "skin", "skinId": "obsidian_rock" }] },
+      { "level": 16, "freeRewards": [{ "kind": "coins", "amount": 220 }], "premiumRewards": [{ "kind": "coins", "amount": 420 }] },
+      { "level": 17, "freeRewards": [{ "kind": "event_tokens", "amount": 12 }], "premiumRewards": [{ "kind": "event_tokens", "amount": 20 }] },
+      { "level": 18, "freeRewards": [{ "kind": "xp", "amount": 150 }], "premiumRewards": [{ "kind": "xp", "amount": 260 }] },
+      { "level": 19, "freeRewards": [{ "kind": "coins", "amount": 240 }], "premiumRewards": [{ "kind": "coins", "amount": 460 }] },
+      { "level": 20, "freeRewards": [{ "kind": "skin", "skinId": "frost_rock" }], "premiumRewards": [{ "kind": "effect", "effectId": "victory_sparks" }] },
+      { "level": 21, "freeRewards": [{ "kind": "coins", "amount": 260 }], "premiumRewards": [{ "kind": "coins", "amount": 520 }] },
+      { "level": 22, "freeRewards": [{ "kind": "event_tokens", "amount": 14 }], "premiumRewards": [{ "kind": "event_tokens", "amount": 22 }] },
+      { "level": 23, "freeRewards": [{ "kind": "xp", "amount": 180 }], "premiumRewards": [{ "kind": "xp", "amount": 300 }] },
+      { "level": 24, "freeRewards": [{ "kind": "boost_double_win", "amount": 2 }], "premiumRewards": [{ "kind": "boost_double_win", "amount": 4 }] },
+      { "level": 25, "freeRewards": [{ "kind": "skin", "skinId": "volcanic_scissors" }], "premiumRewards": [{ "kind": "skin", "skinId": "phoenix_paper" }] },
+      { "level": 26, "freeRewards": [{ "kind": "coins", "amount": 280 }], "premiumRewards": [{ "kind": "coins", "amount": 560 }] },
+      { "level": 27, "freeRewards": [{ "kind": "event_tokens", "amount": 16 }], "premiumRewards": [{ "kind": "event_tokens", "amount": 25 }] },
+      { "level": 28, "freeRewards": [{ "kind": "xp", "amount": 220 }], "premiumRewards": [{ "kind": "xp", "amount": 340 }] },
+      { "level": 29, "freeRewards": [{ "kind": "coins", "amount": 300 }], "premiumRewards": [{ "kind": "coins", "amount": 620 }] },
+      { "level": 30, "freeRewards": [{ "kind": "skin", "skinId": "season_champion" }], "premiumRewards": [{ "kind": "skin", "skinId": "legendary_chaos_hand" }, { "kind": "frame", "frameId": "legendary_frame" }, { "kind": "effect", "effectId": "legendary_victory_fx" }] }
+    ]
+  },
+  "weeklyEvents": [
+    {
+      "week": 1,
+      "id": "tournament_of_elements",
+      "mode": "elements_tournament",
+      "title": "Tournament of Elements",
+      "description": "Only fire, water and rock are available. Win rewards are doubled.",
+      "rewardsMultiplier": 2,
+      "tokenRewardPerWin": 5
+    },
+    {
+      "week": 2,
+      "id": "time_is_money",
+      "mode": "time_is_money",
+      "title": "Time Is Money",
+      "description": "Bet doubles every 2 rounds in streak modes.",
+      "rewardsMultiplier": 1.5,
+      "tokenRewardPerWin": 4
+    },
+    {
+      "week": 3,
+      "id": "blind_luck",
+      "mode": "blind_luck",
+      "title": "Слепая удача",
+      "description": "Opponent bet is hidden until round end.",
+      "rewardsMultiplier": 1.2,
+      "tokenRewardPerWin": 7
+    },
+    {
+      "week": 4,
+      "id": "boss_week",
+      "mode": "boss_week",
+      "title": "Boss Week",
+      "description": "Defeat adaptive NPC boss for guaranteed rare chest.",
+      "rewardsMultiplier": 1,
+      "tokenRewardPerWin": 10
+    }
+  ],
+  "achievements": [
+    {
+      "id": "matches_1000",
+      "title": "Thousand Battles",
+      "description": "Play 1000 matches",
+      "condition": { "kind": "play_matches", "target": 1000 },
+      "rewards": [{ "kind": "title", "titleId": "legend" }]
+    },
+    {
+      "id": "rock_wins_100",
+      "title": "Rock Master",
+      "description": "Win 100 rounds using rock",
+      "condition": { "kind": "throw_move", "target": 100, "move": "rock" },
+      "rewards": [{ "kind": "title", "titleId": "rock_master" }]
+    },
+    {
+      "id": "bank_1000",
+      "title": "High Roller",
+      "description": "Capture a bank of 1000 voices in one match",
+      "condition": { "kind": "bet_voices_total", "target": 1000 },
+      "rewards": [{ "kind": "title", "titleId": "high_roller" }]
+    }
+  ]
+}

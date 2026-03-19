@@ -27,12 +27,15 @@ function getTierBadge(rounds: number) {
 }
 
 export function BetSelect() {
-  const { setScreen, setCurrentBet, setTotalRounds, player, toDisplayAmount, currencyLabel } = useGame()
+  const { setScreen, setCurrentBet, setTotalRounds, player, setPlayer, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
     setCurrentBet(value)
     setTotalRounds(rounds)
+    if (weeklyRules?.event.mode) {
+      setPlayer((p) => ({ ...p, activeWeeklyMode: weeklyRules.event.mode }))
+    }
     setScreen("matchmaking")
   }
 
@@ -64,6 +67,13 @@ export function BetSelect() {
       <p className="text-muted-foreground text-sm mb-6 text-center font-medium">
         Выберите ставку и режим: 5–10 монет — быстрая игра, 25–50 монет — 3 хода, 100–250 монет — 5 ходов
       </p>
+
+      {weeklyRules && (
+        <div className="w-full max-w-lg mb-5 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-3">
+          <p className="text-sm font-semibold text-sky-200">{weeklyRules.event.title}</p>
+          <p className="text-xs text-white/75 mt-1">{weeklyRules.event.description}</p>
+        </div>
+      )}
 
       {/* Сетка: ставка + режим (объединённое поле) */}
       <div className="w-full max-w-lg grid grid-cols-2 gap-3">
@@ -101,7 +111,7 @@ export function BetSelect() {
       {/* Info */}
       <div className="mt-6 w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4">
         <p className="text-sm text-muted-foreground text-center font-medium">
-          Ставка × 2 = банк. Комиссия 10% (VIP: 5%).
+          Ставка × 2 = банк. Без комиссии.
         </p>
       </div>
     </div>

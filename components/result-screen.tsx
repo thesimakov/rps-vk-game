@@ -3,7 +3,7 @@
 import { useGame } from "@/lib/game-context"
 import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { Trophy, Skull, Minus, Coins, RotateCcw, ArrowRight, Zap, Heart, Hammer, Scissors, FileText, Moon, Sun, Droplets } from "lucide-react"
+import { Trophy, Skull, Minus, Coins, RotateCcw, ArrowRight, Zap, Heart, Hammer, Scissors, FileText, Moon, Sun, Droplets, Gift } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { useState, useEffect } from "react"
 
@@ -12,6 +12,7 @@ const MOVE_LABELS: Record<string, { icon: string; label: string }> = {
   scissors: { icon: "\u2702\uFE0F", label: "Ножницы" },
   paper: { icon: "\uD83D\uDCC4", label: "Бумага" },
   water: { icon: "\uD83C\uDF0A", label: "Вода" },
+  fire: { icon: "\uD83D\uDD25", label: "Огонь" },
 }
 
 /** Текст исхода: что произошло (бумага обернула камень, ножницы порезали бумагу и т.д.) */
@@ -24,6 +25,9 @@ function getOutcomePhrase(playerMove: string | null, opponentMove: string | null
   if (winner === "paper" && loser === "rock") return "Бумага обернула камень"
   if (winner === "water" && loser === "rock") return "Вода размыла камень"
   if (winner === "paper" && loser === "water") return "Бумага впитала воду"
+  if (winner === "fire" && loser === "rock") return "Огонь оплавил камень"
+  if (winner === "rock" && loser === "water") return "Камень рассекает поток"
+  if (winner === "water" && loser === "fire") return "Вода потушила огонь"
   return null
 }
 
@@ -43,8 +47,10 @@ function OutcomeIcon({ playerMove, opponentMove, outcome }: { playerMove: string
 
 const FIRE_ANIMATION_DURATION_MS = 3000
 const CONFETTI_DURATION_MS = 3200
+const LOSE_FX_DURATION_MS = 1800
 const FIRE_PARTICLES_COUNT = 48
 const CONFETTI_PIECES = 50
+const LOSE_PARTICLES = 22
 
 /** Детерминированные позиции огоньков (по индексу), чтобы не было гидратации */
 function getFirePosition(i: number) {
@@ -71,17 +77,34 @@ function getConfettiPosition(i: number) {
   }
 }
 
+/** Частицы поражения: разлёт от центра вниз/в стороны */
+function getLoseFxPosition(i: number) {
+  const angle = (i / LOSE_PARTICLES) * Math.PI * 1.8 + 0.6
+  const distance = 90 + (i % 6) * 22
+  const dx = Math.round(Math.cos(angle) * distance)
+  const dy = Math.round(Math.sin(angle) * distance + 25)
+  return {
+    dx,
+    dy,
+    delay: (i % 5) * 0.03,
+    rot: (i % 4) * 110 + i * 16,
+    symbol: i % 3 === 0 ? "💀" : i % 2 === 0 ? "🕳️" : "✖",
+  }
+}
+
 export function ResultScreen() {
-  const { lastResult, setScreen, opponent, player, totalRounds, toDisplayAmount, currencyLabel } = useGame()
+  const { lastResult, setScreen, opponent, player, totalRounds, currentBet, toDisplayAmount, currencyLabel } = useGame()
   const isWin = lastResult?.outcome === "win"
   const isDraw = lastResult?.outcome === "draw"
   /** Поражение из-за таймаута (кто-то не выбрал карту) — показываем «Кто-то уснул» вместо черепа и карт */
   const isAsleep = lastResult?.outcome === "loss" && lastResult.playerMove == null && lastResult.opponentMove == null
   const showFireAnimation = isWin && player.victoryAnimation === "fire"
   const showConfetti = isWin && player.victoryAnimation !== "fire"
+  const showLoseFx = !isWin && !isDraw && !isAsleep
 
   const [fireVisible, setFireVisible] = useState(showFireAnimation)
   const [confettiVisible, setConfettiVisible] = useState(showConfetti)
+  const [loseFxVisible, setLoseFxVisible] = useState(showLoseFx)
 
   useEffect(() => {
     if (!showFireAnimation) return
@@ -96,6 +119,13 @@ export function ResultScreen() {
     const t = setTimeout(() => setConfettiVisible(false), CONFETTI_DURATION_MS)
     return () => clearTimeout(t)
   }, [showConfetti])
+
+  useEffect(() => {
+    if (!showLoseFx) return
+    setLoseFxVisible(true)
+    const t = setTimeout(() => setLoseFxVisible(false), LOSE_FX_DURATION_MS)
+    return () => clearTimeout(t)
+  }, [showLoseFx])
 
   if (!lastResult) return null
 
@@ -120,9 +150,12 @@ export function ResultScreen() {
   const playerRoundsWon = rounds.filter((r) => r.outcome === "win").length
   const opponentRoundsWon = rounds.filter((r) => r.outcome === "loss").length
   const isFiveRoundMatch = totalRounds === 5 && rounds.length === 5
+  const isBossWin = isWin && (opponentData.id === "boss-npc" || player.activeWeeklyMode === "boss_week")
+  const hasBossChest = !!player.bossChestPending
+  const stakeMultiplier = Math.max(1, Math.round(lastResult.bet / Math.max(1, currentBet)))
 
   return (
-    <div className="flex flex-col min-h-screen relative arena-bg">
+    <div className={`flex flex-col min-h-screen relative arena-bg ${showLoseFx ? "result-lose-shake" : ""}`}>
       {/* Победа с анимацией «Огонь»: полноэкранные огоньки */}
       {fireVisible && (
         <div
@@ -170,6 +203,35 @@ export function ResultScreen() {
                   ["--rot" as string]: `${rot}deg`,
                 }}
               />
+            )
+          })}
+        </div>
+      )}
+
+      {/* Поражение: красный импульс + осколки/черепа */}
+      {loseFxVisible && (
+        <div
+          className="fixed inset-0 z-50 pointer-events-none overflow-hidden"
+          aria-hidden
+        >
+          <div className="absolute inset-0 result-lose-overlay" />
+          {Array.from({ length: LOSE_PARTICLES }, (_, i) => {
+            const { dx, dy, delay, rot, symbol } = getLoseFxPosition(i)
+            return (
+              <span
+                key={i}
+                className="result-lose-particle"
+                style={{
+                  left: "50%",
+                  top: "45%",
+                  animationDelay: `${delay}s`,
+                  ["--dx" as string]: `${dx}px`,
+                  ["--dy" as string]: `${dy}px`,
+                  ["--rot" as string]: `${rot}deg`,
+                }}
+              >
+                {symbol}
+              </span>
             )
           })}
         </div>
@@ -295,6 +357,10 @@ export function ResultScreen() {
                           ? "card-medieval-paper"
                           : r.playerMove === "scissors"
                           ? "card-medieval-scissors"
+                          : r.playerMove === "water"
+                          ? "card-medieval-water"
+                          : r.playerMove === "fire"
+                          ? "card-medieval-fire"
                           : ""
                       } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                     />
@@ -311,6 +377,10 @@ export function ResultScreen() {
                           ? "card-medieval-paper"
                           : r.playerMove === "scissors"
                           ? "card-medieval-scissors"
+                          : r.playerMove === "water"
+                          ? "card-medieval-water"
+                          : r.playerMove === "fire"
+                          ? "card-medieval-fire"
                           : ""
                       } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                     />
@@ -338,6 +408,10 @@ export function ResultScreen() {
                           ? "card-medieval-paper"
                           : r.opponentMove === "scissors"
                           ? "card-medieval-scissors"
+                          : r.opponentMove === "water"
+                          ? "card-medieval-water"
+                          : r.opponentMove === "fire"
+                          ? "card-medieval-fire"
                           : ""
                       } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                     />
@@ -354,6 +428,10 @@ export function ResultScreen() {
                           ? "card-medieval-paper"
                           : r.opponentMove === "scissors"
                           ? "card-medieval-scissors"
+                          : r.opponentMove === "water"
+                          ? "card-medieval-water"
+                          : r.opponentMove === "fire"
+                          ? "card-medieval-fire"
                           : ""
                       } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                     />
@@ -376,6 +454,10 @@ export function ResultScreen() {
                         ? "card-medieval-paper"
                         : r.playerMove === "scissors"
                         ? "card-medieval-scissors"
+                        : r.playerMove === "water"
+                        ? "card-medieval-water"
+                        : r.playerMove === "fire"
+                        ? "card-medieval-fire"
                         : ""
                     } ${player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                   />
@@ -401,6 +483,10 @@ export function ResultScreen() {
                         ? "card-medieval-paper"
                         : r.opponentMove === "scissors"
                         ? "card-medieval-scissors"
+                        : r.opponentMove === "water"
+                        ? "card-medieval-water"
+                        : r.opponentMove === "fire"
+                        ? "card-medieval-fire"
                         : ""
                     } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
                   />
@@ -411,9 +497,9 @@ export function ResultScreen() {
         </div>
       )}
 
-      {/* Две основные карты в стиле средневековья: игрок слева, соперник справа — выезд с боков */}
-      <div className="flex items-end justify-center gap-3 sm:gap-6 w-full max-w-lg mx-auto mb-4">
-        <div className="result-card-left flex flex-col items-center gap-3" style={{ animationDelay: "0.35s" }}>
+      {/* Две основные карты: симметричная сетка (игрок | центр | соперник) */}
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 sm:gap-6 w-full max-w-lg mx-auto mb-4">
+        <div className="result-card-left justify-self-center w-full max-w-[160px] flex flex-col items-center gap-3" style={{ animationDelay: "0.35s" }}>
           <div
             className={`card-medieval w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0 ${
               lastResult.playerMove === "rock"
@@ -422,6 +508,10 @@ export function ResultScreen() {
                 ? "card-medieval-paper"
                 : lastResult.playerMove === "scissors"
                 ? "card-medieval-scissors"
+                : lastResult.playerMove === "water"
+                ? "card-medieval-water"
+                : lastResult.playerMove === "fire"
+                ? "card-medieval-fire"
                 : ""
             } ${player.cardSkin === "gold" ? "card-medieval-selected" : ""} ${
               player.cardDeck === "ancient-rus" ? "card-set-ancient" : ""
@@ -454,9 +544,17 @@ export function ResultScreen() {
               <PlayerAvatar name={player.name} avatar={player.avatar} avatarUrl={player.hideVkAvatar ? undefined : player.avatarUrl} size="md" variant="primary" />
             </div>
           )}
+          <div className="flex items-center gap-1">
+            <span className="text-xs text-white/90 font-semibold">{player.name}</span>
+            {player.activeTitleId && (
+              <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-purple-500/25 text-purple-200 border border-purple-400/40">
+                {player.activeTitleId}
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="result-center-in flex flex-col items-center justify-center pb-20 sm:pb-24 gap-2" style={{ animationDelay: "0.5s" }}>
+        <div className="result-center-in self-center flex flex-col items-center justify-center gap-2 px-1" style={{ animationDelay: "0.5s" }}>
           <OutcomeIcon
             playerMove={lastResult.playerMove}
             opponentMove={lastResult.opponentMove}
@@ -467,7 +565,7 @@ export function ResultScreen() {
           </p>
         </div>
 
-        <div className="result-card-right flex flex-col items-center gap-3" style={{ animationDelay: "0.4s" }}>
+        <div className="result-card-right justify-self-center w-full max-w-[160px] flex flex-col items-center gap-3" style={{ animationDelay: "0.4s" }}>
           <div
             className={`card-medieval card-medieval-opponent w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0 ${
               lastResult.opponentMove === "rock"
@@ -476,6 +574,10 @@ export function ResultScreen() {
                 ? "card-medieval-paper"
                 : lastResult.opponentMove === "scissors"
                 ? "card-medieval-scissors"
+                : lastResult.opponentMove === "water"
+                ? "card-medieval-water"
+                : lastResult.opponentMove === "fire"
+                ? "card-medieval-fire"
                 : ""
             } ${opponentData.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
           />
@@ -493,6 +595,7 @@ export function ResultScreen() {
               <PlayerAvatar name={opponentData.name} avatar={opponentData.avatar} avatarUrl={opponentData.avatarUrl} size="md" variant="destructive" />
             </div>
           )}
+          <span className="text-xs text-white/90 font-semibold text-center">{opponentData.name}</span>
         </div>
       </div>
         </>
@@ -523,10 +626,25 @@ export function ResultScreen() {
               ? `Вы проиграли ${formatAmount(toDisplayAmount(Math.abs(lastResult.earnings)))} ${currencyLabel}`
               : "Ничья — баланс не изменился"}
         </p>
+        {stakeMultiplier > 1 && (
+          <span className="mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+            Множитель ставки: x{stakeMultiplier}
+          </span>
+        )}
       </div>
 
       {/* Кнопки: Реванш, Закончить игру — появление снизу каскадом */}
       <div className="w-full max-w-xs mx-auto flex flex-col gap-3">
+        {isBossWin && hasBossChest && (
+          <button
+            onClick={() => setScreen("boss-reward")}
+            className="result-btn-in w-full flex items-center justify-center gap-2 bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold py-3.5 rounded-2xl transition-all active:scale-[0.98]"
+            style={{ animationDelay: "0.72s" }}
+          >
+            <Gift className="h-5 w-5" />
+            <span>Открыть сундук босса</span>
+          </button>
+        )}
         <button
           onClick={() => setScreen("matchmaking")}
           className="result-btn-in w-full flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"

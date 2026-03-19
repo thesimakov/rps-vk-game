@@ -4,14 +4,22 @@ import { useGame, type Move, type MatchRoundSummary } from "@/lib/game-context"
 import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useState, useEffect, useRef, useCallback } from "react"
-import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown } from "lucide-react"
+import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown, ShieldAlert } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
+import { sendMatchResult } from "@/lib/liveops/client"
 
 const BASE_MOVES: { key: Move; label: string; icon: string; color: string }[] = [
   { key: "rock", label: "Камень", icon: "\uD83E\uDEA8", color: "border-secondary/50 shadow-secondary/10" },
   { key: "scissors", label: "Ножницы", icon: "\u2702\uFE0F", color: "border-destructive/50 shadow-destructive/10" },
   { key: "paper", label: "Бумага", icon: "\uD83D\uDCC4", color: "border-primary/50 shadow-primary/10" },
 ]
+
+const FIRE_MOVE: { key: Move; label: string; icon: string; color: string } = {
+  key: "fire",
+  label: "Огонь",
+  icon: "\uD83D\uDD25",
+  color: "border-orange-500/60 shadow-orange-500/20",
+}
 
 const WATER_MOVE: { key: Move; label: string; icon: string; color: string } = {
   key: "water",
@@ -22,6 +30,14 @@ const WATER_MOVE: { key: Move; label: string; icon: string; color: string } = {
 
 function getOutcome(p: Move, o: Move): "win" | "loss" | "draw" {
   if (p === o) return "draw"
+  const isElementalP = p === "fire" || p === "water" || p === "rock"
+  const isElementalO = o === "fire" || o === "water" || o === "rock"
+  if (isElementalP && isElementalO) {
+    if ((p === "fire" && o === "rock") || (p === "rock" && o === "water") || (p === "water" && o === "fire")) {
+      return "win"
+    }
+    return "loss"
+  }
   // Вода: побеждает камень, проигрывает бумаге, ничья с ножницами
   if (p === "water") {
     if (o === "rock") return "win"
@@ -51,7 +67,60 @@ function getMoveThatBeats(move: Move): Move {
   if (move === "rock") return "paper"
   if (move === "scissors") return "rock"
   if (move === "water") return "paper" // бумага бьёт воду
+  if (move === "fire") return "water"
   return "scissors"
+}
+
+function getRandomMoveFrom(list: Move[]): Move {
+  if (list.length === 0) return getRandomMove()
+  return list[Math.floor(Math.random() * list.length)]
+}
+
+function getBossMove(history: Move[], allowedMoves: Move[]): Move {
+  const pool: Move[] = allowedMoves.length ? allowedMoves : (["rock", "scissors", "paper"] as Move[])
+  if (history.length < 2) {
+    return getRandomMoveFrom(pool)
+  }
+  const count = new Map<Move, number>()
+  for (const m of history) count.set(m, (count.get(m) ?? 0) + 1)
+  let predicted: Move = history[history.length - 1]
+  let best = -1
+  for (const [move, v] of count.entries()) {
+    if (v > best) {
+      best = v
+      predicted = move
+    }
+  }
+  const counter = getMoveThatBeats(predicted)
+  if (Math.random() < 0.7 && pool.includes(counter)) return counter
+  return getRandomMoveFrom(pool)
+}
+
+function getBossChestReward(pityCounter: number) {
+  type BossChestReward = {
+    rarity: "rare" | "epic" | "legendary"
+    rewardId: string
+    rewardLabel: string
+    rewardCoins: number
+    rewardRating: number
+  }
+  const rewards: BossChestReward[] = [
+    { rarity: "rare" as const, rewardId: "rare_obsidian_rock", rewardLabel: "Редкий скин: Обсидиановый Камень", rewardCoins: 500, rewardRating: 120 },
+    { rarity: "rare" as const, rewardId: "rare_phantom_scissors", rewardLabel: "Редкий скин: Призрачные Ножницы", rewardCoins: 550, rewardRating: 130 },
+    { rarity: "epic" as const, rewardId: "epic_aurora_paper", rewardLabel: "Эпический скин: Северная Бумага", rewardCoins: 800, rewardRating: 180 },
+    { rarity: "epic" as const, rewardId: "epic_solar_blade", rewardLabel: "Эпический скин: Солнечные Ножницы", rewardCoins: 850, rewardRating: 200 },
+    { rarity: "legendary" as const, rewardId: "legendary_void_hand", rewardLabel: "Легендарный скин: Длань Пустоты", rewardCoins: 1300, rewardRating: 300 },
+  ]
+  if (pityCounter >= 9) {
+    const legendaryPool = rewards.filter((r) => r.rarity === "legendary")
+    return legendaryPool[Math.floor(Math.random() * legendaryPool.length)]
+  }
+  const roll = Math.random()
+  // 70% rare, 25% epic, 5% legendary
+  let pool = rewards.filter((r) => r.rarity === "rare")
+  if (roll > 0.7 && roll <= 0.95) pool = rewards.filter((r) => r.rarity === "epic")
+  if (roll > 0.95) pool = rewards.filter((r) => r.rarity === "legendary")
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 /** Текст исхода раунда для подсказки на арене */
@@ -64,6 +133,9 @@ function getOutcomePhrase(playerMove: Move, opponentMove: Move, outcome: "win" |
   if (winner === "paper" && loser === "rock") return "Бумага обернула камень"
   if (winner === "water" && loser === "rock") return "Вода размыла камень"
   if (winner === "paper" && loser === "water") return "Бумага впитала воду"
+  if (winner === "fire" && loser === "rock") return "Огонь оплавил камень"
+  if (winner === "rock" && loser === "water") return "Камень рассекает поток"
+  if (winner === "water" && loser === "fire") return "Вода потушила огонь"
   if (winner === "water" || loser === "water") return outcome === "win" ? "Победа!" : "Поражение!"
   return outcome === "win" ? "Победа!" : "Поражение!"
 }
@@ -71,9 +143,24 @@ function getOutcomePhrase(playerMove: Move, opponentMove: Move, outcome: "win" |
 type Phase = "choosing" | "locked" | "revealing" | "resolved"
 
 export function GameArena() {
-  const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds } = useGame()
+  const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds, weeklyRules } = useGame()
+  const activeMode = player.activeWeeklyMode ?? weeklyRules?.event.mode
+  const isElementsMode = activeMode === "elements_tournament"
+  const isTimeMoneyMode = activeMode === "time_is_money"
+  const isBossMode = activeMode === "boss_week" || opponent?.id === "boss-npc"
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
-  const MOVES = hasWaterCard ? [...BASE_MOVES, WATER_MOVE] : BASE_MOVES
+  const allowedMovesByMode: Move[] = isElementsMode
+    ? ["fire", "water", "rock"]
+    : weeklyRules?.allowedMoves?.length
+      ? (weeklyRules.allowedMoves as Move[])
+      : hasWaterCard
+        ? [...BASE_MOVES, WATER_MOVE].map((m) => m.key as Move)
+        : BASE_MOVES.map((m) => m.key as Move)
+  const MOVES = isElementsMode
+    ? [FIRE_MOVE, WATER_MOVE, BASE_MOVES[0]]
+    : hasWaterCard
+      ? [...BASE_MOVES, WATER_MOVE]
+      : BASE_MOVES
   const hasExtraTimer = (player.extraTimerUntil ?? 0) > Date.now()
   const baseTimer = hasExtraTimer ? 25 : 15
 
@@ -110,6 +197,34 @@ export function GameArena() {
     timersRef.current = []
   }, [])
 
+  const getEffectiveStake = useCallback(
+    (round: number) => {
+      if (!isTimeMoneyMode) return currentBet
+      const multiplier = Math.floor(Math.max(0, round - 1) / 2)
+      return currentBet * 2 ** multiplier
+    },
+    [currentBet, isTimeMoneyMode]
+  )
+
+  const trackLiveOpsMatch = useCallback(
+    (won: boolean, movesUsed: Move[]) => {
+      if (!player.id.startsWith("vk_")) return
+      void sendMatchResult(player.id, {
+        type: "match_finished",
+        won,
+        movesUsed: movesUsed.length ? movesUsed : ["rock"],
+        skinIdUsed: player.cardSkin,
+        betVoices: currentBet,
+        bankVoices: currentBet * 2,
+        mode: player.activeWeeklyMode,
+      }).catch(() => {})
+      if (player.activeWeeklyMode) {
+        setPlayer((p) => ({ ...p, activeWeeklyMode: undefined }))
+      }
+    },
+    [currentBet, player.activeWeeklyMode, player.cardSkin, player.id, setPlayer]
+  )
+
   useEffect(() => {
     // При входе на арену сбрасываем историю раундов и таймеры
     roundsHistoryRef.current = []
@@ -144,8 +259,13 @@ export function GameArena() {
 
       // Правило для робота: до 50 монет — случайный исход, выше 100 монет — игрок проигрывает
       const isBot = opponent?.id?.startsWith("bot-") ?? false
-      const oppMove =
-        isBot && currentBet > 100 ? getMoveThatBeats(playerMove) : getRandomMove()
+      const history = roundsHistoryRef.current.map((r) => r.playerMove)
+      const eventRandom = getRandomMoveFrom(allowedMovesByMode)
+      const oppMove = isBossMode
+        ? getBossMove(history, allowedMovesByMode)
+        : isBot && !activeMode && currentBet > 100
+          ? getMoveThatBeats(playerMove)
+          : eventRandom
 
       setPhase("locked")
       setOpponentMove(oppMove)
@@ -202,22 +322,20 @@ export function GameArena() {
         roundsHistoryRef.current = nextHistory
         setRoundsHistory(nextHistory)
 
-        // Экономика раунда: банк = ставка × 2, комиссия 10% (VIP: 5%).
-        const pot = currentBet * 2
-        const commissionRate = player.vip ? 0.05 : 0.1
-        const commission = Math.ceil(pot * commissionRate)
-        const winnings = pot - commission
-        const roundEarnings = outcome === "win" ? winnings - currentBet : -currentBet
+        // Экономика раунда: банк = ставка × 2, без комиссии.
+        const effectiveBet = getEffectiveStake(roundCount)
+        const pot = effectiveBet * 2
+        const winnings = pot
+        const roundEarnings = outcome === "win" ? winnings - effectiveBet : -effectiveBet
         const roundBonus = outcome === "win" ? Math.max(1, Math.round(winnings * 0.1)) : 0
 
         // Для одиночного раунда применяем экономику сразу.
         if (totalRounds === 1) {
           setPlayer((p) => {
-            const isVip = p.vip
-            const potInner = currentBet * 2
-            const commissionInner = Math.ceil(potInner * (isVip ? 0.05 : 0.1))
-            const winningsInner = potInner - commissionInner
-            const earningsInner = outcome === "win" ? winningsInner - currentBet : -currentBet
+            const effectiveBetInner = getEffectiveStake(roundCount)
+            const potInner = effectiveBetInner * 2
+            const winningsInner = potInner
+            const earningsInner = outcome === "win" ? winningsInner - effectiveBetInner : -effectiveBetInner
             const bonusInner =
               outcome === "win" ? Math.max(1, Math.round(winningsInner * 0.1)) : 0
 
@@ -230,8 +348,17 @@ export function GameArena() {
               weekEarnings: p.weekEarnings + Math.max(0, earningsInner),
               ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonusInner),
             }
-            if (playerMove === "water") {
+            if (playerMove === "water" && !isElementsMode) {
               next.waterCardUses = Math.max(0, (p.waterCardUses ?? 0) - 1)
+            }
+            if (outcome === "win" && isBossMode) {
+              const currentPity = p.bossChestPityCounter ?? 0
+              const reward = getBossChestReward(currentPity)
+              next.bossChestPending = {
+                ...reward,
+                createdAt: Date.now(),
+              }
+              next.bossChestPityCounter = reward.rarity === "legendary" ? 0 : currentPity + 1
             }
             return next
           })
@@ -241,13 +368,14 @@ export function GameArena() {
             opponentMove: oppMove,
             outcome,
             earnings: roundEarnings,
-            bet: currentBet,
+            bet: effectiveBet,
             bonus: roundBonus,
           })
+          trackLiveOpsMatch(outcome === "win", [playerMove])
         } else {
           // В мульти-раундовых матчах (3 или 5 ходов) ставка относится ко всему матчу.
           // Здесь обновляем только использование карты «Вода», без изменения баланса и статистики.
-          if (playerMove === "water") {
+          if (playerMove === "water" && !isElementsMode) {
             setPlayer((p) => ({
               ...p,
               waterCardUses: Math.max(0, (p.waterCardUses ?? 0) - 1),
@@ -269,13 +397,13 @@ export function GameArena() {
               else if (playerScoreAfter < opponentScoreAfter) finalOutcome = "loss"
 
               // Экономика матча: ставка относится ко всему матчу, а не к каждому раунду.
-              const potMatch = currentBet * 2
-              const commissionMatch = Math.ceil(potMatch * (player.vip ? 0.05 : 0.1))
-              const winningsMatch = potMatch - commissionMatch
+              const finalBet = getEffectiveStake(totalRounds)
+              const potMatch = finalBet * 2
+              const winningsMatch = potMatch
 
               let finalEarnings = 0
-              if (finalOutcome === "win") finalEarnings = winningsMatch - currentBet
-              else if (finalOutcome === "loss") finalEarnings = -currentBet
+              if (finalOutcome === "win") finalEarnings = winningsMatch - finalBet
+              else if (finalOutcome === "loss") finalEarnings = -finalBet
               else finalEarnings = 0
 
               const matchBonus =
@@ -291,6 +419,15 @@ export function GameArena() {
                   weekEarnings: p.weekEarnings + Math.max(0, finalEarnings),
                   ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + matchBonus),
                 }
+                if (finalOutcome === "win" && isBossMode) {
+                  const currentPity = p.bossChestPityCounter ?? 0
+                  const reward = getBossChestReward(currentPity)
+                  next.bossChestPending = {
+                    ...reward,
+                    createdAt: Date.now(),
+                  }
+                  next.bossChestPityCounter = reward.rarity === "legendary" ? 0 : currentPity + 1
+                }
                 return next
               })
 
@@ -299,10 +436,14 @@ export function GameArena() {
                 opponentMove: oppMove,
                 outcome: finalOutcome,
                 earnings: finalEarnings,
-                bet: currentBet,
+                bet: finalBet,
                 bonus: matchBonus,
                 rounds: roundsHistoryRef.current,
               })
+              if (finalOutcome === "win" || finalOutcome === "loss") {
+                const allMoves = roundsHistoryRef.current.map((r) => r.playerMove)
+                trackLiveOpsMatch(finalOutcome === "win", allMoves)
+              }
             }
 
             setScreen("result")
@@ -324,6 +465,11 @@ export function GameArena() {
       currentBet,
       opponent?.id,
       player.vip,
+      activeMode,
+      allowedMovesByMode,
+      isBossMode,
+      getEffectiveStake,
+      isElementsMode,
       setPlayer,
       setLastResult,
       setScreen,
@@ -331,6 +477,7 @@ export function GameArena() {
       roundCount,
       playerScore,
       opponentScore,
+      trackLiveOpsMatch,
     ]
   )
 
@@ -354,6 +501,7 @@ export function GameArena() {
           bet: currentBet,
           bonus: 0,
         })
+        trackLiveOpsMatch(false, ["rock"])
         setScreen("result")
         return
       }
@@ -362,7 +510,7 @@ export function GameArena() {
 
     const id = setInterval(() => setTimeLeft((t) => t - 1), 1000)
     return () => clearInterval(id)
-  }, [timeLeft, phase, selectedMove, currentBet, setPlayer, setLastResult, setScreen, resolveRound, baseTimer])
+  }, [timeLeft, phase, selectedMove, currentBet, setPlayer, setLastResult, setScreen, resolveRound, baseTimer, trackLiveOpsMatch])
 
   const handleSelectMove = (move: Move) => {
     if (phase !== "choosing") return
@@ -385,12 +533,21 @@ export function GameArena() {
   const timerDanger = timeLeft <= 5
   /** Сердечки = сколько ходов осталось (после победы/поражения один ход засчитывается) */
   const movesLeft = Math.max(0, totalRounds - roundCount + 1)
-  const bankAmount = currentBet * 2
+  const bankAmount = getEffectiveStake(roundCount) * 2
+  const stakeMultiplier = Math.max(1, Math.round(getEffectiveStake(roundCount) / Math.max(1, currentBet)))
+  const bankDisplay = formatAmount(bankAmount)
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
       {/* Верхняя панель как в макете: БАНК | БОНУСЫ | РАУНД + сердечки */}
       <div className="w-full max-w-lg mx-auto mb-5">
+        {weeklyRules?.event && (
+          <div className="mb-3 flex items-center justify-center">
+            <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold bg-sky-500/20 border border-sky-400/40 text-sky-200">
+              {weeklyRules.event.title}
+            </span>
+          </div>
+        )}
         <div className="flex items-start justify-between gap-4">
           {/* Банк */}
           <div className="flex flex-col">
@@ -400,12 +557,17 @@ export function GameArena() {
             <div className="mt-1 flex items-baseline gap-2">
               <Coins className="h-5 w-5 text-amber-400 flex-shrink-0" />
               <span className="text-xl font-extrabold text-amber-400 tabular-nums leading-none">
-                {formatAmount(bankAmount)}
+                {bankDisplay}
               </span>
             </div>
             <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
               монет
             </span>
+            {isTimeMoneyMode && (
+              <span className="mt-1 inline-flex w-fit px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 animate-pulse">
+                x{stakeMultiplier} (Time Is Money)
+              </span>
+            )}
           </div>
 
           {/* Бонусы */}
@@ -441,6 +603,12 @@ export function GameArena() {
 
       {/* Соперник: аватар, имя, карта с анимацией переворота */}
       <div className="flex flex-col items-center gap-2 w-full max-w-lg mx-auto">
+        {isBossMode && (
+          <div className="w-full rounded-xl border border-red-400/40 bg-red-500/10 px-3 py-2 flex items-center justify-center gap-2">
+            <ShieldAlert className="h-4 w-4 text-red-300" />
+            <span className="text-xs font-semibold text-red-200">BOSS BATTLE: адаптивный ИИ анализирует ваши паттерны</span>
+          </div>
+        )}
         {opponentData.vip ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="vip-frame-outer w-16 h-16">
@@ -486,6 +654,10 @@ export function GameArena() {
                   ? "card-medieval-paper"
                   : opponentMove === "scissors"
                   ? "card-medieval-scissors"
+                  : opponentMove === "water"
+                  ? "card-medieval-water"
+                  : opponentMove === "fire"
+                  ? "card-medieval-fire"
                   : ""
               }`}
             />
@@ -621,6 +793,8 @@ export function GameArena() {
                         ? "card-medieval-scissors"
                         : move.key === "water"
                           ? "card-medieval-water"
+                          : move.key === "fire"
+                            ? "card-medieval-fire"
                           : ""
                 } ${isSelected || player.cardSkin === "gold" ? "card-medieval-selected" : ""} ${
                   move.key === "water" ? "border-sky-500/60" : ""
@@ -686,7 +860,14 @@ export function GameArena() {
             />
           </div>
         )}
-        <span className="text-base font-bold text-white mt-2">{player.name}</span>
+        <div className="mt-2 flex items-center gap-2">
+          <span className="text-base font-bold text-white">{player.name}</span>
+          {player.activeTitleId && (
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/25 text-purple-200 border border-purple-400/40">
+              {player.activeTitleId}
+            </span>
+          )}
+        </div>
         <span className="text-base text-white/70">{formatAmount(player.balance)} монет</span>
       </div>
 

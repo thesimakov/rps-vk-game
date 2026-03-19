@@ -5,6 +5,7 @@ import { formatAmount } from "@/lib/format-amount"
 import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, Pencil, Check, UserMinus, LogOut, Users } from "lucide-react"
 import { useState } from "react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
+import { LiveOpsDashboard } from "@/components/liveops-dashboard"
 
 const HIDE_AVATAR_PRICE = 100
 
@@ -15,6 +16,7 @@ export function ProfileScreen() {
 
   const totalGames = player.wins + player.losses
   const winRate = totalGames > 0 ? Math.round((player.wins / totalGames) * 100) : 0
+  const chestHistory = player.bossChestHistory ?? []
 
   const saveName = () => {
     const trimmed = nameInput.trim()
@@ -224,6 +226,47 @@ export function ProfileScreen() {
             <span className="text-base font-extrabold text-primary tabular-nums">{formatAmount(toDisplayAmount(player.weekEarnings))}</span>
           </div>
         </div>
+      </div>
+
+      {/* LiveOps: квесты / pass / достижения / событие недели */}
+      <LiveOpsDashboard />
+
+      {/* История лута босса */}
+      <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-foreground">История сундуков босса</span>
+          <span className="text-[11px] text-muted-foreground">последние 10</span>
+        </div>
+        {chestHistory.length === 0 ? (
+          <p className="text-xs text-muted-foreground">Пока пусто. Победите босса, чтобы получить лут.</p>
+        ) : (
+          <div className="space-y-2 max-h-52 overflow-auto pr-1">
+            {chestHistory.map((item, idx) => {
+              const rarityClass =
+                item.rarity === "legendary"
+                  ? "bg-amber-500/20 text-amber-200 border-amber-400/50"
+                  : item.rarity === "epic"
+                  ? "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/50"
+                  : "bg-sky-500/20 text-sky-200 border-sky-400/50"
+              return (
+                <div key={`${item.rewardId}-${item.openedAt}-${idx}`} className="rounded-xl border border-border/30 p-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs text-foreground font-medium truncate">{item.rewardLabel}</span>
+                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase ${rarityClass}`}>
+                      {item.rarity}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span>
+                      +{formatAmount(toDisplayAmount(item.rewardCoins))} {currencyLabel}
+                    </span>
+                    <span>+{item.rewardRating} рейтинга</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
       </div>
 
       {/* Тема карт */}

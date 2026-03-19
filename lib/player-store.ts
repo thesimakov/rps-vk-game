@@ -1,5 +1,6 @@
 import { promises as fs } from "fs"
 import path from "path"
+import type { LiveOpsState } from "@/lib/liveops/types"
 
 // Серверное хранилище профиля игрока на JSON-файле.
 // В проде по умолчанию файл лежит в /var/rps-data/players.json — один общий для всех деплоев.
@@ -62,6 +63,32 @@ export interface StoredPlayer {
   banUntil?: number
   /** Внутренние заметки для админки/разработчиков */
   notes?: string
+  /** Баланс голосов VK (серверная синхронизация). */
+  vkVoicesBalance?: number
+  /** Основной liveops-прогресс: daily/quests/pass/events/achievements. */
+  liveOpsState?: LiveOpsState
+  /** Активный титул из системы достижений (показывается рядом с ником). */
+  activeTitleId?: string
+  /** Ожидающая награда сундука босса для отдельного экрана получения. */
+  bossChestPending?: {
+    rarity: "rare" | "epic" | "legendary"
+    rewardId: string
+    rewardLabel: string
+    rewardCoins: number
+    rewardRating: number
+    createdAt: number
+  }
+  /** Счётчик pity-system для сундуков босса. */
+  bossChestPityCounter?: number
+  /** История последних наград из сундуков босса (до 10 записей). */
+  bossChestHistory?: Array<{
+    rarity: "rare" | "epic" | "legendary"
+    rewardId: string
+    rewardLabel: string
+    rewardCoins: number
+    rewardRating: number
+    openedAt: number
+  }>
 }
 
 const DB_PATH =

@@ -5,7 +5,7 @@ import { LogIn, Trophy, Coins, Ticket } from "lucide-react"
 import { useEffect, useState } from "react"
 
 export function EntryScreen() {
-  const { setScreen, loginWithVK, loginErrorMessage } = useGame()
+  const { setScreen, loginWithVK, loginWithoutVK, loginErrorMessage } = useGame()
   const [showInviteCode, setShowInviteCode] = useState(false)
   const [inviteCode, setInviteCode] = useState("")
   const [inviteStatus, setInviteStatus] = useState<"idle" | "saved" | "error">("idle")
@@ -149,6 +149,14 @@ export function EntryScreen() {
           >
             <Coins className="h-5 w-5 text-accent" />
             Ставки
+          </button>
+
+          <button
+            type="button"
+            onClick={loginWithoutVK}
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-2xl bg-white/5 border border-white/20 hover:bg-white/10 text-white/90 font-semibold transition-all active:scale-[0.98]"
+          >
+            Войти без VK
           </button>
         </div>
       </div>

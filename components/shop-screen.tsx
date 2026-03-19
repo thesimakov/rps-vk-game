@@ -25,7 +25,7 @@ const SHOP_ITEMS: ShopItem[] = [
   {
     id: "vip",
     name: "VIP Статус",
-    description: "Комиссия 5%, цветной ник, приоритет",
+    description: "Цветной ник, приоритет, статус в профиле",
     price: 50,
     icon: <Crown className="h-5 w-5" />,
     category: "premium",
