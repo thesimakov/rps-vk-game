@@ -75,6 +75,10 @@ export interface Player {
   lottoDrawnNumbers?: number[]
   /** Лото: момент проведения последнего розыгрыша (timestamp). Результаты висят сутки. */
   lottoDrawnAt?: number
+  /** Лото: размер ожидающего приза, который игрок должен забрать кнопкой. */
+  lottoPendingPrize?: number
+  /** Лото: совпавшие числа последнего розыгрыша (для подсветки и объяснения результата). */
+  lottoMatchedNumbers?: number[]
 }
 
 export interface LeaderboardEntry {
@@ -397,6 +401,8 @@ function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
     lottoDrawAt: player.lottoDrawAt,
     lottoDrawnNumbers: player.lottoDrawnNumbers,
     lottoDrawnAt: player.lottoDrawnAt,
+    lottoPendingPrize: player.lottoPendingPrize,
+    lottoMatchedNumbers: player.lottoMatchedNumbers,
   }
 }
 
@@ -481,6 +487,8 @@ function saveState(player: Player, lavaCardStock: number) {
           lottoDrawAt: player.lottoDrawAt,
           lottoDrawnNumbers: player.lottoDrawnNumbers,
           lottoDrawnAt: player.lottoDrawnAt,
+          lottoPendingPrize: player.lottoPendingPrize,
+          lottoMatchedNumbers: player.lottoMatchedNumbers,
         },
         lavaCardStock,
       })

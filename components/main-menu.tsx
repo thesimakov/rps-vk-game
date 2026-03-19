@@ -144,7 +144,8 @@ export function MainMenu() {
     setPlayer((p) => {
       if (!p.lottoNumbers || (p.lottoDrawnNumbers && p.lottoDrawnNumbers.length > 0)) return p
       const chosenSet = new Set(p.lottoNumbers)
-      const matchCount = numbers.filter((n) => chosenSet.has(n)).length
+      const matchedNumbers = numbers.filter((n) => chosenSet.has(n))
+      const matchCount = matchedNumbers.length
 
       let bonus = 0
       if (matchCount === 10) bonus = 1000
@@ -155,12 +156,11 @@ export function MainMenu() {
 
       return {
         ...p,
-        lottoNumbers: undefined,
         lottoDrawnNumbers: numbers,
         lottoDrawnAt: Date.now(),
         lottoDrawAt: undefined,
-        balance: p.balance + bonus,
-        ratingPoints: bonus > 0 ? Math.min(1000, (p.ratingPoints ?? 0) + bonus) : p.ratingPoints,
+        lottoPendingPrize: bonus,
+        lottoMatchedNumbers: matchedNumbers,
       }
     })
   }, [player.lottoNumbers, player.lottoDrawAt, player.lottoDrawnNumbers, setPlayer])
@@ -172,8 +172,11 @@ export function MainMenu() {
     if (Date.now() - player.lottoDrawnAt < LOTTO_RESULTS_TTL_MS) return
     setPlayer((p) => ({
       ...p,
+      lottoNumbers: undefined,
       lottoDrawnNumbers: undefined,
       lottoDrawnAt: undefined,
+      lottoPendingPrize: undefined,
+      lottoMatchedNumbers: undefined,
     }))
   }, [player.lottoDrawnNumbers, player.lottoDrawnAt, setPlayer])
 
@@ -515,14 +518,48 @@ export function MainMenu() {
                     .slice()
                     .sort((a, b) => a - b)
                     .map((n) => (
+                      // Подсветка совпадений: эти числа были и в билете игрока, и в розыгрыше.
+                      // Так сразу видно, где именно сработал выигрыш.
                       <span
                         key={n}
-                        className="px-2 py-1 rounded-full bg-slate-800 text-white text-xs font-semibold"
+                        className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          player.lottoMatchedNumbers?.includes(n)
+                            ? "bg-emerald-500 text-emerald-950 ring-1 ring-emerald-300"
+                            : "bg-slate-800 text-white"
+                        }`}
                       >
                         {n}
                       </span>
                     ))}
                 </div>
+                {!!player.lottoMatchedNumbers?.length && (
+                  <p className="mt-2 text-xs text-emerald-300">
+                    Совпадения: {player.lottoMatchedNumbers.slice().sort((a, b) => a - b).join(", ")}
+                  </p>
+                )}
+                {(player.lottoPendingPrize ?? 0) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const prize = player.lottoPendingPrize ?? 0
+                      if (prize <= 0) return
+                      setPlayer((p) => ({
+                        ...p,
+                        balance: p.balance + prize,
+                        ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + prize),
+                        lottoPendingPrize: undefined,
+                      }))
+                    }}
+                    className="mt-3 w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-bold"
+                  >
+                    Забрать приз: +{formatAmount(player.lottoPendingPrize ?? 0)} {currencyLabel}
+                  </button>
+                )}
+                {(player.lottoPendingPrize ?? 0) === 0 && (
+                  <p className="mt-2 text-xs text-white/60">
+                    Приза в этом розыгрыше нет
+                  </p>
+                )}
               </div>
             )}
           </div>
