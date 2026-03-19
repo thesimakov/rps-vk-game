@@ -414,7 +414,7 @@ const DEFAULT_PLAYER: Player = {
   name: "Игрок",
   avatar: "И",
   avatarUrl: "",
-  balance: 100,
+  balance: 0,
   wins: 0,
   losses: 0,
   weekWins: 0,
@@ -442,7 +442,20 @@ function loadSavedState(): {
     // Если сохранение относится к VK-аккаунту, не восстанавливаем прогресс из localStorage —
     // для таких игроков источником правды является сервер (API /api/player/load/save).
     const isVkPlayer = typeof data.player?.id === "string" && data.player.id.startsWith("vk_")
-    const player: Player = isVkPlayer ? { ...DEFAULT_PLAYER } : { ...DEFAULT_PLAYER, ...data.player }
+    const hasWelcomeGiftFlag = typeof data.player?.welcomeGiftClaimed === "boolean"
+    let player: Player = isVkPlayer ? { ...DEFAULT_PLAYER } : { ...DEFAULT_PLAYER, ...data.player }
+    // Миграция старого состояния: раньше стартовый баланс был 100.
+    // Если бонус ещё не помечен как полученный и это "чистый" профиль, переводим старт обратно в 0.
+    if (
+      !hasWelcomeGiftFlag &&
+      player.balance === 100 &&
+      player.wins === 0 &&
+      player.losses === 0 &&
+      player.weekWins === 0 &&
+      (player.totalPurchases ?? 0) === 0
+    ) {
+      player = { ...player, balance: 0, welcomeGiftClaimed: false }
+    }
     const lavaCardStock = typeof data.lavaCardStock === "number" ? Math.max(0, data.lavaCardStock) : 3
     return { player, lavaCardStock }
   } catch {
