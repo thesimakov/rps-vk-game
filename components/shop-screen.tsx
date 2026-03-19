@@ -609,6 +609,24 @@ export function ShopScreen() {
         </div>
       </div>
 
+      <div className="w-full max-w-lg mb-4 rounded-2xl border border-border/30 bg-card/35 px-4 py-3 backdrop-blur-sm">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">Легенда магазина</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-500/12 px-2.5 py-1 text-xs text-emerald-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            Экономика
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-300/35 bg-blue-500/12 px-2.5 py-1 text-xs text-blue-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
+            Социальное
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-300/35 bg-purple-500/12 px-2.5 py-1 text-xs text-purple-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-purple-300" />
+            События и бонусы
+          </span>
+        </div>
+      </div>
+
       {/* Пополнение баланса через ВК */}
       <div className="w-full max-w-lg mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
         <div className="flex items-center gap-2 mb-3">

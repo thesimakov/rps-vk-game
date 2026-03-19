@@ -9,7 +9,7 @@ import {
   getLiveOpsState,
   unlockPremiumPass,
 } from "@/lib/liveops/client"
-import { Check, Lock, Sparkles, Swords, Trophy } from "lucide-react"
+import { Check, Info, Lock, Sparkles, Swords, Trophy } from "lucide-react"
 
 interface RewardDto {
   kind: string
@@ -109,6 +109,7 @@ export function LiveOpsDashboard() {
   const [error, setError] = useState<string | null>(null)
   const [data, setData] = useState<StateResponse | null>(null)
   const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [showPassInfo, setShowPassInfo] = useState(false)
 
   const reload = async () => {
     if (!player.id.startsWith("vk_")) return
@@ -154,6 +155,8 @@ export function LiveOpsDashboard() {
   const premiumCostVoices = 15
   const voicesBalance = player.vkVoicesBalance ?? 0
   const hasInsufficientVoices = voicesBalance < premiumCostVoices
+  const bigCardBase =
+    "rounded-3xl border p-5 md:p-6 backdrop-blur-sm shadow-[0_0_0_1px_rgba(148,163,184,0.14),0_0_26px_rgba(15,23,42,0.20)]"
 
   const onClaimQuest = async (questId: string) => {
     setBusyKey(`q:${questId}`)
@@ -213,27 +216,29 @@ export function LiveOpsDashboard() {
   }
 
   return (
-    <div className="w-full max-w-lg space-y-3 mb-4">
-      <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
+    <div className="w-full max-w-lg space-y-4 mb-4">
+      <div
+        className={`${bigCardBase} border-sky-300/30 bg-gradient-to-br from-sky-500/14 via-card/55 to-indigo-500/10`}
+      >
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <Swords className="h-4 w-4 text-sky-300" />
-            <p className="text-sm font-semibold text-foreground">Событие недели</p>
+            <Swords className="h-5 w-5 text-sky-300" />
+            <p className="text-base md:text-lg font-extrabold text-foreground">Событие недели</p>
           </div>
           <button
             type="button"
             onClick={() => void reload()}
-            className="text-[11px] px-2 py-1 rounded-md border border-border/50 text-muted-foreground"
+            className="text-xs px-3 py-1.5 rounded-xl border border-border/50 text-muted-foreground"
           >
             Обновить
           </button>
         </div>
         {loading ? (
-          <p className="text-xs text-muted-foreground mt-2">Загрузка...</p>
+          <p className="text-sm text-muted-foreground mt-3">Загрузка...</p>
         ) : (
           <>
-            <p className="text-sm text-foreground mt-2">{data?.weeklyEvent?.title ?? "Нет события"}</p>
-            <p className="text-xs text-muted-foreground mt-1">{data?.weeklyEvent?.description ?? ""}</p>
+            <p className="text-base text-foreground mt-3 font-medium">{data?.weeklyEvent?.title ?? "Нет события"}</p>
+            <p className="text-sm text-muted-foreground mt-1">{data?.weeklyEvent?.description ?? ""}</p>
             {data?.weeklyEvent?.mode === "boss_week" && (
               <button
                 type="button"
@@ -241,7 +246,7 @@ export function LiveOpsDashboard() {
                   setPlayer((p) => ({ ...p, activeWeeklyMode: "boss_week" }))
                   setScreen("bet-select")
                 }}
-                className="mt-3 px-3 py-2 rounded-xl bg-red-500/20 border border-red-400/50 text-red-200 text-xs font-semibold"
+                className="mt-4 px-4 py-2.5 rounded-2xl bg-red-500/20 border border-red-400/50 text-red-200 text-sm font-semibold"
               >
                 Войти в бой с Боссом
               </button>
@@ -251,18 +256,37 @@ export function LiveOpsDashboard() {
       </div>
 
       <div
-        className={`rounded-3xl border p-5 md:p-6 ${
+        className={`${bigCardBase} ${
           hasInsufficientVoices && !pass?.premiumUnlocked
-            ? "border-red-400/50 bg-red-500/10 shadow-[0_0_0_1px_rgba(248,113,113,0.35),0_0_30px_rgba(248,113,113,0.15)]"
-            : "border-amber-300/35 bg-amber-500/10 shadow-[0_0_0_1px_rgba(251,191,36,0.25),0_0_28px_rgba(251,191,36,0.12)]"
+            ? "border-red-400/50 bg-gradient-to-br from-red-500/16 via-card/55 to-rose-500/10 shadow-[0_0_0_1px_rgba(248,113,113,0.28),0_0_32px_rgba(248,113,113,0.16)]"
+            : "border-amber-300/35 bg-gradient-to-br from-amber-500/16 via-card/55 to-orange-500/10 shadow-[0_0_0_1px_rgba(251,191,36,0.26),0_0_30px_rgba(251,191,36,0.14)]"
         }`}
       >
-        <div className="flex items-center justify-between">
-          <p className="text-base md:text-lg font-extrabold text-foreground">Боевой пропуск</p>
-          <span className="text-xs md:text-sm text-muted-foreground">
-            Уровень {pass?.level ?? 0}/{maxLevel}
-          </span>
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <p className="text-base md:text-lg font-extrabold text-foreground">Боевой пропуск</p>
+            <button
+              type="button"
+              onClick={() => setShowPassInfo((v) => !v)}
+              className="inline-flex items-center gap-1 rounded-xl border border-amber-300/45 bg-amber-500/10 px-2.5 py-1 text-xs text-amber-100 hover:bg-amber-500/20"
+            >
+              <Info className="h-3.5 w-3.5" />
+              Информация
+            </button>
+          </div>
+          <span className="text-xs md:text-sm text-muted-foreground">Уровень {pass?.level ?? 0}/{maxLevel}</span>
         </div>
+        {showPassInfo && (
+          <div className="mt-3 rounded-2xl border border-amber-300/35 bg-black/20 p-3.5">
+            <p className="text-sm font-semibold text-amber-100">Что нужно сделать</p>
+            <ul className="mt-2 space-y-1 text-xs text-amber-50/90">
+              <li>• Играйте матчи и побеждайте, чтобы получать очки пропуска.</li>
+              <li>• Выполняйте квесты в блоке ниже — это ускоряет прокачку уровней.</li>
+              <li>• Бесплатные награды можно забирать при достижении уровня.</li>
+              <li>• Для премиум-наград откройте пропуск за 15 голосов VK.</li>
+            </ul>
+          </div>
+        )}
         <div className="mt-3 h-3 bg-white/10 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-cyan-400 to-purple-500"
@@ -292,24 +316,27 @@ export function LiveOpsDashboard() {
             Голоса: {voicesBalance}. Требуется: {premiumCostVoices}.
           </p>
         )}
-        <div className="mt-3 space-y-2 max-h-48 overflow-auto">
+        <div className="mt-3 space-y-2.5 max-h-52 overflow-auto pr-1">
           {(data?.config?.pass.levels ?? []).slice(0, 10).map((lvl) => {
             const freeClaimed = pass?.claimedFreeLevels.includes(lvl.level) ?? false
             const premClaimed = pass?.claimedPremiumLevels.includes(lvl.level) ?? false
             const unlocked = (pass?.level ?? 0) >= lvl.level
             return (
-              <div key={lvl.level} className="rounded-xl border border-border/30 p-2">
+              <div
+                key={lvl.level}
+                className="rounded-2xl border border-border/30 p-3 bg-gradient-to-br from-white/[0.04] via-card/35 to-white/[0.02]"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-foreground font-semibold">Уровень {lvl.level}</span>
+                  <span className="text-sm text-foreground font-semibold">Уровень {lvl.level}</span>
                   {!unlocked && <Lock className="h-3.5 w-3.5 text-muted-foreground" />}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">{rewardText(lvl.freeRewards[0])}</p>
+                <p className="text-xs text-muted-foreground mt-1.5">{rewardText(lvl.freeRewards[0])}</p>
                 <div className="mt-2 flex gap-2">
                   <button
                     type="button"
                     disabled={!unlocked || freeClaimed || busyKey === `p:${lvl.level}:0`}
                     onClick={() => void onClaimPass(lvl.level, false)}
-                    className="text-[11px] px-2 py-1 rounded-md border border-emerald-400/40 text-emerald-300 disabled:opacity-50"
+                    className="text-xs px-2.5 py-1.5 rounded-lg border border-emerald-400/40 text-emerald-300 disabled:opacity-50"
                   >
                     {freeClaimed ? "Получено" : "Забрать (бесплатно)"}
                   </button>
@@ -317,7 +344,7 @@ export function LiveOpsDashboard() {
                     type="button"
                     disabled={!unlocked || !pass?.premiumUnlocked || premClaimed || busyKey === `p:${lvl.level}:1`}
                     onClick={() => void onClaimPass(lvl.level, true)}
-                    className="text-[11px] px-2 py-1 rounded-md border border-amber-400/40 text-amber-300 disabled:opacity-50"
+                    className="text-xs px-2.5 py-1.5 rounded-lg border border-amber-400/40 text-amber-300 disabled:opacity-50"
                   >
                     {premClaimed ? "Получено" : "Забрать (премиум)"}
                   </button>
@@ -328,28 +355,33 @@ export function LiveOpsDashboard() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
-        <p className="text-sm font-semibold text-foreground">Квесты</p>
-        <div className="mt-2 space-y-2 max-h-52 overflow-auto">
+      <div
+        className={`${bigCardBase} border-cyan-300/30 bg-gradient-to-br from-cyan-500/16 via-card/55 to-blue-500/10 shadow-[0_0_0_1px_rgba(56,189,248,0.20),0_0_28px_rgba(56,189,248,0.12)]`}
+      >
+        <p className="text-base md:text-lg font-extrabold text-foreground">Квесты</p>
+        <div className="mt-3 space-y-3 max-h-60 overflow-auto pr-1">
           {(data?.config?.quests ?? []).map((q) => {
             const progress = questProgressMap.get(q.id)
             const value = progress?.value ?? 0
             const done = value >= q.condition.target
             const claimed = !!progress?.claimedAt
             return (
-              <div key={q.id} className="rounded-xl border border-border/30 p-2">
+              <div
+                key={q.id}
+                className="rounded-2xl border border-border/30 p-3.5 bg-gradient-to-br from-white/[0.04] via-card/35 to-white/[0.02]"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-foreground">{q.title}</span>
-                  <span className="text-[10px] text-muted-foreground uppercase">{resetLabel(q.reset)}</span>
+                  <span className="text-sm font-medium text-foreground">{q.title}</span>
+                  <span className="text-[11px] text-muted-foreground uppercase">{resetLabel(q.reset)}</span>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   {value}/{q.condition.target} | +{q.points} очков пропуска
                 </p>
                 <button
                   type="button"
                   disabled={!done || claimed || busyKey === `q:${q.id}`}
                   onClick={() => void onClaimQuest(q.id)}
-                  className="mt-2 text-[11px] px-2 py-1 rounded-md border border-sky-400/40 text-sky-300 disabled:opacity-50"
+                  className="mt-3 text-xs px-3 py-2 rounded-xl border border-sky-400/40 text-sky-300 font-semibold disabled:opacity-50"
                 >
                   {claimed ? "Получено" : done ? "Забрать" : "Не выполнено"}
                 </button>
@@ -359,31 +391,36 @@ export function LiveOpsDashboard() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
+      <div
+        className={`${bigCardBase} border-amber-300/30 bg-gradient-to-br from-amber-500/16 via-card/55 to-yellow-500/10 shadow-[0_0_0_1px_rgba(251,191,36,0.20),0_0_28px_rgba(251,191,36,0.12)]`}
+      >
         <div className="flex items-center gap-2">
-          <Trophy className="h-4 w-4 text-amber-300" />
-          <p className="text-sm font-semibold text-foreground">Достижения</p>
+          <Trophy className="h-5 w-5 text-amber-300" />
+          <p className="text-base md:text-lg font-extrabold text-foreground">Достижения</p>
         </div>
-        <div className="mt-2 space-y-2 max-h-44 overflow-auto">
+        <div className="mt-3 space-y-3 max-h-52 overflow-auto pr-1">
           {(data?.config?.achievements ?? []).map((a) => {
             const progress = achProgressMap.get(a.id)
             const value = progress?.value ?? 0
             const done = value >= a.condition.target
             const claimed = !!progress?.claimedAt
             return (
-              <div key={a.id} className="rounded-xl border border-border/30 p-2">
+              <div
+                key={a.id}
+                className="rounded-2xl border border-border/30 p-3.5 bg-gradient-to-br from-white/[0.04] via-card/35 to-white/[0.02]"
+              >
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-foreground">{a.title}</span>
-                  {claimed && <Check className="h-3.5 w-3.5 text-emerald-300" />}
+                  <span className="text-sm font-medium text-foreground">{a.title}</span>
+                  {claimed && <Check className="h-4 w-4 text-emerald-300" />}
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <p className="text-xs text-muted-foreground mt-1.5">
                   {value}/{a.condition.target}
                 </p>
                 <button
                   type="button"
                   disabled={!done || claimed || busyKey === `a:${a.id}`}
                   onClick={() => void onClaimAchievement(a.id)}
-                  className="mt-2 text-[11px] px-2 py-1 rounded-md border border-amber-400/40 text-amber-300 disabled:opacity-50"
+                  className="mt-3 text-xs px-3 py-2 rounded-xl border border-amber-400/40 text-amber-300 font-semibold disabled:opacity-50"
                 >
                   {claimed ? "Получено" : "Забрать титул"}
                 </button>
@@ -394,9 +431,9 @@ export function LiveOpsDashboard() {
       </div>
 
       {player.activeTitleId && (
-        <div className="rounded-2xl border border-purple-400/30 bg-purple-500/10 p-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-300" />
-          <span className="text-xs text-purple-100">Активный титул: {player.activeTitleId}</span>
+        <div className="rounded-3xl border border-purple-400/30 bg-gradient-to-br from-purple-500/16 via-card/55 to-violet-500/10 p-4 flex items-center gap-2.5">
+          <Sparkles className="h-5 w-5 text-purple-300" />
+          <span className="text-sm text-purple-100">Активный титул: {player.activeTitleId}</span>
         </div>
       )}
 

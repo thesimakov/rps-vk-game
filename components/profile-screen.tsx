@@ -8,6 +8,14 @@ import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { LiveOpsDashboard } from "@/components/liveops-dashboard"
 
 const HIDE_AVATAR_PRICE = 100
+const BLOCK_BASE =
+  "w-full max-w-lg rounded-3xl border backdrop-blur-sm p-5 md:p-6 shadow-[0_0_0_1px_rgba(148,163,184,0.14),0_0_26px_rgba(15,23,42,0.20)]"
+const BLOCK_ECONOMY_CLASS =
+  `${BLOCK_BASE} border-emerald-300/30 bg-gradient-to-br from-emerald-500/14 via-card/55 to-cyan-500/10`
+const BLOCK_PROFILE_CLASS =
+  `${BLOCK_BASE} border-violet-300/30 bg-gradient-to-br from-violet-500/14 via-card/55 to-indigo-500/10`
+const BLOCK_SOCIAL_CLASS =
+  `${BLOCK_BASE} border-blue-300/30 bg-gradient-to-br from-blue-500/14 via-card/55 to-sky-500/10`
 
 export function ProfileScreen() {
   const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, toDisplayAmount, currencyLabel } = useGame()
@@ -164,30 +172,30 @@ export function ProfileScreen() {
 
       {/* Balance + Bonuses + Rank */}
       <div className="w-full max-w-lg grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-card/50 backdrop-blur-sm border border-accent/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
-          <Coins className="h-5 w-5 text-accent mb-1" />
-          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+        <div className="bg-gradient-to-br from-emerald-500/16 via-card/60 to-cyan-500/12 backdrop-blur-sm border border-emerald-300/30 rounded-3xl px-3.5 py-4 md:py-4.5 flex flex-col items-center justify-between min-h-[108px] shadow-[0_0_0_1px_rgba(16,185,129,0.14)]">
+          <Coins className="h-5 w-5 text-accent mb-1.5" />
+          <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">
             Баланс
           </span>
-          <span className="mt-1 text-lg font-extrabold text-accent tabular-nums">
+          <span className="mt-1.5 text-lg md:text-xl font-extrabold text-accent tabular-nums">
             {formatAmount(toDisplayAmount(player.balance))} {currencyLabel}
           </span>
         </div>
-        <div className="bg-card/50 backdrop-blur-sm border border-amber-400/40 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
-          <Coins className="h-5 w-5 text-amber-300 mb-1" />
-          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+        <div className="bg-gradient-to-br from-amber-500/16 via-card/60 to-orange-500/12 backdrop-blur-sm border border-amber-400/40 rounded-3xl px-3.5 py-4 md:py-4.5 flex flex-col items-center justify-between min-h-[108px] shadow-[0_0_0_1px_rgba(251,191,36,0.14)]">
+          <Coins className="h-5 w-5 text-amber-300 mb-1.5" />
+          <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">
             бонусы
           </span>
-          <span className="mt-1 text-lg font-extrabold text-amber-200 tabular-nums">
+          <span className="mt-1.5 text-lg md:text-xl font-extrabold text-amber-200 tabular-nums">
             {formatAmount(player.ratingPoints ?? 0)}
           </span>
         </div>
-        <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-2xl px-3 py-3 flex flex-col items-center justify-between">
-          <Medal className="h-5 w-5 text-primary mb-1" />
-          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">
+        <div className="bg-gradient-to-br from-indigo-500/16 via-card/60 to-purple-500/12 backdrop-blur-sm border border-primary/25 rounded-3xl px-3.5 py-4 md:py-4.5 flex flex-col items-center justify-between min-h-[108px] shadow-[0_0_0_1px_rgba(129,140,248,0.14)]">
+          <Medal className="h-5 w-5 text-primary mb-1.5" />
+          <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">
             рейтинг
           </span>
-          <span className="mt-1 text-lg font-extrabold text-primary tabular-nums">
+          <span className="mt-1.5 text-lg md:text-xl font-extrabold text-primary tabular-nums">
             #{playerRank}
           </span>
         </div>
@@ -195,36 +203,56 @@ export function ProfileScreen() {
 
       {/* Stats */}
       <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 flex flex-col items-center gap-1">
-          <Trophy className="h-4 w-4 text-primary mb-1" />
-          <span className="text-base font-extrabold text-foreground tabular-nums">{player.wins}</span>
-          <span className="text-xs text-muted-foreground font-medium">Побед</span>
+        <div className="bg-gradient-to-br from-cyan-500/12 via-card/55 to-sky-500/10 backdrop-blur-sm border border-cyan-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(34,211,238,0.10)]">
+          <Trophy className="h-5 w-5 text-primary mb-1" />
+          <span className="text-lg font-extrabold text-foreground tabular-nums">{player.wins}</span>
+          <span className="text-sm text-muted-foreground font-medium">Побед</span>
         </div>
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 flex flex-col items-center gap-1">
-          <Skull className="h-4 w-4 text-destructive mb-1" />
-          <span className="text-base font-extrabold text-foreground tabular-nums">{player.losses}</span>
-          <span className="text-xs text-muted-foreground font-medium">Поражений</span>
+        <div className="bg-gradient-to-br from-rose-500/12 via-card/55 to-red-500/10 backdrop-blur-sm border border-rose-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(251,113,133,0.10)]">
+          <Skull className="h-5 w-5 text-destructive mb-1" />
+          <span className="text-lg font-extrabold text-foreground tabular-nums">{player.losses}</span>
+          <span className="text-sm text-muted-foreground font-medium">Поражений</span>
         </div>
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 flex flex-col items-center gap-1">
-          <Percent className="h-4 w-4 text-accent mb-1" />
-          <span className="text-base font-extrabold text-foreground tabular-nums">{winRate}%</span>
-          <span className="text-xs text-muted-foreground font-medium">Винрейт</span>
+        <div className="bg-gradient-to-br from-emerald-500/12 via-card/55 to-lime-500/10 backdrop-blur-sm border border-emerald-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(52,211,153,0.10)]">
+          <Percent className="h-5 w-5 text-accent mb-1" />
+          <span className="text-lg font-extrabold text-foreground tabular-nums">{winRate}%</span>
+          <span className="text-sm text-muted-foreground font-medium">Винрейт</span>
         </div>
-        <div className="bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 flex flex-col items-center gap-1">
-          <Calendar className="h-4 w-4 text-secondary mb-1" />
-          <span className="text-base font-extrabold text-foreground tabular-nums">{player.weekWins}</span>
-          <span className="text-xs text-muted-foreground font-medium">За неделю</span>
+        <div className="bg-gradient-to-br from-violet-500/12 via-card/55 to-fuchsia-500/10 backdrop-blur-sm border border-violet-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(167,139,250,0.10)]">
+          <Calendar className="h-5 w-5 text-secondary mb-1" />
+          <span className="text-lg font-extrabold text-foreground tabular-nums">{player.weekWins}</span>
+          <span className="text-sm text-muted-foreground font-medium">За неделю</span>
         </div>
       </div>
 
       {/* Weekly amount */}
-      <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+      <div className={`${BLOCK_ECONOMY_CLASS} mb-4`}>
         <div className="flex items-center justify-between">
-          <span className="text-sm text-muted-foreground font-medium">За неделю</span>
-          <div className="flex items-center gap-1.5">
-            <Coins className="h-3.5 w-3.5 text-accent" />
-            <span className="text-base font-extrabold text-primary tabular-nums">{formatAmount(toDisplayAmount(player.weekEarnings))}</span>
+          <span className="text-base md:text-lg text-muted-foreground font-semibold">За неделю</span>
+          <div className="flex items-center gap-2">
+            <Coins className="h-4 w-4 text-accent" />
+            <span className="text-lg md:text-xl font-extrabold text-primary tabular-nums">
+              {formatAmount(toDisplayAmount(player.weekEarnings))}
+            </span>
           </div>
+        </div>
+      </div>
+
+      <div className="w-full max-w-lg mb-4 rounded-2xl border border-border/30 bg-card/35 px-4 py-3 backdrop-blur-sm">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">Легенда блоков</p>
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/35 bg-emerald-500/12 px-2.5 py-1 text-xs text-emerald-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-300" />
+            Экономика
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-cyan-300/35 bg-cyan-500/12 px-2.5 py-1 text-xs text-cyan-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+            LiveOps
+          </span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-300/35 bg-blue-500/12 px-2.5 py-1 text-xs text-blue-100">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-300" />
+            Социальное
+          </span>
         </div>
       </div>
 
@@ -232,15 +260,15 @@ export function ProfileScreen() {
       <LiveOpsDashboard />
 
       {/* История лута босса */}
-      <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-semibold text-foreground">История сундуков босса</span>
-          <span className="text-[11px] text-muted-foreground">последние 10</span>
+      <div className="w-full max-w-lg rounded-3xl p-5 md:p-6 mb-4 border border-red-300/30 bg-gradient-to-br from-red-500/15 via-card/55 to-rose-500/10 backdrop-blur-sm shadow-[0_0_0_1px_rgba(248,113,113,0.16),0_0_24px_rgba(248,113,113,0.12)]">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-base md:text-lg font-extrabold text-foreground">История сундуков босса</span>
+          <span className="text-xs text-muted-foreground">последние 10</span>
         </div>
         {chestHistory.length === 0 ? (
-          <p className="text-xs text-muted-foreground">Пока пусто. Победите босса, чтобы получить лут.</p>
+          <p className="text-sm text-muted-foreground">Пока пусто. Победите босса, чтобы получить лут.</p>
         ) : (
-          <div className="space-y-2 max-h-52 overflow-auto pr-1">
+          <div className="space-y-3 max-h-60 overflow-auto pr-1">
             {chestHistory.map((item, idx) => {
               const rarityClass =
                 item.rarity === "legendary"
@@ -249,14 +277,14 @@ export function ProfileScreen() {
                   ? "bg-fuchsia-500/20 text-fuchsia-200 border-fuchsia-400/50"
                   : "bg-sky-500/20 text-sky-200 border-sky-400/50"
               return (
-                <div key={`${item.rewardId}-${item.openedAt}-${idx}`} className="rounded-xl border border-border/30 p-2.5">
+                <div key={`${item.rewardId}-${item.openedAt}-${idx}`} className="rounded-2xl border border-border/30 p-3.5 bg-card/35">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs text-foreground font-medium truncate">{item.rewardLabel}</span>
-                    <span className={`px-2 py-0.5 rounded-full border text-[10px] font-bold uppercase ${rarityClass}`}>
+                    <span className="text-sm text-foreground font-semibold truncate">{item.rewardLabel}</span>
+                    <span className={`px-2.5 py-1 rounded-full border text-[11px] font-bold uppercase ${rarityClass}`}>
                       {item.rarity}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
+                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
                     <span>
                       +{formatAmount(toDisplayAmount(item.rewardCoins))} {currencyLabel}
                     </span>
@@ -271,13 +299,13 @@ export function ProfileScreen() {
 
       {/* Тема карт */}
       {player.hasAncientDeck && (
-        <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-4 mb-4">
+        <div className={`${BLOCK_PROFILE_CLASS} mb-4`}>
           <div className="flex items-center justify-between gap-3">
             <div>
-              <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                 Тема карт
               </span>
-              <span className="block text-sm text-foreground font-medium">
+              <span className="block text-base text-foreground font-medium">
                 Выберите оформление карт в боях
               </span>
             </div>
@@ -290,7 +318,7 @@ export function ProfileScreen() {
                   cardDeck: val === "ancient-rus" ? "ancient-rus" : undefined,
                 }))
               }}
-              className="ml-2 px-3 py-2 rounded-xl bg-card border border-border/50 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
+              className="ml-2 px-3.5 py-2.5 rounded-2xl bg-card border border-border/50 text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/60"
             >
               <option value="classic">Классические карты</option>
               <option value="ancient-rus">Древняя Русь</option>
@@ -303,9 +331,9 @@ export function ProfileScreen() {
       {!player.vip && (
         <button
           onClick={() => setScreen("shop")}
-          className="w-full max-w-lg flex items-center justify-center gap-2 bg-accent/8 border border-accent/25 text-accent font-semibold text-sm py-3.5 rounded-2xl transition-all hover:bg-accent/15 mb-6"
+          className="w-full max-w-lg flex items-center justify-center gap-2 bg-gradient-to-br from-amber-500/18 via-card/55 to-orange-500/12 border border-amber-300/35 text-amber-100 font-semibold text-base py-4 rounded-3xl transition-all hover:brightness-110 mb-6 shadow-[0_0_0_1px_rgba(251,191,36,0.14)]"
         >
-          <Crown className="h-4 w-4" />
+          <Crown className="h-5 w-5" />
           <span>{"Купить VIP \u2014 50 монет/мес"}</span>
         </button>
       )}
@@ -313,7 +341,7 @@ export function ProfileScreen() {
       {/* Реферальная программа */}
       <button
         onClick={() => setScreen("referral")}
-        className="w-full max-w-lg flex items-center justify-center gap-2 bg-card/50 border border-border/40 text-foreground font-semibold py-3.5 rounded-2xl transition-all hover:bg-card/70 active:scale-[0.99] mb-4"
+        className={`${BLOCK_SOCIAL_CLASS} flex items-center justify-center gap-2 text-foreground font-semibold text-base py-4 active:scale-[0.99] mb-4`}
       >
         <Users className="h-5 w-5 text-muted-foreground" />
         <span>Реферальная программа</span>
@@ -323,9 +351,9 @@ export function ProfileScreen() {
       <div className="flex-1 min-h-4" />
       <button
         onClick={logoutWithVK}
-        className="w-full max-w-lg flex items-center justify-center gap-2 py-3.5 rounded-2xl border border-border/50 bg-muted/20 text-muted-foreground hover:bg-muted/40 hover:text-foreground font-medium text-sm transition-colors"
+        className="w-full max-w-lg flex items-center justify-center gap-2 py-4 rounded-3xl border border-slate-300/25 bg-gradient-to-br from-slate-500/14 via-card/50 to-zinc-500/10 text-muted-foreground hover:text-foreground font-medium text-base transition-colors"
       >
-        <LogOut className="h-4 w-4" />
+        <LogOut className="h-5 w-5" />
         Выйти
       </button>
     </div>
