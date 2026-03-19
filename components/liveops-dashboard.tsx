@@ -59,7 +59,11 @@ interface StateResponse {
   }
   weeklyEvent?: { title: string; description: string; mode: string }
   liveOpsState?: LiveOpsStateDto
+  vkSync?: { voicesBalance: number }
+  error?: string
 }
+
+type ApiErrorPayload = { ok?: boolean; error?: string }
 
 function rewardText(r: RewardDto) {
   if (r.kind === "coins") return `Монеты +${r.amount ?? 0}`
@@ -78,6 +82,27 @@ function resetLabel(reset: "daily" | "weekly" | "monthly") {
   return "Ежемесячно"
 }
 
+function toErrorCode(error: unknown): string {
+  if (!error) return "unknown_error"
+  if (typeof error === "string") return error
+  if (error instanceof Error) return error.message
+  if (typeof error === "object" && "error" in (error as Record<string, unknown>)) {
+    const value = (error as ApiErrorPayload).error
+    if (typeof value === "string") return value
+  }
+  return "unknown_error"
+}
+
+function toFriendlyErrorMessage(error: unknown): string {
+  const code = toErrorCode(error)
+  if (code.includes("insufficient_voices")) return "Недостаточно голосов для открытия премиум-пропуска."
+  if (code.includes("pass_premium_already")) return "Премиум-пропуск уже открыт."
+  if (code.includes("player_not_found")) return "Профиль игрока не найден."
+  if (code.includes("invalid_user")) return "Некорректный пользователь."
+  if (code.includes("no_server")) return "Сервер недоступен в текущем режиме."
+  return "Не удалось выполнить действие. Попробуйте позже."
+}
+
 export function LiveOpsDashboard() {
   const { player, setPlayer, setScreen } = useGame()
   const [loading, setLoading] = useState(true)
@@ -93,9 +118,12 @@ export function LiveOpsDashboard() {
       const res = (await getLiveOpsState(player.id)) as StateResponse
       if (!res.ok) throw new Error("load_failed")
       setData(res)
-      if (res.liveOpsState) {
-        setPlayer((p) => ({ ...p, liveOpsState: res.liveOpsState as unknown as typeof p.liveOpsState }))
-      }
+      setPlayer((p) => ({
+        ...p,
+        liveOpsState: res.liveOpsState ? (res.liveOpsState as unknown as typeof p.liveOpsState) : p.liveOpsState,
+        vkVoicesBalance:
+          typeof res.vkSync?.voicesBalance === "number" ? res.vkSync.voicesBalance : (p.vkVoicesBalance ?? 0),
+      }))
     } catch {
       setError("Не удалось загрузить прогресс событий")
     } finally {
@@ -123,14 +151,17 @@ export function LiveOpsDashboard() {
 
   const pass = data?.liveOpsState?.pass
   const maxLevel = data?.config?.pass.maxLevel ?? 30
+  const premiumCostVoices = 15
+  const voicesBalance = player.vkVoicesBalance ?? 0
+  const hasInsufficientVoices = voicesBalance < premiumCostVoices
 
   const onClaimQuest = async (questId: string) => {
     setBusyKey(`q:${questId}`)
     try {
       await claimQuestReward(player.id, questId)
       await reload()
-    } catch {
-      setError("Не удалось забрать награду квеста")
+    } catch (e) {
+      setError(toFriendlyErrorMessage(e))
     } finally {
       setBusyKey(null)
     }
@@ -150,8 +181,8 @@ export function LiveOpsDashboard() {
         if (title) setPlayer((p) => ({ ...p, activeTitleId: title }))
       }
       await reload()
-    } catch {
-      setError("Не удалось забрать ачивку")
+    } catch (e) {
+      setError(toFriendlyErrorMessage(e))
     } finally {
       setBusyKey(null)
     }
@@ -162,8 +193,8 @@ export function LiveOpsDashboard() {
     try {
       await unlockPremiumPass(player.id)
       await reload()
-    } catch {
-      setError("Не удалось открыть премиум-пропуск")
+    } catch (e) {
+      setError(toFriendlyErrorMessage(e))
     } finally {
       setBusyKey(null)
     }
@@ -174,8 +205,8 @@ export function LiveOpsDashboard() {
     try {
       await claimPassLevel(player.id, level, premium)
       await reload()
-    } catch {
-      setError("Не удалось забрать награду пропуска")
+    } catch (e) {
+      setError(toFriendlyErrorMessage(e))
     } finally {
       setBusyKey(null)
     }
@@ -219,14 +250,20 @@ export function LiveOpsDashboard() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-border/40 bg-card/40 p-4">
+      <div
+        className={`rounded-3xl border p-5 md:p-6 ${
+          hasInsufficientVoices && !pass?.premiumUnlocked
+            ? "border-red-400/50 bg-red-500/10 shadow-[0_0_0_1px_rgba(248,113,113,0.35),0_0_30px_rgba(248,113,113,0.15)]"
+            : "border-amber-300/35 bg-amber-500/10 shadow-[0_0_0_1px_rgba(251,191,36,0.25),0_0_28px_rgba(251,191,36,0.12)]"
+        }`}
+      >
         <div className="flex items-center justify-between">
-          <p className="text-sm font-semibold text-foreground">Боевой пропуск</p>
-          <span className="text-xs text-muted-foreground">
+          <p className="text-base md:text-lg font-extrabold text-foreground">Боевой пропуск</p>
+          <span className="text-xs md:text-sm text-muted-foreground">
             Уровень {pass?.level ?? 0}/{maxLevel}
           </span>
         </div>
-        <div className="mt-2 h-2 bg-white/10 rounded-full overflow-hidden">
+        <div className="mt-3 h-3 bg-white/10 rounded-full overflow-hidden">
           <div
             className="h-full bg-gradient-to-r from-cyan-400 to-purple-500"
             style={{ width: `${Math.min(100, ((pass?.level ?? 0) / maxLevel) * 100)}%` }}
@@ -235,12 +272,25 @@ export function LiveOpsDashboard() {
         {!pass?.premiumUnlocked && (
           <button
             type="button"
-            disabled={busyKey === "pass:unlock"}
+            disabled={busyKey === "pass:unlock" || hasInsufficientVoices}
             onClick={() => void onUnlockPremium()}
-            className="mt-3 px-3 py-2 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-200 text-xs font-semibold disabled:opacity-50"
+            className={`mt-4 w-full px-4 py-3 rounded-2xl text-sm md:text-base font-bold transition-colors disabled:opacity-60 ${
+              hasInsufficientVoices
+                ? "bg-red-500/20 border border-red-400/70 text-red-200"
+                : "bg-amber-500/20 border border-amber-400/60 text-amber-100"
+            }`}
           >
-            Открыть премиум за 15 голосов
+            Открыть премиум за {premiumCostVoices} голосов
           </button>
+        )}
+        {!pass?.premiumUnlocked && (
+          <p
+            className={`mt-2 text-xs md:text-sm font-medium ${
+              hasInsufficientVoices ? "text-red-200" : "text-muted-foreground"
+            }`}
+          >
+            Голоса: {voicesBalance}. Требуется: {premiumCostVoices}.
+          </p>
         )}
         <div className="mt-3 space-y-2 max-h-48 overflow-auto">
           {(data?.config?.pass.levels ?? []).slice(0, 10).map((lvl) => {
