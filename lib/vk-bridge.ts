@@ -79,12 +79,12 @@ export interface VKVoicePack {
 }
 
 export const VK_VOICE_PACKS: VKVoicePack[] = [
-  { amount: 10, votes: 1, itemId: "coins_10" },
-  { amount: 20, votes: 2, itemId: "coins_20" },
-  { amount: 30, votes: 3, itemId: "coins_30" },
-  { amount: 50, votes: 5, itemId: "coins_50" },
-  { amount: 70, votes: 7, itemId: "coins_70" },
-  { amount: 100, votes: 10, itemId: "coins_100" },
+  { amount: 100, votes: 1, itemId: "coins_100" },
+  { amount: 200, votes: 2, itemId: "coins_200" },
+  { amount: 300, votes: 3, itemId: "coins_300" },
+  { amount: 500, votes: 5, itemId: "coins_500" },
+  { amount: 700, votes: 7, itemId: "coins_700" },
+  { amount: 1000, votes: 10, itemId: "coins_1000" },
 ]
 
 /**
