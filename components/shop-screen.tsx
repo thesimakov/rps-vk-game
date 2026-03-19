@@ -223,19 +223,23 @@ export function ShopScreen() {
   const [promoStatus, setPromoStatus] = useState<"idle" | "success" | "error">("idle")
   const [promoMessage, setPromoMessage] = useState("")
   const confettiRef = useRef<HTMLDivElement>(null)
+  const purchaseLockRef = useRef(false)
   const [showFriendsModal, setShowFriendsModal] = useState(false)
+  const [nowTs, setNowTs] = useState(() => Date.now())
 
   const invitedSlots = normalizeInvitedSlots(player.invitedFriends)
   const invitedCount = invitedSlots.filter(Boolean).length
   const canClaimInviteReward = invitedCount >= INVITED_SLOTS && !player.invitedRewardClaimed
   const canClaimGroupReward = !player.groupSubscribedRewardClaimed
   const oneDayMs = 24 * 60 * 60 * 1000
-  const timerCooldownLeftMs = player.timerPlus10BoughtAt ? Math.max(0, oneDayMs - (Date.now() - player.timerPlus10BoughtAt)) : 0
-  const timerCooldownHours = Math.floor(timerCooldownLeftMs / (60 * 60 * 1000))
-  const timerCooldownMinutesRaw = Math.ceil((timerCooldownLeftMs % (60 * 60 * 1000)) / (60 * 1000))
-  const timerCooldownHoursNormalized = timerCooldownHours + Math.floor(timerCooldownMinutesRaw / 60)
-  const timerCooldownMinutes = timerCooldownMinutesRaw % 60
-  const timerCooldownText = `${timerCooldownHoursNormalized}:${String(timerCooldownMinutes).padStart(2, "0")}`
+  const timerCooldownLeftMs = player.timerPlus10BoughtAt ? Math.max(0, oneDayMs - (nowTs - player.timerPlus10BoughtAt)) : 0
+  const timerCooldownTotalSeconds = Math.ceil(timerCooldownLeftMs / 1000)
+  const timerCooldownHours = Math.floor(timerCooldownTotalSeconds / 3600)
+  const timerCooldownMinutes = Math.floor((timerCooldownTotalSeconds % 3600) / 60)
+  const timerCooldownSeconds = timerCooldownTotalSeconds % 60
+  const timerCooldownText = `${timerCooldownHours} часов ${String(timerCooldownMinutes).padStart(2, "0")} минут ${String(
+    timerCooldownSeconds
+  ).padStart(2, "0")} секунд`
 
   const getItemById = (itemId: ShopItemId) => SHOP_ITEMS.find((item) => item.id === itemId)
 
@@ -281,6 +285,12 @@ export function ShopScreen() {
       clearTimeout(t2)
     }
   }, [openingChest])
+
+  useEffect(() => {
+    if (!player.timerPlus10BoughtAt || timerCooldownLeftMs <= 0) return
+    const t = setInterval(() => setNowTs(Date.now()), 1000)
+    return () => clearInterval(t)
+  }, [player.timerPlus10BoughtAt, timerCooldownLeftMs])
 
   const handleCollectChest = () => {
     if (!openingChest) return
@@ -490,27 +500,30 @@ export function ShopScreen() {
   }
 
   const handleBuy = (itemId: ShopItemId) => {
-    if (buyingItemId) return
+    if (purchaseLockRef.current || buyingItemId) return
     const item = getItemById(itemId)
     if (!item) return
     const price = item.price
     if (!canBuyItem(itemId)) return
+    purchaseLockRef.current = true
+    setBuyingItemId(itemId)
+    const releasePurchaseLock = () => {
+      purchaseLockRef.current = false
+      setBuyingItemId(null)
+    }
 
     if (itemId === "lava-card") {
-      setBuyingItemId(itemId)
       purchaseLavaCard()
-      setTimeout(() => setBuyingItemId(null), 300)
+      setTimeout(releasePurchaseLock, 300)
       return
     }
     if (itemId === "water-card") {
-      setBuyingItemId(itemId)
       purchaseWaterCard()
-      setTimeout(() => setBuyingItemId(null), 300)
+      setTimeout(releasePurchaseLock, 300)
       return
     }
 
     if (itemId === "chest-basic" || itemId === "chest-premium") {
-      setBuyingItemId(itemId)
       trackSpend(price, itemId)
       const type: ChestType = itemId === "chest-basic" ? "basic" : "premium"
       const count = type === "premium" ? 3 : 2
@@ -520,11 +533,10 @@ export function ShopScreen() {
         return { ...p, balance: p.balance - price }
       })
       setOpeningChest({ type, prizes })
-      setTimeout(() => setBuyingItemId(null), 300)
+      setTimeout(releasePurchaseLock, 300)
       return
     }
 
-    setBuyingItemId(itemId)
     trackSpend(price, itemId)
     setPlayer((p) => {
       if (!canBuyItem(itemId, p)) return p
@@ -570,7 +582,7 @@ export function ShopScreen() {
           return p
       }
     })
-    setTimeout(() => setBuyingItemId(null), 300)
+    setTimeout(releasePurchaseLock, 300)
   }
 
   return (
