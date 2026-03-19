@@ -37,6 +37,8 @@ export interface StoredPlayer {
   lastDailyGiftClaimedAt?: number
   dailyRewardIndex?: number
   extraTimerUntil?: number
+  /** Время последней покупки буста «Таймер +10 секунд (1 день)» (timestamp, ms) */
+  timerPlus10BoughtAt?: number
   lottoNumbers?: number[]
   lottoDrawAt?: number
   lottoDrawnNumbers?: number[]

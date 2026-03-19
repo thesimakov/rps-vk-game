@@ -229,6 +229,13 @@ export function ShopScreen() {
   const invitedCount = invitedSlots.filter(Boolean).length
   const canClaimInviteReward = invitedCount >= INVITED_SLOTS && !player.invitedRewardClaimed
   const canClaimGroupReward = !player.groupSubscribedRewardClaimed
+  const oneDayMs = 24 * 60 * 60 * 1000
+  const timerCooldownLeftMs = player.timerPlus10BoughtAt ? Math.max(0, oneDayMs - (Date.now() - player.timerPlus10BoughtAt)) : 0
+  const timerCooldownHours = Math.floor(timerCooldownLeftMs / (60 * 60 * 1000))
+  const timerCooldownMinutesRaw = Math.ceil((timerCooldownLeftMs % (60 * 60 * 1000)) / (60 * 1000))
+  const timerCooldownHoursNormalized = timerCooldownHours + Math.floor(timerCooldownMinutesRaw / 60)
+  const timerCooldownMinutes = timerCooldownMinutesRaw % 60
+  const timerCooldownText = `${timerCooldownHoursNormalized}:${String(timerCooldownMinutes).padStart(2, "0")}`
 
   const getItemById = (itemId: ShopItemId) => SHOP_ITEMS.find((item) => item.id === itemId)
 
@@ -241,6 +248,7 @@ export function ShopScreen() {
       avatarFrame: p.avatarFrame,
       tournamentEntry: p.tournamentEntry,
       hasAncientDeck: p.hasAncientDeck,
+      timerPlus10BoughtAt: p.timerPlus10BoughtAt,
     })
 
   const canBuyItem = (itemId: ShopItemId, p = player) => {
@@ -257,6 +265,7 @@ export function ShopScreen() {
         avatarFrame: p.avatarFrame,
         tournamentEntry: p.tournamentEntry,
         hasAncientDeck: p.hasAncientDeck,
+        timerPlus10BoughtAt: p.timerPlus10BoughtAt,
       },
       lavaCardStock,
     })
@@ -549,7 +558,12 @@ export function ShopScreen() {
           const now = Date.now()
           const current = p.extraTimerUntil && p.extraTimerUntil > now ? p.extraTimerUntil : now
           const oneDay = 24 * 60 * 60 * 1000
-          return { ...p, balance: p.balance - price, extraTimerUntil: current + oneDay }
+          return {
+            ...p,
+            balance: p.balance - price,
+            extraTimerUntil: current + oneDay,
+            timerPlus10BoughtAt: now,
+          }
         }
         default:
           // неизвестный id — ничего не покупаем
@@ -797,6 +811,11 @@ export function ShopScreen() {
                 <p className="text-xs text-muted-foreground font-medium leading-relaxed">{item.description}</p>
                 {item.id === "lava-card" && (
                   <p className="text-[10px] text-muted-foreground mt-0.5">В наличии: {lavaCardStock} из 3</p>
+                )}
+                {item.id === "timer-plus-10" && timerCooldownLeftMs > 0 && (
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Можно купить через {timerCooldownText}
+                  </p>
                 )}
               </div>
               <button

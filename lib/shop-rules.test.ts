@@ -87,4 +87,27 @@ describe("shop rules", () => {
       })
     ).toBe(false)
   })
+
+  it("allows timer +10 only once per 24 hours", () => {
+    const nowMs = 1_700_000_000_000
+    expect(
+      canPurchaseItem({
+        itemId: "timer-plus-10",
+        price: 5,
+        state: { ...baseState, timerPlus10BoughtAt: nowMs - 12 * 60 * 60 * 1000 },
+        lavaCardStock: 1,
+        nowMs,
+      })
+    ).toBe(false)
+
+    expect(
+      canPurchaseItem({
+        itemId: "timer-plus-10",
+        price: 5,
+        state: { ...baseState, timerPlus10BoughtAt: nowMs - 24 * 60 * 60 * 1000 },
+        lavaCardStock: 1,
+        nowMs,
+      })
+    ).toBe(true)
+  })
 })

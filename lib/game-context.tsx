@@ -55,6 +55,8 @@ export interface Player {
   waterCardUses?: number
   /** Таймер в бою +10 секунд до указанного времени (timestamp, ms) */
   extraTimerUntil?: number
+  /** Время последней покупки буста «Таймер +10 секунд (1 день)» (timestamp, ms) */
+  timerPlus10BoughtAt?: number
   /** Приглашённые друзья (до 4 слотов). Когда друг принимает приглашение — появляется в ячейке. */
   invitedFriends?: Array<{ id: number; first_name: string; last_name: string; photo_200: string } | null>
   /** Награда 100 монет за 4 приглашённых друга уже получена */
@@ -403,6 +405,7 @@ function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
     lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
     dailyRewardIndex: player.dailyRewardIndex,
     extraTimerUntil: player.extraTimerUntil,
+    timerPlus10BoughtAt: player.timerPlus10BoughtAt,
     lottoNumbers: player.lottoNumbers,
     lottoDrawAt: player.lottoDrawAt,
     lottoDrawnNumbers: player.lottoDrawnNumbers,
@@ -430,6 +433,7 @@ const DEFAULT_PLAYER: Player = {
   cardDeck: undefined,
   hasAncientDeck: false,
   extraTimerUntil: undefined,
+  timerPlus10BoughtAt: undefined,
   welcomeGiftClaimed: false,
 }
 
@@ -504,6 +508,7 @@ function saveState(player: Player, lavaCardStock: number) {
           lastDailyGiftClaimedAt: player.lastDailyGiftClaimedAt,
           dailyRewardIndex: player.dailyRewardIndex,
           extraTimerUntil: player.extraTimerUntil,
+          timerPlus10BoughtAt: player.timerPlus10BoughtAt,
           lottoNumbers: player.lottoNumbers,
           lottoDrawAt: player.lottoDrawAt,
           lottoDrawnNumbers: player.lottoDrawnNumbers,

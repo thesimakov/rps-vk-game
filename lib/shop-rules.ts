@@ -24,7 +24,10 @@ export interface ShopEligibilityState {
   avatarFrame?: string
   tournamentEntry?: boolean
   hasAncientDeck?: boolean
+  timerPlus10BoughtAt?: number
 }
+
+const TIMER_PLUS_10_COOLDOWN_MS = 24 * 60 * 60 * 1000
 
 export function isItemOwned(itemId: ShopItemId, state: ShopEligibilityState) {
   return (
@@ -43,10 +46,15 @@ export function canPurchaseItem(args: {
   price: number
   state: ShopEligibilityState
   lavaCardStock: number
+  nowMs?: number
 }) {
-  const { itemId, price, state, lavaCardStock } = args
+  const { itemId, price, state, lavaCardStock, nowMs = Date.now() } = args
   if (state.balance < price) return false
   if (itemId === "lava-card") return lavaCardStock > 0
   if (itemId === "water-card") return true
+  if (itemId === "timer-plus-10") {
+    if (!state.timerPlus10BoughtAt) return true
+    return nowMs - state.timerPlus10BoughtAt >= TIMER_PLUS_10_COOLDOWN_MS
+  }
   return !isItemOwned(itemId, state)
 }
