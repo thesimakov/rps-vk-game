@@ -6,9 +6,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield } from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
-
-const LEVELS = ["Супер новичок", "Новичок", "Игрок", "Мастер", "Легенда"]
-const LEVEL_STEPS = 100
+import { LEVELS, LEVEL_STEP_XP, MAX_LEVEL, getDailyBonusPercent, getLevelMeta } from "@/lib/level-system"
 
 const DAILY_REWARDS = [
   { day: 1, amount: 100, icon: "coin" as const },
@@ -88,12 +86,11 @@ export function MainMenu() {
   const [tempSelection, setTempSelection] = useState<number[]>([])
   const [showWelcomeGiftModal, setShowWelcomeGiftModal] = useState(false)
 
-  const rating = player.ratingPoints ?? 0
-  const levelNumber = Math.floor(rating / LEVEL_STEPS)
-  const levelIndex = Math.min(levelNumber, LEVELS.length - 1)
-  const levelName = LEVELS[levelIndex]
-  const progressInLevel = rating % LEVEL_STEPS
-  const progressDisplay = `${Math.min(progressInLevel, LEVEL_STEPS)}/${LEVEL_STEPS}`
+  const levelXp = player.levelXp ?? 0
+  const levelData = getLevelMeta(levelXp)
+  const levelNumber = levelData.level
+  const progressInLevel = levelXp >= LEVELS.length * LEVEL_STEP_XP ? LEVEL_STEP_XP : levelXp % LEVEL_STEP_XP
+  const progressDisplay = `${Math.min(progressInLevel, LEVEL_STEP_XP)}/${LEVEL_STEP_XP}`
 
   const lastClaimedAt = player.lastDailyGiftClaimedAt
   const dailyIndex = typeof player.dailyRewardIndex === "number" ? player.dailyRewardIndex : 0
@@ -124,7 +121,9 @@ export function MainMenu() {
   const handleClaimDaily = () => {
     if (!canClaimGift) return
     const reward = DAILY_REWARDS[dailyIndex]
-    const amount = reward.icon === "coin" ? reward.amount : 0
+    const baseAmount = reward.icon === "coin" ? reward.amount : 0
+    const dailyBonusPercent = getDailyBonusPercent(player.levelXp ?? 0)
+    const amount = baseAmount > 0 ? Math.floor(baseAmount * (1 + dailyBonusPercent / 100)) : 0
     setPlayer((p) => ({
       ...p,
       balance: p.balance + amount,
@@ -225,18 +224,28 @@ export function MainMenu() {
             RPS Arena
           </p>
           <p className="text-sm text-white/90 font-medium">
-            Твой уровень: {levelName}
+            Твой уровень: {levelData.name} ({Math.min(levelData.level, MAX_LEVEL)}/{MAX_LEVEL})
           </p>
         </div>
         <div className="w-full max-w-[200px] mt-1.5 flex items-center gap-2">
           <div className="flex-1 h-2 bg-white/15 rounded-full overflow-hidden">
             <div
               className="h-full rounded-full bg-gradient-to-r from-amber-400 to-primary transition-all duration-500"
-              style={{ width: `${(progressInLevel / LEVEL_STEPS) * 100}%` }}
+              style={{ width: `${(progressInLevel / LEVEL_STEP_XP) * 100}%` }}
             />
           </div>
           <span className="text-xs font-bold text-white tabular-nums">{progressDisplay}</span>
         </div>
+        <p className="mt-2 text-[11px] text-cyan-200/90 font-medium text-center">
+          {levelData.perk}
+        </p>
+        <button
+          type="button"
+          onClick={() => setScreen("levels")}
+          className="mt-2 px-3 py-1.5 rounded-xl border border-cyan-300/35 bg-cyan-500/10 text-cyan-100 text-xs font-semibold hover:bg-cyan-500/20"
+        >
+          Все уровни и бонусы
+        </button>
       </div>
 
       {/* Валюта: аватар слева, поле и кнопки управления (лото, пополнить) */}

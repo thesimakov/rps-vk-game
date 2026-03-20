@@ -12,6 +12,7 @@ import { ResultScreen } from "@/components/result-screen"
 import { BossRewardScreen } from "@/components/boss-reward-screen"
 import { LeaderboardScreen } from "@/components/leaderboard-screen"
 import { ProfileScreen } from "@/components/profile-screen"
+import { LevelsScreen } from "@/components/levels-screen"
 import { ReferralScreen } from "@/components/referral-screen"
 import { ShopScreen } from "@/components/shop-screen"
 import { BottomNav } from "@/components/bottom-nav"
@@ -32,6 +33,7 @@ function GameScreen() {
     <>
       {isEntry && <EntryScreen />}
       {screen === "menu" && vkUser && <MainMenu />}
+      {screen === "levels" && <LevelsScreen />}
       {screen === "bets" && <BetsScreen />}
       {screen === "bet-select" && <BetSelect />}
       {screen === "matchmaking" && <Matchmaking />}

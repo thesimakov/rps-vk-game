@@ -19,6 +19,8 @@ export interface StoredPlayer {
   weekWins: number
   weekEarnings: number
   ratingPoints?: number
+  /** Очки уровня (XP), отдельные от рейтинга. */
+  levelXp?: number
   totalPurchases?: number
   vip?: boolean
   fastMatchBoosts?: number

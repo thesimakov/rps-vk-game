@@ -3,12 +3,14 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
 import type { LiveOpsState } from "@/lib/liveops/types"
+import { clampLevelXp, getRankBoostExtra } from "@/lib/level-system"
 
 export type Move = "rock" | "scissors" | "paper" | "water" | "fire"
 export type WeeklyMode = "elements_tournament" | "time_is_money" | "blind_luck" | "boss_week"
 export type GameScreen =
   | "entry"
   | "menu"
+  | "levels"
   | "bet-select"
   | "matchmaking"
   | "arena"
@@ -33,6 +35,8 @@ export interface Player {
   weekEarnings: number
   /** Рейтинговые бонусы (очки), полученные за победы */
   ratingPoints?: number
+  /** Очки уровня (XP), отдельные от рейтинга и бустов рейтинга. */
+  levelXp?: number
   /** Суммарные покупки монет за всё время (для банка турнира сезона) */
   totalPurchases?: number
   vip: boolean
@@ -424,6 +428,11 @@ async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | nu
   }
 }
 
+function deriveInitialLevelXp(player: Pick<Player, "levelXp" | "ratingPoints">): number {
+  if (typeof player.levelXp === "number") return clampLevelXp(player.levelXp)
+  return clampLevelXp(player.ratingPoints ?? 0)
+}
+
 function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
   return {
     id: player.id,
@@ -436,6 +445,7 @@ function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
     weekWins: player.weekWins,
     weekEarnings: player.weekEarnings,
     ratingPoints: player.ratingPoints,
+    levelXp: player.levelXp,
     totalPurchases: player.totalPurchases,
     vip: player.vip,
     fastMatchBoosts: player.fastMatchBoosts,
@@ -486,6 +496,7 @@ const DEFAULT_PLAYER: Player = {
   weekEarnings: 0,
   vip: false,
   ratingPoints: 0,
+  levelXp: 0,
   totalPurchases: 0,
   groupSubscribedRewardClaimed: false,
   cardDeck: undefined,
@@ -519,6 +530,7 @@ function loadSavedState(): {
     const isVkPlayer = typeof data.player?.id === "string" && data.player.id.startsWith("vk_")
     const hasWelcomeGiftFlag = typeof data.player?.welcomeGiftClaimed === "boolean"
     let player: Player = isVkPlayer ? { ...DEFAULT_PLAYER } : { ...DEFAULT_PLAYER, ...data.player }
+    player = { ...player, levelXp: deriveInitialLevelXp(player) }
     // Миграция старого состояния: раньше стартовый баланс был 100.
     // Если бонус ещё не помечен как полученный и это "чистый" профиль, переводим старт обратно в 0.
     if (
@@ -557,6 +569,7 @@ function saveState(player: Player, lavaCardStock: number) {
           weekEarnings: player.weekEarnings,
           vip: player.vip,
           ratingPoints: player.ratingPoints,
+          levelXp: player.levelXp,
           totalPurchases: player.totalPurchases,
           fastMatchBoosts: player.fastMatchBoosts,
           victoryAnimation: player.victoryAnimation,
@@ -816,7 +829,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return
     }
     if (res.player) {
-      setPlayer((p) => ({ ...p, ...res.player }))
+      setPlayer((p) => ({
+        ...p,
+        ...res.player,
+        levelXp: deriveInitialLevelXp({ levelXp: res.player.levelXp, ratingPoints: res.player.ratingPoints }),
+      }))
       return
     }
     void postJSON("/api/player/save", {
@@ -1053,9 +1070,31 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     rankTrendRef.current = { rank: playerRank, earnings }
   }, [playerRank, player.weekEarnings])
 
+  // Прогресс уровня отдельно от рейтинга: начисляем XP за матчи.
+  // Победа = +30 XP, поражение = +12 XP.
+  const xpProgressRef = useRef<{ id: string; wins: number; losses: number } | null>(null)
+  useEffect(() => {
+    const snapshot = xpProgressRef.current
+    if (!snapshot || snapshot.id !== player.id) {
+      xpProgressRef.current = { id: player.id, wins: player.wins, losses: player.losses }
+      if (typeof player.levelXp !== "number") {
+        setPlayer((p) => ({ ...p, levelXp: deriveInitialLevelXp(p) }))
+      }
+      return
+    }
+
+    const winDelta = Math.max(0, player.wins - snapshot.wins)
+    const lossDelta = Math.max(0, player.losses - snapshot.losses)
+    xpProgressRef.current = { id: player.id, wins: player.wins, losses: player.losses }
+    if (winDelta === 0 && lossDelta === 0) return
+
+    const xpGain = winDelta * 30 + lossDelta * 12
+    setPlayer((p) => ({ ...p, levelXp: clampLevelXp((p.levelXp ?? deriveInitialLevelXp(p)) + xpGain) }))
+  }, [player.id, player.wins, player.losses, player.levelXp, setPlayer])
+
   const purchaseRankBoost = useCallback(() => {
     const cost = 250
-    const bonus = 100
+    const bonus = 100 + getRankBoostExtra(player.levelXp ?? 0)
     if (player.balance < cost) return false
     trackSpend(cost, "rank-boost")
     setPlayer((p) => ({
@@ -1064,7 +1103,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonus),
     }))
     return true
-  }, [player.balance, trackSpend])
+  }, [player.balance, player.levelXp, trackSpend])
 
   const BOT_AUTO_ACCEPT_AFTER_MS = 30 * 1000
 

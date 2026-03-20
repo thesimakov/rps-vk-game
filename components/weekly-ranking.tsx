@@ -246,7 +246,7 @@ export function WeeklyRanking() {
         Увеличить рейтинг
       </button>
       <p className="text-[10px] text-muted-foreground text-center px-1">
-        +100 бонус за 250 монет
+        +100 рейтинга за 250 монет (уровень не меняется)
       </p>
 
       <button

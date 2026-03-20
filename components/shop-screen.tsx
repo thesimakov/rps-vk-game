@@ -5,6 +5,7 @@ import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, joinVKGroup, VK_VOICE_PACKS } from "@/lib/vk-bridge"
 import { canPurchaseItem, isItemOwned, type ShopItemId } from "@/lib/shop-rules"
+import { getDiscountedPrice, getLevelFromXp, getShopDiscountPercent } from "@/lib/level-system"
 import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass, Ticket } from "lucide-react"
 
 const INVITED_SLOTS = 4
@@ -240,8 +241,12 @@ export function ShopScreen() {
   const timerCooldownText = `${timerCooldownHours} часов ${String(timerCooldownMinutes).padStart(2, "0")} минут ${String(
     timerCooldownSeconds
   ).padStart(2, "0")} секунд`
+  const levelXp = player.levelXp ?? 0
+  const levelNumber = getLevelFromXp(levelXp)
+  const shopDiscountPercent = getShopDiscountPercent(levelXp)
 
   const getItemById = (itemId: ShopItemId) => SHOP_ITEMS.find((item) => item.id === itemId)
+  const getItemPrice = (item: ShopItem, xp = levelXp) => getDiscountedPrice(item.price, xp)
 
   const isOwned = (itemId: ShopItemId, p = player) =>
     isItemOwned(itemId, {
@@ -260,9 +265,10 @@ export function ShopScreen() {
   const canBuyItem = (itemId: ShopItemId, p = player) => {
     const item = getItemById(itemId)
     if (!item) return false
+    const price = getItemPrice(item, p.levelXp ?? 0)
     return canPurchaseItem({
       itemId,
-      price: item.price,
+      price,
       state: {
         balance: p.balance,
         vip: p.vip,
@@ -507,7 +513,7 @@ export function ShopScreen() {
     if (purchaseLockRef.current || buyingItemId) return
     const item = getItemById(itemId)
     if (!item) return
-    const price = item.price
+    const price = getItemPrice(item)
     if (!canBuyItem(itemId)) return
     purchaseLockRef.current = true
     setBuyingItemId(itemId)
@@ -625,6 +631,9 @@ export function ShopScreen() {
             События и бонусы
           </span>
         </div>
+        <p className="mt-2 text-[11px] text-emerald-200/90">
+          Уровень {levelNumber}: скидка в магазине {shopDiscountPercent}%.
+        </p>
       </div>
 
       {/* Пополнение баланса через ВК */}
@@ -833,6 +842,8 @@ export function ShopScreen() {
           const showPermanentOwnedBadge = (itemId === "frame-neon" || itemId === "frame-gold") && alreadyOwned
           const lavaOutOfStock = itemId === "lava-card" && lavaCardStock <= 0
           const canBuy = canBuyItem(itemId)
+          const effectivePrice = getItemPrice(item)
+          const hasDiscount = effectivePrice < item.price
           return (
             <div
               key={item.id}
@@ -873,7 +884,12 @@ export function ShopScreen() {
                 {buyingItemId === item.id ? "Покупка..." : item.id === "lava-card" && lavaOutOfStock ? "Нет в наличии" : alreadyOwned ? "Куплено" : (
                   <>
                     <Coins className="h-3 w-3" />
-                    {formatAmount(toDisplayAmount(item.price))} {currencyLabel}
+                    {formatAmount(toDisplayAmount(effectivePrice))} {currencyLabel}
+                    {hasDiscount && (
+                      <span className="ml-1 text-[10px] line-through opacity-70">
+                        {formatAmount(toDisplayAmount(item.price))}
+                      </span>
+                    )}
                   </>
                 )}
               </button>
