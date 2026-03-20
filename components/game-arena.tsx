@@ -589,6 +589,9 @@ export function GameArena() {
             <span className="text-base font-semibold text-white uppercase tracking-widest leading-none">
               Раунд {roundCount} из {totalRounds}
             </span>
+            <span className="mt-1 text-[11px] text-white/70 font-medium">
+              Формат матча: {totalRounds} {totalRounds === 1 ? "ход" : totalRounds < 5 ? "хода" : "ходов"} (для обоих)
+            </span>
             <div className="mt-1 flex gap-1">
               {Array.from({ length: totalRounds }).map((_, i) => (
                 <Heart
