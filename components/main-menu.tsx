@@ -6,7 +6,6 @@ import { useEffect, useMemo, useState } from "react"
 import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield } from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
-import { LiveOpsDailyWidget } from "@/components/liveops-daily-widget"
 
 const LEVELS = ["Супер новичок", "Новичок", "Игрок", "Мастер", "Легенда"]
 const LEVEL_STEPS = 100
@@ -90,7 +89,6 @@ export function MainMenu() {
   const [showWelcomeGiftModal, setShowWelcomeGiftModal] = useState(false)
 
   const rating = player.ratingPoints ?? 0
-  const isVkPlayer = player.id.startsWith("vk_")
   const levelNumber = Math.floor(rating / LEVEL_STEPS)
   const levelIndex = Math.min(levelNumber, LEVELS.length - 1)
   const levelName = LEVELS[levelIndex]
@@ -326,62 +324,58 @@ export function MainMenu() {
       </div>
 
       {/* Ежедневные награды */}
-      {isVkPlayer ? (
-        <LiveOpsDailyWidget />
-      ) : (
-        <div className="w-full max-w-lg mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
-          <div className="flex items-center justify-between gap-2 mb-3">
-            <p className="text-sm text-white/95 font-medium leading-tight">
-              Играйте, делайте ставки и становись лидером
-            </p>
-            {canClaimGift ? (
-              <button
-                onClick={handleClaimDaily}
-                className="px-4 py-2 rounded-xl bg-amber-400 text-amber-950 font-bold text-xs uppercase tracking-wide hover:bg-amber-300 transition-colors flex-shrink-0"
-              >
-                Забрать
-              </button>
-            ) : (
-              <span className="text-xs text-white/80 font-medium flex-shrink-0">
-                {timeUntilText}
-              </span>
-            )}
-          </div>
-          <div className="flex gap-1 overflow-x-auto py-1">
-            {DAILY_REWARDS.map((r, i) => {
-              const claimed = i < dailyIndex
-              const isCurrent = i === dailyIndex
-              const isAvailable = isCurrent && canClaimGift
-              return (
-                <div
-                  key={r.day}
-                  className={`flex flex-col items-center min-w-[64px] px-2 py-1.5 rounded-xl border text-center ${
-                    claimed
-                      ? "bg-emerald-500/20 border-emerald-400/40"
-                      : isAvailable
-                      ? "bg-amber-400/20 border-amber-400/50"
-                      : "bg-white/5 border-white/15"
-                  }`}
-                >
-                  {claimed ? (
-                    <Check className="h-4 w-4 text-emerald-400 mb-0.5" />
-                  ) : r.icon === "gift" ? (
-                    <Gift className="h-4 w-4 text-emerald-400 mb-0.5" />
-                  ) : (
-                    <Coins className="h-4 w-4 text-amber-400 mb-0.5" />
-                  )}
-                  <span className="text-[10px] font-bold text-white/90">{r.day} день</span>
-                  {!claimed && (
-                    <span className="text-[10px] text-white/70">
-                      {r.icon === "gift" ? "сундук" : r.amount}
-                    </span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+      <div className="w-full max-w-lg mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <p className="text-sm text-white/95 font-medium leading-tight">
+            Играйте, делайте ставки и становись лидером
+          </p>
+          {canClaimGift ? (
+            <button
+              onClick={handleClaimDaily}
+              className="px-4 py-2 rounded-xl bg-amber-400 text-amber-950 font-bold text-xs uppercase tracking-wide hover:bg-amber-300 transition-colors flex-shrink-0"
+            >
+              Забрать
+            </button>
+          ) : (
+            <span className="text-xs text-white/80 font-medium flex-shrink-0">
+              {timeUntilText}
+            </span>
+          )}
         </div>
-      )}
+        <div className="flex gap-1 overflow-x-auto py-1">
+          {DAILY_REWARDS.map((r, i) => {
+            const claimed = i < dailyIndex
+            const isCurrent = i === dailyIndex
+            const isAvailable = isCurrent && canClaimGift
+            return (
+              <div
+                key={r.day}
+                className={`flex flex-col items-center min-w-[64px] px-2 py-1.5 rounded-xl border text-center ${
+                  claimed
+                    ? "bg-emerald-500/20 border-emerald-400/40"
+                    : isAvailable
+                    ? "bg-amber-400/20 border-amber-400/50"
+                    : "bg-white/5 border-white/15"
+                }`}
+              >
+                {claimed ? (
+                  <Check className="h-4 w-4 text-emerald-400 mb-0.5" />
+                ) : r.icon === "gift" ? (
+                  <Gift className="h-4 w-4 text-emerald-400 mb-0.5" />
+                ) : (
+                  <Coins className="h-4 w-4 text-amber-400 mb-0.5" />
+                )}
+                <span className="text-[10px] font-bold text-white/90">{r.day} день</span>
+                {!claimed && (
+                  <span className="text-[10px] text-white/70">
+                    {r.icon === "gift" ? "сундук" : r.amount}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
 
       {/* Кнопки: ИГРАТЬ, Таблица лидеров, Магазин и Профиль */}
       <div className="w-full max-w-lg flex flex-col gap-3">
