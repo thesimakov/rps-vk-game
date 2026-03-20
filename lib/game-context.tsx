@@ -829,10 +829,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       return
     }
     if (res.player) {
+      const serverPlayer = res.player
       setPlayer((p) => ({
         ...p,
-        ...res.player,
-        levelXp: deriveInitialLevelXp({ levelXp: res.player.levelXp, ratingPoints: res.player.ratingPoints }),
+        ...serverPlayer,
+        levelXp: deriveInitialLevelXp({ levelXp: serverPlayer.levelXp, ratingPoints: serverPlayer.ratingPoints }),
       }))
       return
     }
