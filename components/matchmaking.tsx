@@ -1,21 +1,77 @@
 "use client"
 
 import { useGame } from "@/lib/game-context"
+import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Coins, Search, X } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 
 const NORMAL_SEARCH_MS = 2500
 const FAST_SEARCH_MS = 800
+const POLL_MS = 1000
+
+type QueueOpponentDto = {
+  id: string
+  name: string
+  avatar: string
+  avatarUrl: string
+  vip: boolean
+  wins: number
+  losses: number
+  weekWins: number
+  weekEarnings: number
+  balance: number
+}
+
+function dtoToPlayer(o: QueueOpponentDto): Player {
+  return {
+    id: o.id,
+    name: o.name,
+    avatar: o.avatar,
+    avatarUrl: o.avatarUrl,
+    balance: o.balance,
+    wins: o.wins,
+    losses: o.losses,
+    weekWins: o.weekWins,
+    weekEarnings: o.weekEarnings,
+    vip: o.vip,
+  }
+}
+
+async function leaveMatchQueue(userId: string) {
+  try {
+    await fetch("/api/match/queue", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    })
+  } catch {
+    /* ignore */
+  }
+}
 
 export function Matchmaking() {
-  const { setScreen, opponent, setOpponent, currentBet, player, setPlayer, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
+  const {
+    setScreen,
+    opponent,
+    setOpponent,
+    currentBet,
+    player,
+    setPlayer,
+    toDisplayAmount,
+    currencyLabel,
+    weeklyRules,
+    totalRounds,
+    pickRandomOpponent,
+    ensureRandomBotOpponent,
+  } = useGame()
   const [dots, setDots] = useState("")
   const [progress, setProgress] = useState(0)
   const useFastSearch = (player.fastMatchBoosts ?? 0) > 0
   const searchMs = useFastSearch ? FAST_SEARCH_MS : NORMAL_SEARCH_MS
   const isBossWeek = (player.activeWeeklyMode ?? weeklyRules?.event.mode) === "boss_week"
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
     if (!isBossWeek) return
@@ -33,6 +89,97 @@ export function Matchmaking() {
     })
   }, [isBossWeek, setOpponent])
 
+  /** Гость / не ВК — сразу бот */
+  useEffect(() => {
+    if (isBossWeek) return
+    if (player.id.startsWith("vk_")) return
+    pickRandomOpponent()
+  }, [isBossWeek, player.id, pickRandomOpponent])
+
+  /** Очередь PvP (только vk_* и не неделя босса) */
+  useEffect(() => {
+    if (isBossWeek) return
+    if (!player.id.startsWith("vk_")) return
+
+    let cancelled = false
+    const weeklyMode = player.activeWeeklyMode ?? weeklyRules?.event.mode ?? "elements_tournament"
+
+    const clearPoll = () => {
+      if (pollRef.current) {
+        clearInterval(pollRef.current)
+        pollRef.current = null
+      }
+    }
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/match/queue", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: player.id,
+            name: player.name,
+            avatar: player.avatar,
+            avatarUrl: player.avatarUrl,
+            vip: player.vip,
+            bet: currentBet,
+            rounds: totalRounds,
+            weeklyMode,
+          }),
+        })
+        const data = (await res.json()) as {
+          ok?: boolean
+          matched?: boolean
+          opponent?: QueueOpponentDto
+        }
+        if (cancelled) return
+        if (data.ok && data.matched && data.opponent) {
+          setOpponent(dtoToPlayer(data.opponent))
+          return
+        }
+        if (!data.ok) return
+
+        pollRef.current = setInterval(async () => {
+          try {
+            const pollRes = await fetch(`/api/match/poll?userId=${encodeURIComponent(player.id)}`)
+            const pollData = (await pollRes.json()) as {
+              ok?: boolean
+              matched?: boolean
+              opponent?: QueueOpponentDto
+            }
+            if (cancelled) return
+            if (pollData.ok && pollData.matched && pollData.opponent) {
+              setOpponent(dtoToPlayer(pollData.opponent))
+              clearPoll()
+            }
+          } catch {
+            /* ignore */
+          }
+        }, POLL_MS)
+      } catch {
+        /* сеть / static export — остаёмся без PvP */
+      }
+    })()
+
+    return () => {
+      cancelled = true
+      clearPoll()
+      void leaveMatchQueue(player.id)
+    }
+  }, [
+    isBossWeek,
+    player.id,
+    player.name,
+    player.avatar,
+    player.avatarUrl,
+    player.vip,
+    player.activeWeeklyMode,
+    currentBet,
+    totalRounds,
+    weeklyRules?.event.mode,
+    setOpponent,
+  ])
+
   useEffect(() => {
     const dotInterval = setInterval(() => {
       setDots((d) => (d.length >= 3 ? "" : d + "."))
@@ -45,6 +192,10 @@ export function Matchmaking() {
       if (useFastSearch) {
         setPlayer((p) => ({ ...p, fastMatchBoosts: Math.max(0, (p.fastMatchBoosts ?? 0) - 1) }))
       }
+      if (!isBossWeek && player.id.startsWith("vk_")) {
+        void leaveMatchQueue(player.id)
+        ensureRandomBotOpponent()
+      }
       setScreen("arena")
     }, searchMs)
     return () => {
@@ -52,7 +203,7 @@ export function Matchmaking() {
       clearInterval(progressInterval)
       clearTimeout(timer)
     }
-  }, [setScreen, useFastSearch, setPlayer])
+  }, [setScreen, useFastSearch, setPlayer, isBossWeek, player.id, ensureRandomBotOpponent])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8">
@@ -115,7 +266,12 @@ export function Matchmaking() {
         />
       </div>
       <button
-        onClick={() => setScreen("menu")}
+        onClick={() => {
+          if (!isBossWeek && player.id.startsWith("vk_")) {
+            void leaveMatchQueue(player.id)
+          }
+          setScreen("menu")
+        }}
         className="mt-10 flex items-center gap-1.5 text-sm text-muted-foreground hover:text-destructive font-medium transition-colors"
       >
         <X className="h-4 w-4" />

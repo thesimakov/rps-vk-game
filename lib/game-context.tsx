@@ -269,6 +269,10 @@ interface GameState {
   /** Подпись валюты (например, "монет") */
   currencyLabel: string
   weeklyRules: WeeklyRules | null
+  /** Случайный бот-соперник (полная замена) */
+  pickRandomOpponent: () => void
+  /** Если соперника ещё нет — подобрать бота (для таймаута очереди PvP) */
+  ensureRandomBotOpponent: () => void
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -983,15 +987,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setOpponent(OPPONENTS[idx])
   }, [])
 
-  const handleSetScreen = useCallback(
-    (s: GameScreen) => {
-      if (s === "matchmaking") {
-        pickRandomOpponent()
-      }
-      setScreen(s)
-    },
-    [pickRandomOpponent]
-  )
+  const ensureRandomBotOpponent = useCallback(() => {
+    setOpponent((o) => {
+      if (o) return o
+      const idx = Math.floor(Math.random() * OPPONENTS.length)
+      return OPPONENTS[idx]
+    })
+  }, [])
+
+  const handleSetScreen = useCallback((s: GameScreen) => {
+    setScreen(s)
+  }, [])
 
   // Динамический рейтинг: обновление каждые 30 минут с анимацией
   const [displayLeaderboard, setDisplayLeaderboard] = useState<LeaderboardEntry[]>(() => {
@@ -1366,6 +1372,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         toDisplayAmount,
         currencyLabel,
         weeklyRules,
+        pickRandomOpponent,
+        ensureRandomBotOpponent,
       }}
     >
       {children}
