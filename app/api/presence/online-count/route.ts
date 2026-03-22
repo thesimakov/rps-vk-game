@@ -8,16 +8,14 @@ export const dynamic = "force-dynamic"
 
 /**
  * Сколько игроков ВК считаются онлайн (недавний heartbeat).
- * Query `?userId=vk_*` — перед подсчётом записать пинг этого клиента в том же процессе,
- * чтобы GET и POST не «расходились» на разных воркерах/serverless (иначе часто 0).
+ * Опционально `?userId=vk_...` — перед подсчётом фиксируем присутствие этого игрока.
  */
 export async function GET(req: Request) {
   if (IS_STATIC_EXPORT) {
     return NextResponse.json({ ok: false, error: "no_server", count: 0 }, { status: 501 })
   }
   try {
-    const url = new URL(req.url)
-    const userId = url.searchParams.get("userId")?.trim() ?? ""
+    const userId = new URL(req.url).searchParams.get("userId") ?? ""
     if (userId && isValidPlayerId(userId)) {
       await recordPresence(userId)
     }

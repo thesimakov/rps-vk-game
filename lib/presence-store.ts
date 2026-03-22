@@ -1,10 +1,7 @@
 /**
  * Онлайн-присутствие игроков ВК: последний heartbeat с клиента.
- *
- * Раньше хранилось в Map в памяти — при нескольких воркерах Node или serverless
- * POST /heartbeat и GET /online-count попадали в разные процессы → всегда 0.
- * Сейчас — общий JSON-файл рядом с players.json (один диск на VPS).
- * Для горизонтального масштаба без общего диска — Redis / KV.
+ * Память + файл на диске (рядом с players.json), чтобы счётчик работал при
+ * нескольких воркерах Node и не терялся при рестарте.
  */
 
 import { promises as fs } from "fs"
@@ -13,82 +10,88 @@ import { isValidPlayerId } from "@/lib/player-store"
 
 /** Считаем онлайн, если heartbeat был не старше этого окна */
 const ONLINE_WINDOW_MS = 90_000
-/** Удаляем запись, если нет пингов дольше (чистка памяти / файла) */
+/** Удаляем запись, если нет пингов дольше (чистка памяти и файла) */
 const STALE_PURGE_MS = 5 * 60_000
 
-interface PresenceFile {
-  lastSeen: Record<string, number>
-}
-
-function getPlayersJsonPath(): string {
-  return (
-    process.env.PLAYERS_DB_PATH ||
-    (process.env.NODE_ENV === "development"
-      ? path.join(process.cwd(), "data", "players.json")
-      : "/var/rps-data/players.json")
-  )
-}
-
-function getPresenceFilePath(): string {
+function getPresencePath(): string {
   if (process.env.PRESENCE_DB_PATH) return process.env.PRESENCE_DB_PATH
-  return path.join(path.dirname(getPlayersJsonPath()), "presence.json")
+  const playersPath = process.env.PLAYERS_DB_PATH
+  if (playersPath) return path.join(path.dirname(playersPath), "presence.json")
+  return process.env.NODE_ENV === "development"
+    ? path.join(process.cwd(), "data", "presence.json")
+    : "/var/rps-data/presence.json"
 }
 
-async function readPresence(): Promise<PresenceFile> {
-  const filePath = getPresenceFilePath()
+const lastSeen = new Map<string, number>()
+
+/** Цепочка записей на диск — без гонок при параллельных heartbeat */
+let persistChain: Promise<void> = Promise.resolve()
+
+async function ensurePresenceDir() {
+  await fs.mkdir(path.dirname(getPresencePath()), { recursive: true })
+}
+
+async function mergeFromDisk(): Promise<void> {
   try {
-    const raw = await fs.readFile(filePath, "utf8")
-    const parsed = JSON.parse(raw) as Partial<PresenceFile>
-    return { lastSeen: typeof parsed.lastSeen === "object" && parsed.lastSeen !== null ? parsed.lastSeen : {} }
-  } catch {
-    return { lastSeen: {} }
-  }
-}
-
-async function writePresence(data: PresenceFile): Promise<void> {
-  const filePath = getPresenceFilePath()
-  await fs.mkdir(path.dirname(filePath), { recursive: true })
-  const tmp = `${filePath}.tmp`
-  await fs.writeFile(tmp, JSON.stringify({ lastSeen: data.lastSeen }, null, process.env.NODE_ENV === "development" ? 2 : undefined), "utf8")
-  await fs.rename(tmp, filePath)
-}
-
-function purgeStaleEntries(data: PresenceFile, now: number) {
-  for (const [uid, t] of Object.entries(data.lastSeen)) {
-    if (now - t > STALE_PURGE_MS) {
-      delete data.lastSeen[uid]
-    }
-  }
-}
-
-/** Серийная очередь: не теряем обновления при параллельных heartbeat */
-let writeChain: Promise<void> = Promise.resolve()
-
-function enqueueWrite(fn: () => Promise<void>): Promise<void> {
-  const next = writeChain.then(fn)
-  writeChain = next.catch(() => {})
-  return next
-}
-
-export async function recordPresence(userId: string): Promise<void> {
-  if (!isValidPlayerId(userId)) return
-  await enqueueWrite(async () => {
-    const data = await readPresence()
+    const raw = await fs.readFile(getPresencePath(), "utf8")
+    const parsed = JSON.parse(raw) as Record<string, unknown>
     const now = Date.now()
-    data.lastSeen[userId] = now
-    purgeStaleEntries(data, now)
-    await writePresence(data)
-  })
+    for (const [uid, t] of Object.entries(parsed)) {
+      if (!uid.startsWith("vk_") || typeof t !== "number" || !Number.isFinite(t)) continue
+      if (now - t > STALE_PURGE_MS) continue
+      const prev = lastSeen.get(uid) ?? 0
+      if (t > prev) lastSeen.set(uid, t)
+    }
+  } catch {
+    // файла ещё нет или битый JSON
+  }
 }
 
-/** Уникальные vk_* с недавним heartbeat — «онлайн в игре» */
-export async function getOnlineVkCount(): Promise<number> {
-  const data = await readPresence()
+async function flushToDisk(): Promise<void> {
   const now = Date.now()
+  const obj: Record<string, number> = {}
+  for (const [uid, t] of lastSeen.entries()) {
+    if (now - t > STALE_PURGE_MS) {
+      lastSeen.delete(uid)
+      continue
+    }
+    obj[uid] = t
+  }
+  try {
+    await ensurePresenceDir()
+    const p = getPresencePath()
+    const tmp = `${p}.tmp`
+    await fs.writeFile(tmp, JSON.stringify(obj), "utf8")
+    await fs.rename(tmp, p)
+  } catch {
+    // игнорируем ошибки диска (read-only в serverless и т.д.)
+  }
+}
+
+export function recordPresence(userId: string) {
+  if (!isValidPlayerId(userId)) return
+  lastSeen.set(userId, Date.now())
+  persistChain = persistChain.then(() => flushToDisk())
+}
+
+function countOnlineVk(now: number): number {
   let n = 0
-  for (const [uid, t] of Object.entries(data.lastSeen)) {
-    if (now - t > STALE_PURGE_MS) continue
+  for (const [uid, t] of lastSeen.entries()) {
+    if (now - t > STALE_PURGE_MS) {
+      lastSeen.delete(uid)
+      continue
+    }
     if (now - t <= ONLINE_WINDOW_MS && uid.startsWith("vk_")) n++
   }
   return n
+}
+
+/**
+ * Сколько vk_* с недавним heartbeat.
+ * Сначала подмешиваем данные с диска — нужно при нескольких воркерах / после рестарта.
+ */
+export async function getOnlineVkCount(): Promise<number> {
+  await mergeFromDisk()
+  const now = Date.now()
+  return countOnlineVk(now)
 }

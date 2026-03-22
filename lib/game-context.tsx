@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
 import type { LiveOpsState } from "@/lib/liveops/types"
 import { appPath } from "@/lib/app-path"
+import { sendPresenceHeartbeat } from "@/lib/presence-client"
 import { clampLevelXp, getRankBoostExtra, MATCH_LOSS_XP, MATCH_WIN_XP } from "@/lib/level-system"
 
 export type Move = "rock" | "scissors" | "paper" | "water" | "fire"
@@ -781,14 +782,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!userId.startsWith("vk_")) return
 
     const send = () => {
-      void fetch(appPath("/api/presence/heartbeat"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId }),
-      }).catch(() => {})
+      sendPresenceHeartbeat(userId)
     }
     send()
-    const interval = setInterval(send, 40_000)
+    const interval = setInterval(send, 25_000)
     return () => clearInterval(interval)
   }, [hasLoadedSave, screen, player.id])
 

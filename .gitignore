@@ -2,6 +2,7 @@ node_modules
 .next
 out
 data/referrals.json
+data/presence.json
 .pnpm-store
 .env
 .DS_Store

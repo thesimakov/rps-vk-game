@@ -1,6 +1,7 @@
 "use client"
 
 import { appPath } from "@/lib/app-path"
+import { sendPresenceHeartbeat } from "@/lib/presence-client"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { ArrowLeft, Coins, Flame, Skull, User } from "lucide-react"
@@ -34,6 +35,8 @@ export function BetSelect() {
   const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("live")
   /** Онлайн ВК в игре (heartbeat, см. /api/presence/online-count) */
   const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
+  /** В очереди матчмейкинга (см. /api/match/live-count) */
+  const [vkInMatchmaking, setVkInMatchmaking] = useState<number | null>(null)
   const displayVkOnline =
     vkOnlineInGame === null
       ? null
@@ -50,23 +53,40 @@ export function BetSelect() {
 
   useEffect(() => {
     if (!isBossWeekEvent) return
+    sendPresenceHeartbeat(player.id)
+  }, [isBossWeekEvent, player.id])
+
+  useEffect(() => {
+    if (!isBossWeekEvent) return
     let cancelled = false
     const load = async () => {
       try {
         const base = appPath("/api/presence/online-count")
-        const url = player.id.startsWith("vk_")
+        const presenceUrl = player.id.startsWith("vk_")
           ? `${base}?userId=${encodeURIComponent(player.id)}`
           : base
-        const res = await fetch(url, { cache: "no-store" })
-        const data = (await res.json()) as { ok?: boolean; count?: number }
+        const [presenceRes, queueRes] = await Promise.all([
+          fetch(presenceUrl, { cache: "no-store" }),
+          fetch(appPath("/api/match/live-count"), { cache: "no-store" }),
+        ])
+        const presenceData = (await presenceRes.json()) as { ok?: boolean; count?: number }
+        const queueData = (await queueRes.json()) as { ok?: boolean; count?: number }
         if (cancelled) return
-        if (data.ok && typeof data.count === "number") {
-          setVkOnlineInGame(data.count)
+        if (presenceData.ok && typeof presenceData.count === "number") {
+          setVkOnlineInGame(presenceData.count)
         } else {
           setVkOnlineInGame(null)
         }
+        if (queueData.ok && typeof queueData.count === "number") {
+          setVkInMatchmaking(queueData.count)
+        } else {
+          setVkInMatchmaking(null)
+        }
       } catch {
-        if (!cancelled) setVkOnlineInGame(null)
+        if (!cancelled) {
+          setVkOnlineInGame(null)
+          setVkInMatchmaking(null)
+        }
       }
     }
     void load()
@@ -160,7 +180,10 @@ export function BetSelect() {
                 <span>Живая игра</span>
                 {displayVkOnline !== null && (
                   <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
-                    {displayVkOnline} онлайн в игре
+                    {displayVkOnline} онлайн
+                    {vkInMatchmaking !== null && vkInMatchmaking > 0
+                      ? ` · ${vkInMatchmaking} в поиске`
+                      : ""}
                   </span>
                 )}
               </span>
