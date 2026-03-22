@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { ArrowLeft, Copy, Coins, Users, Link as LinkIcon, RefreshCw, HandCoins } from "lucide-react"
 import { formatAmount } from "@/lib/format-amount"
@@ -69,7 +70,7 @@ export function ReferralScreen() {
     if (!canUse) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/referrals/stats?userId=${encodeURIComponent(userId)}`)
+      const res = await fetch(appPath(`/api/referrals/stats?userId=${encodeURIComponent(userId)}`))
       const json = (await res.json()) as ReferralStatsResponse
       setStats(json)
     } catch {
@@ -102,7 +103,7 @@ export function ReferralScreen() {
     if (!canUse) return
     setClaiming(true)
     try {
-      const res = await fetch("/api/referrals/claim", {
+      const res = await fetch(appPath("/api/referrals/claim"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),

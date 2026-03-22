@@ -1,5 +1,6 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
@@ -41,7 +42,7 @@ function dtoToPlayer(o: QueueOpponentDto): Player {
 
 async function leaveMatchQueue(userId: string) {
   try {
-    await fetch("/api/match/queue", {
+    await fetch(appPath("/api/match/queue"), {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
@@ -116,7 +117,7 @@ export function Matchmaking() {
 
     void (async () => {
       try {
-        const res = await fetch("/api/match/queue", {
+        const res = await fetch(appPath("/api/match/queue"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -144,7 +145,9 @@ export function Matchmaking() {
 
         pollRef.current = setInterval(async () => {
           try {
-            const pollRes = await fetch(`/api/match/poll?userId=${encodeURIComponent(player.id)}`)
+            const pollRes = await fetch(
+              appPath(`/api/match/poll?userId=${encodeURIComponent(player.id)}`),
+            )
             const pollData = (await pollRes.json()) as {
               ok?: boolean
               matched?: boolean

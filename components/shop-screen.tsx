@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, joinVKGroup, VK_VOICE_PACKS } from "@/lib/vk-bridge"
@@ -456,7 +457,7 @@ export function ShopScreen() {
     setPromoStatus("idle")
     setPromoMessage("")
     try {
-      const res = await fetch("/api/promo/redeem", {
+      const res = await fetch(appPath("/api/promo/redeem"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: player.id, code: promoCode }),

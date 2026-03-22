@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import type { StoredPlayer } from "@/lib/player-store"
 import { ShieldAlert, ShieldCheck, RefreshCcw, Search } from "lucide-react"
@@ -17,7 +18,7 @@ const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN
 
 async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T | null> {
   try {
-    const res = await fetch(url, {
+    const res = await fetch(appPath(url), {
       ...options,
       headers: {
         "Content-Type": "application/json",

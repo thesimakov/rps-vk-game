@@ -1,5 +1,6 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { ArrowLeft, Coins, Flame, Skull, User } from "lucide-react"
@@ -46,7 +47,7 @@ export function BetSelect() {
     let cancelled = false
     const load = async () => {
       try {
-        const res = await fetch("/api/presence/online-count", { cache: "no-store" })
+        const res = await fetch(appPath("/api/presence/online-count"), { cache: "no-store" })
         const data = (await res.json()) as { ok?: boolean; count?: number }
         if (cancelled) return
         if (data.ok && typeof data.count === "number") {

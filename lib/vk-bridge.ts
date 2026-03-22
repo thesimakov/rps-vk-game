@@ -1,5 +1,7 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
+
 /**
  * VK Mini Apps Bridge — интеграция с ВКонтакте.
  * В продакшене обязательны: VKWebAppInit, получение app_id/hash с бэкенда для оплаты,
@@ -136,7 +138,7 @@ export async function purchaseVKVoices(amount: number): Promise<boolean> {
     // Фолбэк для web/prod окружений: пробуем pay-to-service с серверной подписью.
     try {
       const userId = typeof window !== "undefined" ? window.localStorage.getItem("rps_vk_user_id") ?? "" : ""
-      const signRes = await fetch("/api/payment/sign", {
+      const signRes = await fetch(appPath("/api/payment/sign"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -217,7 +219,7 @@ export async function requestWithdraw(amount: number): Promise<{ ok: boolean; ba
 
   try {
     const userId = window.localStorage.getItem("rps_vk_user_id") ?? ""
-    const res = await fetch("/api/withdraw", {
+    const res = await fetch(appPath("/api/withdraw"), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ amount, userId }),

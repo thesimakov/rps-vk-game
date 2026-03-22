@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
 import type { LiveOpsState } from "@/lib/liveops/types"
+import { appPath } from "@/lib/app-path"
 import { clampLevelXp, getRankBoostExtra } from "@/lib/level-system"
 
 export type Move = "rock" | "scissors" | "paper" | "water" | "fire"
@@ -422,7 +423,7 @@ const AUTH_RESOLVE_TIMEOUT_MS = 7000
 
 async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | null> {
   try {
-    const res = await fetch(url, {
+    const res = await fetch(appPath(url), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -769,7 +770,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!userId.startsWith("vk_")) return
 
     const send = () => {
-      void fetch("/api/presence/heartbeat", {
+      void fetch(appPath("/api/presence/heartbeat"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId }),
@@ -1129,11 +1130,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     const bonus = 100 + getRankBoostExtra(player.levelXp ?? 0)
     if (player.balance < cost) return false
     trackSpend(cost, "rank-boost")
+    // weekEarnings — то, что показывает «Топ недели» и ячейка «Получено»; раньше копились только ratingPoints
     setPlayer((p) => ({
       ...p,
       balance: p.balance - cost,
       ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonus),
+      weekEarnings: (p.weekEarnings ?? 0) + bonus,
     }))
+    setLeaderboardVersion((v) => v + 1)
     return true
   }, [player.balance, player.levelXp, trackSpend])
 

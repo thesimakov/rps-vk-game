@@ -2,7 +2,7 @@
 
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, Pencil, Check, UserMinus, LogOut, Users } from "lucide-react"
+import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, Pencil, Check, UserMinus, LogOut } from "lucide-react"
 import { useState } from "react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { LiveOpsDashboard } from "@/components/liveops-dashboard"
@@ -14,8 +14,6 @@ const BLOCK_ECONOMY_CLASS =
   `${BLOCK_BASE} border-emerald-300/30 bg-gradient-to-br from-emerald-500/14 via-card/55 to-cyan-500/10`
 const BLOCK_PROFILE_CLASS =
   `${BLOCK_BASE} border-violet-300/30 bg-gradient-to-br from-violet-500/14 via-card/55 to-indigo-500/10`
-const BLOCK_SOCIAL_CLASS =
-  `${BLOCK_BASE} border-blue-300/30 bg-gradient-to-br from-blue-500/14 via-card/55 to-sky-500/10`
 
 export function ProfileScreen() {
   const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, toDisplayAmount, currencyLabel } = useGame()
@@ -337,15 +335,6 @@ export function ProfileScreen() {
           <span>{"Купить VIP \u2014 50 монет/мес"}</span>
         </button>
       )}
-
-      {/* Реферальная программа */}
-      <button
-        onClick={() => setScreen("referral")}
-        className={`${BLOCK_SOCIAL_CLASS} flex items-center justify-center gap-2 text-foreground font-semibold text-base py-4 active:scale-[0.99] mb-4`}
-      >
-        <Users className="h-5 w-5 text-muted-foreground" />
-        <span>Реферальная программа</span>
-      </button>
 
       {/* Выйти — в самом низу */}
       <div className="flex-1 min-h-4" />
