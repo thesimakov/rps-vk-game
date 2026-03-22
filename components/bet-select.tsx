@@ -30,7 +30,9 @@ function getTierBadge(rounds: number) {
 export function BetSelect() {
   const { setScreen, setCurrentBet, setTotalRounds, player, setPlayer, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
   const isBossWeekEvent = weeklyRules?.event.mode === "boss_week"
-  const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("boss")
+  const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("live")
+  /** Онлайн ВК в игре (heartbeat, см. /api/presence/online-count) */
+  const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
 
   useEffect(() => {
     if (!isBossWeekEvent) return
@@ -38,6 +40,31 @@ export function BetSelect() {
       setBossWeekChoice(player.bossWeekMatchChoice)
     }
   }, [isBossWeekEvent, player.bossWeekMatchChoice])
+
+  useEffect(() => {
+    if (!isBossWeekEvent) return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const res = await fetch("/api/presence/online-count", { cache: "no-store" })
+        const data = (await res.json()) as { ok?: boolean; count?: number }
+        if (cancelled) return
+        if (data.ok && typeof data.count === "number") {
+          setVkOnlineInGame(data.count)
+        } else {
+          setVkOnlineInGame(null)
+        }
+      } catch {
+        if (!cancelled) setVkOnlineInGame(null)
+      }
+    }
+    void load()
+    const t = setInterval(load, 12_000)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
+  }, [isBossWeekEvent])
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
@@ -103,7 +130,36 @@ export function BetSelect() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setBossWeekChoice("boss")}
+              onClick={() => {
+                setBossWeekChoice("live")
+                setPlayer((p) => ({
+                  ...p,
+                  bossWeekMatchChoice: "live",
+                  activeWeeklyMode: p.activeWeeklyMode === "boss_week" ? undefined : p.activeWeeklyMode,
+                }))
+              }}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
+                bossWeekChoice === "live"
+                  ? "border-sky-400/60 bg-sky-500/15 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.12)]"
+                  : "border-border/40 bg-card/30 text-muted-foreground hover:border-border/60"
+              }`}
+            >
+              <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+              <span className="flex flex-col items-center gap-0.5 min-w-0">
+                <span>Живая игра</span>
+                {vkOnlineInGame !== null && (
+                  <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
+                    {vkOnlineInGame} онлайн в игре
+                  </span>
+                )}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setBossWeekChoice("boss")
+                setPlayer((p) => ({ ...p, bossWeekMatchChoice: "boss" }))
+              }}
               className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
                 bossWeekChoice === "boss"
                   ? "border-rose-400/50 bg-rose-950/50 text-rose-50 shadow-[0_0_20px_rgba(225,29,72,0.15)]"
@@ -112,18 +168,6 @@ export function BetSelect() {
             >
               <Skull className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
               Босс-неделя
-            </button>
-            <button
-              type="button"
-              onClick={() => setBossWeekChoice("live")}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
-                bossWeekChoice === "live"
-                  ? "border-sky-400/60 bg-sky-500/15 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.12)]"
-                  : "border-border/40 bg-card/30 text-muted-foreground hover:border-border/60"
-              }`}
-            >
-              <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-              Живая игра
             </button>
           </div>
         </div>

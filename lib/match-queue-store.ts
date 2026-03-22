@@ -126,3 +126,17 @@ export function leaveQueue(userId: string) {
   removeUserFromAllQueues(userId)
   pendingForWaiter.delete(userId)
 }
+
+/** Уникальные игроки ВК, сейчас в матчмейкинге: очередь + ожидание poll после пары */
+export function getLiveVkPlayersInMatchmaking(): number {
+  const ids = new Set<string>()
+  for (const arr of buckets.values()) {
+    for (const e of arr) {
+      if (e.userId.startsWith("vk_")) ids.add(e.userId)
+    }
+  }
+  for (const userId of pendingForWaiter.keys()) {
+    if (userId.startsWith("vk_")) ids.add(userId)
+  }
+  return ids.size
+}

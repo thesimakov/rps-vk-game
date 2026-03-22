@@ -748,7 +748,11 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setWeeklyRules(res.rules)
       setPlayer((p) => ({
         ...p,
-        activeWeeklyMode: p.activeWeeklyMode ?? res.rules!.event.mode,
+        // Не подставлять boss_week при выборе «живая игра» (иначе смешивается режим с очередью PvP)
+        activeWeeklyMode:
+          p.bossWeekMatchChoice === "live"
+            ? p.activeWeeklyMode
+            : (p.activeWeeklyMode ?? res.rules!.event.mode),
       }))
     }
     void loadWeeklyRules()
@@ -756,6 +760,25 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       active = false
     }
   }, [setPlayer])
+
+  /** Heartbeat для подсчёта «онлайн в игре» (игроки ВК после входа, любой экран кроме entry) */
+  useEffect(() => {
+    if (!hasLoadedSave) return
+    if (screen === "entry") return
+    const userId = player.id
+    if (!userId.startsWith("vk_")) return
+
+    const send = () => {
+      void fetch("/api/presence/heartbeat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      }).catch(() => {})
+    }
+    send()
+    const interval = setInterval(send, 40_000)
+    return () => clearInterval(interval)
+  }, [hasLoadedSave, screen, player.id])
 
   // Инициализация VK Bridge
   useEffect(() => {

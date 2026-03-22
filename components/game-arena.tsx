@@ -147,8 +147,9 @@ export function GameArena() {
   const activeMode = player.activeWeeklyMode ?? weeklyRules?.event.mode
   const isElementsMode = activeMode === "elements_tournament"
   const isTimeMoneyMode = activeMode === "time_is_money"
+  /** Только при явном выборе боя с боссом; иначе живой/бот без ИИ босса */
   const isBossMode =
-    (activeMode === "boss_week" || opponent?.id === "boss-npc") && player.bossWeekMatchChoice !== "live"
+    (activeMode === "boss_week" || opponent?.id === "boss-npc") && player.bossWeekMatchChoice === "boss"
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
   const allowedMovesByMode: Move[] = isElementsMode
     ? ["fire", "water", "rock"]

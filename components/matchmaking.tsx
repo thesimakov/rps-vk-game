@@ -70,9 +70,10 @@ export function Matchmaking() {
   const [progress, setProgress] = useState(0)
   const useFastSearch = (player.fastMatchBoosts ?? 0) > 0
   const searchMs = useFastSearch ? FAST_SEARCH_MS : NORMAL_SEARCH_MS
+  /** Только явный выбор «Босс»; если undefined — не босс (иначе «живая» ломалась: undefined !== "live" → true) */
   const isBossWeek =
     (player.activeWeeklyMode ?? weeklyRules?.event.mode) === "boss_week" &&
-    player.bossWeekMatchChoice !== "live"
+    player.bossWeekMatchChoice === "boss"
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
