@@ -34,6 +34,12 @@ export function BetSelect() {
   const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("live")
   /** Онлайн ВК в игре (heartbeat, см. /api/presence/online-count) */
   const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
+  const displayVkOnline =
+    vkOnlineInGame === null
+      ? null
+      : player.id.startsWith("vk_")
+        ? Math.max(vkOnlineInGame, 1)
+        : vkOnlineInGame
 
   useEffect(() => {
     if (!isBossWeekEvent) return
@@ -47,7 +53,11 @@ export function BetSelect() {
     let cancelled = false
     const load = async () => {
       try {
-        const res = await fetch(appPath("/api/presence/online-count"), { cache: "no-store" })
+        const base = appPath("/api/presence/online-count")
+        const url = player.id.startsWith("vk_")
+          ? `${base}?userId=${encodeURIComponent(player.id)}`
+          : base
+        const res = await fetch(url, { cache: "no-store" })
         const data = (await res.json()) as { ok?: boolean; count?: number }
         if (cancelled) return
         if (data.ok && typeof data.count === "number") {
@@ -65,7 +75,7 @@ export function BetSelect() {
       cancelled = true
       clearInterval(t)
     }
-  }, [isBossWeekEvent])
+  }, [isBossWeekEvent, player.id])
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
@@ -148,9 +158,9 @@ export function BetSelect() {
               <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
               <span className="flex flex-col items-center gap-0.5 min-w-0">
                 <span>Живая игра</span>
-                {vkOnlineInGame !== null && (
+                {displayVkOnline !== null && (
                   <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
-                    {vkOnlineInGame} онлайн в игре
+                    {displayVkOnline} онлайн в игре
                   </span>
                 )}
               </span>

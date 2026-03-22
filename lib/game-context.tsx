@@ -4,7 +4,7 @@ import React, { createContext, useContext, useState, useCallback, useMemo, useEf
 import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
 import type { LiveOpsState } from "@/lib/liveops/types"
 import { appPath } from "@/lib/app-path"
-import { clampLevelXp, getRankBoostExtra } from "@/lib/level-system"
+import { clampLevelXp, getRankBoostExtra, MATCH_LOSS_XP, MATCH_WIN_XP } from "@/lib/level-system"
 
 export type Move = "rock" | "scissors" | "paper" | "water" | "fire"
 export type WeeklyMode = "elements_tournament" | "time_is_money" | "blind_luck" | "boss_week"
@@ -435,9 +435,20 @@ async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | nu
   }
 }
 
-function deriveInitialLevelXp(player: Pick<Player, "levelXp" | "ratingPoints">): number {
-  if (typeof player.levelXp === "number") return clampLevelXp(player.levelXp)
-  return clampLevelXp(player.ratingPoints ?? 0)
+/** Оценка XP по статистике матчей (совпадает с начислением в useEffect). */
+function xpFromMatchStats(wins: number, losses: number): number {
+  return Math.max(0, wins) * MATCH_WIN_XP + Math.max(0, losses) * MATCH_LOSS_XP
+}
+
+function deriveInitialLevelXp(player: Pick<Player, "levelXp" | "ratingPoints" | "wins" | "losses">): number {
+  const fromMatches = clampLevelXp(xpFromMatchStats(player.wins ?? 0, player.losses ?? 0))
+  if (typeof player.levelXp === "number") {
+    const stored = clampLevelXp(player.levelXp)
+    // Миграция: в БД могло быть 0 до ввода levelXp, при этом wins/losses уже есть.
+    if (stored === 0 && fromMatches > 0) return fromMatches
+    return stored
+  }
+  return clampLevelXp(Math.max(player.ratingPoints ?? 0, fromMatches))
 }
 
 function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
@@ -863,7 +874,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setPlayer((p) => ({
         ...p,
         ...serverPlayer,
-        levelXp: deriveInitialLevelXp({ levelXp: serverPlayer.levelXp, ratingPoints: serverPlayer.ratingPoints }),
+        levelXp: deriveInitialLevelXp({
+          levelXp: serverPlayer.levelXp,
+          ratingPoints: serverPlayer.ratingPoints,
+          wins: serverPlayer.wins,
+          losses: serverPlayer.losses,
+        }),
       }))
       return
     }
@@ -1104,7 +1120,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [playerRank, player.weekEarnings])
 
   // Прогресс уровня отдельно от рейтинга: начисляем XP за матчи.
-  // Победа = +30 XP, поражение = +12 XP.
   const xpProgressRef = useRef<{ id: string; wins: number; losses: number } | null>(null)
   useEffect(() => {
     const snapshot = xpProgressRef.current
@@ -1121,7 +1136,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     xpProgressRef.current = { id: player.id, wins: player.wins, losses: player.losses }
     if (winDelta === 0 && lossDelta === 0) return
 
-    const xpGain = winDelta * 30 + lossDelta * 12
+    const xpGain = winDelta * MATCH_WIN_XP + lossDelta * MATCH_LOSS_XP
     setPlayer((p) => ({ ...p, levelXp: clampLevelXp((p.levelXp ?? deriveInitialLevelXp(p)) + xpGain) }))
   }, [player.id, player.wins, player.losses, player.levelXp, setPlayer])
 
