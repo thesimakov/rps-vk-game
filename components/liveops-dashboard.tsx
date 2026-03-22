@@ -243,7 +243,11 @@ export function LiveOpsDashboard() {
               <button
                 type="button"
                 onClick={() => {
-                  setPlayer((p) => ({ ...p, activeWeeklyMode: "boss_week" }))
+                  setPlayer((p) => ({
+                    ...p,
+                    activeWeeklyMode: "boss_week",
+                    bossWeekMatchChoice: "boss",
+                  }))
                   setScreen("bet-select")
                 }}
                 className="mt-4 px-4 py-2.5 rounded-2xl bg-red-500/20 border border-red-400/50 text-red-200 text-sm font-semibold"

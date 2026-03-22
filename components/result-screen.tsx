@@ -150,7 +150,7 @@ export function ResultScreen() {
   const playerRoundsWon = rounds.filter((r) => r.outcome === "win").length
   const opponentRoundsWon = rounds.filter((r) => r.outcome === "loss").length
   const isFiveRoundMatch = totalRounds === 5 && rounds.length === 5
-  const isBossWin = isWin && (opponentData.id === "boss-npc" || player.activeWeeklyMode === "boss_week")
+  const isBossWin = isWin && opponentData.id === "boss-npc"
   const hasBossChest = !!player.bossChestPending
   const stakeMultiplier = Math.max(1, Math.round(lastResult.bet / Math.max(1, currentBet)))
 

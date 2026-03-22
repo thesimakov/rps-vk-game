@@ -147,7 +147,8 @@ export function GameArena() {
   const activeMode = player.activeWeeklyMode ?? weeklyRules?.event.mode
   const isElementsMode = activeMode === "elements_tournament"
   const isTimeMoneyMode = activeMode === "time_is_money"
-  const isBossMode = activeMode === "boss_week" || opponent?.id === "boss-npc"
+  const isBossMode =
+    (activeMode === "boss_week" || opponent?.id === "boss-npc") && player.bossWeekMatchChoice !== "live"
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
   const allowedMovesByMode: Move[] = isElementsMode
     ? ["fire", "water", "rock"]
@@ -218,11 +219,11 @@ export function GameArena() {
         bankVoices: currentBet * 2,
         mode: player.activeWeeklyMode,
       }).catch(() => {})
-      if (player.activeWeeklyMode) {
-        setPlayer((p) => ({ ...p, activeWeeklyMode: undefined }))
+      if (player.activeWeeklyMode || player.bossWeekMatchChoice) {
+        setPlayer((p) => ({ ...p, activeWeeklyMode: undefined, bossWeekMatchChoice: undefined }))
       }
     },
-    [currentBet, player.activeWeeklyMode, player.cardSkin, player.id, setPlayer]
+    [currentBet, player.activeWeeklyMode, player.bossWeekMatchChoice, player.cardSkin, player.id, setPlayer]
   )
 
   useEffect(() => {

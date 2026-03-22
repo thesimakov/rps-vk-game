@@ -2,7 +2,8 @@
 
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Flame } from "lucide-react"
+import { ArrowLeft, Coins, Flame, Skull, User } from "lucide-react"
+import { useEffect, useState } from "react"
 
 /** Ставка и режим: 5,10 = быстрая игра (1 ход); 25,50 = 3 хода; 100,250 = 5 ходов */
 const BET_OPTIONS: { value: number; rounds: 1 | 3 | 5; modeLabel: string }[] = [
@@ -28,13 +29,32 @@ function getTierBadge(rounds: number) {
 
 export function BetSelect() {
   const { setScreen, setCurrentBet, setTotalRounds, player, setPlayer, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
+  const isBossWeekEvent = weeklyRules?.event.mode === "boss_week"
+  const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("boss")
+
+  useEffect(() => {
+    if (!isBossWeekEvent) return
+    if (player.bossWeekMatchChoice === "live" || player.bossWeekMatchChoice === "boss") {
+      setBossWeekChoice(player.bossWeekMatchChoice)
+    }
+  }, [isBossWeekEvent, player.bossWeekMatchChoice])
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
     setCurrentBet(value)
     setTotalRounds(rounds)
-    if (weeklyRules?.event.mode) {
-      setPlayer((p) => ({ ...p, activeWeeklyMode: weeklyRules.event.mode }))
+    if (weeklyRules?.event.mode === "boss_week") {
+      setPlayer((p) => ({
+        ...p,
+        bossWeekMatchChoice: bossWeekChoice,
+        activeWeeklyMode: bossWeekChoice === "boss" ? "boss_week" : undefined,
+      }))
+    } else if (weeklyRules?.event.mode) {
+      setPlayer((p) => ({
+        ...p,
+        activeWeeklyMode: weeklyRules.event.mode,
+        bossWeekMatchChoice: undefined,
+      }))
     }
     setScreen("matchmaking")
   }
@@ -72,6 +92,40 @@ export function BetSelect() {
         <div className="w-full max-w-lg mb-5 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-3">
           <p className="text-sm font-semibold text-sky-200">{weeklyRules.event.title}</p>
           <p className="text-xs text-white/75 mt-1">{weeklyRules.event.description}</p>
+        </div>
+      )}
+
+      {isBossWeekEvent && (
+        <div className="w-full max-w-lg mb-5">
+          <p className="text-xs text-muted-foreground text-center mb-2 font-medium">
+            С кем играть в эту неделю?
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setBossWeekChoice("boss")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
+                bossWeekChoice === "boss"
+                  ? "border-rose-400/50 bg-rose-950/50 text-rose-50 shadow-[0_0_20px_rgba(225,29,72,0.15)]"
+                  : "border-border/40 bg-card/30 text-muted-foreground hover:border-border/60"
+              }`}
+            >
+              <Skull className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+              Босс-неделя
+            </button>
+            <button
+              type="button"
+              onClick={() => setBossWeekChoice("live")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
+                bossWeekChoice === "live"
+                  ? "border-sky-400/60 bg-sky-500/15 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.12)]"
+                  : "border-border/40 bg-card/30 text-muted-foreground hover:border-border/60"
+              }`}
+            >
+              <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
+              Живая игра
+            </button>
+          </div>
         </div>
       )}
 

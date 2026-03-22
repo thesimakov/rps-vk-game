@@ -102,6 +102,8 @@ export interface Player {
   activeTitleId?: string
   /** Выбранный режим события для следующего матча. */
   activeWeeklyMode?: WeeklyMode
+  /** Только при ивенте «босс-неделя»: бой с NPC-боссом или поиск живого соперника. */
+  bossWeekMatchChoice?: "boss" | "live"
   /** Ожидающая награда за победу над боссом. */
   bossChestPending?: {
     rarity: "rare" | "epic" | "legendary"
