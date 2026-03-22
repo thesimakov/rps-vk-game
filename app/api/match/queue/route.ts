@@ -4,7 +4,8 @@ import { joinQueue, leaveQueue, type QueuePlayerPayload } from "@/lib/match-queu
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
-export const dynamic = "force-dynamic"
+/** С `output: export` допустим только force-static; при реальном SSR см. IS_STATIC_EXPORT в обработчике */
+export const dynamic = "force-static"
 
 function parseBody(body: unknown): QueuePlayerPayload | null {
   if (!body || typeof body !== "object") return null

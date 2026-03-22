@@ -4,7 +4,8 @@ import { pollMatch } from "@/lib/match-queue-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
-export const dynamic = "force-dynamic"
+/** С `output: export` допустим только force-static; при реальном SSR см. IS_STATIC_EXPORT в обработчике */
+export const dynamic = "force-static"
 
 /** Polling: есть ли уже пара для игрока, который ждал первым */
 export async function GET(req: Request) {
