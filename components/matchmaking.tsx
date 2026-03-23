@@ -89,12 +89,12 @@ export function Matchmaking() {
   /** Актуальный профиль для POST очереди без лишних перезапусков эффекта (имя/аватар/VIP не должны вызывать leaveQueue) */
   const playerRef = useRef(player)
   playerRef.current = player
-  /** Режим недели для корзины: обновляем каждый рендер, но не кладём в deps — иначе при hydrate weeklyRules эффект снимал игрока с очереди */
+  /** Режим недели для корзины: обновляем каждый рендер; не в deps эффекта очереди */
   const weeklyModeRef = useRef(weeklyMode)
   weeklyModeRef.current = weeklyMode
-  /** Примитивы для deps: объект weeklyRules с родителя может менять ссылку каждый рендер */
-  const hasWeeklyRules = Boolean(weeklyRules)
-  const weeklyRulesModeKey = weeklyRules?.event.mode ?? ""
+  /** Не в deps — иначе при refetch LiveOps эффект перезапускался бы и снимал с очереди */
+  const weeklyRulesRef = useRef(weeklyRules)
+  weeklyRulesRef.current = weeklyRules
 
   /** vk в той же корзине (ставка/раунды/режим) */
   const [bucketLive, setBucketLive] = useState<number | null>(null)
@@ -136,8 +136,6 @@ export function Matchmaking() {
   useEffect(() => {
     if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
-    /** Пока weeklyRules не загружены, weeklyMode может быть неверным — не встаём в очередь (иначе разные корзины у двух игроков) */
-    if (!hasWeeklyRules) return
 
     let cancelled = false
 
@@ -149,6 +147,14 @@ export function Matchmaking() {
     }
 
     void (async () => {
+      /** Ждём правила здесь, а не в deps — иначе при догрузке/обновлении weeklyRules эффект перезапускался → leaveQueue → нет пары */
+      for (let i = 0; i < 300; i++) {
+        if (cancelled) return
+        if (weeklyRulesRef.current) break
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      if (cancelled || !weeklyRulesRef.current) return
+
       try {
         const p = playerRef.current
         const res = await fetch(appPath("/api/match/queue"), {
@@ -206,11 +212,8 @@ export function Matchmaking() {
       clearPoll()
       void leaveMatchQueue(player.id)
     }
-    /**
-     * Не включаем weeklyMode в deps: при подгрузке weeklyRules он меняется → cleanup → leaveQueue → первый игрок без пары, второй один в корзине.
-     * hasWeeklyRules + weeklyRulesModeKey — без ссылки на объект weeklyRules.
-     */
-  }, [isBossWeek, player.id, currentBet, totalRounds, hasWeeklyRules, weeklyRulesModeKey, setOpponent])
+    /** Только корзина (ставка/раунды) и vk id. Не weeklyMode / weeklyRules / setOpponent — любое обновление снимало бы игрока с очереди. */
+  }, [isBossWeek, player.id, currentBet, totalRounds])
 
   /** Статистика очереди: своя корзина + глобально */
   useEffect(() => {
