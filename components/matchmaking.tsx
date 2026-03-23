@@ -86,6 +86,9 @@ export function Matchmaking() {
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const botTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Актуальный профиль для POST очереди без лишних перезапусков эффекта (имя/аватар/VIP не должны вызывать leaveQueue) */
+  const playerRef = useRef(player)
+  playerRef.current = player
 
   /** vk в той же корзине (ставка/раунды/режим) */
   const [bucketLive, setBucketLive] = useState<number | null>(null)
@@ -139,15 +142,16 @@ export function Matchmaking() {
 
     void (async () => {
       try {
+        const p = playerRef.current
         const res = await fetch(appPath("/api/match/queue"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: player.id,
-            name: player.name,
-            avatar: player.avatar,
-            avatarUrl: player.avatarUrl,
-            vip: player.vip,
+            userId: p.id,
+            name: p.name,
+            avatar: p.avatar,
+            avatarUrl: p.avatarUrl,
+            vip: p.vip,
             bet: currentBet,
             rounds: totalRounds,
             weeklyMode,
@@ -168,7 +172,7 @@ export function Matchmaking() {
         pollRef.current = setInterval(async () => {
           try {
             const pollRes = await fetch(
-              appPath(`/api/match/poll?userId=${encodeURIComponent(player.id)}`),
+              appPath(`/api/match/poll?userId=${encodeURIComponent(playerRef.current.id)}`),
             )
             const pollData = (await pollRes.json()) as {
               ok?: boolean
@@ -194,20 +198,8 @@ export function Matchmaking() {
       clearPoll()
       void leaveMatchQueue(player.id)
     }
-  }, [
-    isBossWeek,
-    player.id,
-    player.name,
-    player.avatar,
-    player.avatarUrl,
-    player.vip,
-    player.activeWeeklyMode,
-    currentBet,
-    totalRounds,
-    weeklyMode,
-    weeklyRules?.event.mode,
-    setOpponent,
-  ])
+    /** Только id корзины (ставка/раунды/режим) и vk id — иначе любое обновление профиля (имя, аватар, VIP, weekly hydrate) снимало игрока с очереди и ломало пару. */
+  }, [isBossWeek, player.id, currentBet, totalRounds, weeklyMode, setOpponent])
 
   /** Статистика очереди: своя корзина + глобально */
   useEffect(() => {
