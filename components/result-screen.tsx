@@ -93,7 +93,7 @@ function getLoseFxPosition(i: number) {
 }
 
 export function ResultScreen() {
-  const { lastResult, setScreen, opponent, player, totalRounds, currentBet, toDisplayAmount, currencyLabel } = useGame()
+  const { lastResult, setScreen, setOpponent, opponent, player, totalRounds, currentBet, toDisplayAmount, currencyLabel } = useGame()
   const isWin = lastResult?.outcome === "win"
   const isDraw = lastResult?.outcome === "draw"
   /** Поражение из-за таймаута (кто-то не выбрал карту) — показываем «Кто-то уснул» вместо черепа и карт */
@@ -646,7 +646,10 @@ export function ResultScreen() {
           </button>
         )}
         <button
-          onClick={() => setScreen("matchmaking")}
+          onClick={() => {
+            setOpponent(null)
+            setScreen("matchmaking")
+          }}
           className="result-btn-in w-full flex items-center justify-center gap-2 bg-sky-500 hover:bg-sky-600 text-white font-bold text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"
           style={{ animationDelay: "0.8s" }}
         >

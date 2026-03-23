@@ -83,6 +83,8 @@ export function joinQueue(payload: QueuePlayerPayload):
   let waiting = buckets.get(key) ?? []
   const now = Date.now()
   waiting = waiting.filter((e) => now - e.enqueuedAt < QUEUE_TTL_MS)
+  /** Старшие в очереди первыми — при 5+ живых в сети важнее FIFO-порядок */
+  waiting.sort((a, b) => a.enqueuedAt - b.enqueuedAt)
 
   const partner = waiting.find((e) => e.userId !== payload.userId)
   if (partner) {
@@ -125,6 +127,19 @@ export function leaveQueue(userId: string) {
   if (!isValidPlayerId(userId)) return
   removeUserFromAllQueues(userId)
   pendingForWaiter.delete(userId)
+}
+
+/** Уникальные vk_* в конкретной корзине (ставка / раунды / режим недели) */
+export function getLiveVkPlayersInBucket(bet: number, rounds: number, weeklyMode: string): number {
+  const key = bucketKey(bet, rounds, weeklyMode)
+  const waiting = buckets.get(key) ?? []
+  const now = Date.now()
+  const ids = new Set<string>()
+  for (const e of waiting) {
+    if (now - e.enqueuedAt >= QUEUE_TTL_MS) continue
+    if (e.userId.startsWith("vk_")) ids.add(e.userId)
+  }
+  return ids.size
 }
 
 /** Уникальные игроки ВК, сейчас в матчмейкинге: очередь + ожидание poll после пары */

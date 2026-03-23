@@ -1,18 +1,39 @@
 import { NextResponse } from "next/server"
-import { getLiveVkPlayersInMatchmaking } from "@/lib/match-queue-store"
+import { getLiveVkPlayersInBucket, getLiveVkPlayersInMatchmaking } from "@/lib/match-queue-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 export const dynamic = "force-static"
 
-/** Сколько уникальных vk_* сейчас в матчмейкинге (очередь + ожидание пары по poll) */
-export async function GET() {
+/**
+ * Сколько vk_* в матчмейкинге.
+ * Без query — глобально по всем корзинам.
+ * С `bet`, `rounds`, `weeklyMode` — только эта корзина (для таймера «бот через 2 мин»).
+ */
+export async function GET(req: Request) {
   if (IS_STATIC_EXPORT) {
     return NextResponse.json({ ok: false, error: "no_server", count: 0 }, { status: 501 })
   }
   try {
-    const count = getLiveVkPlayersInMatchmaking()
-    return NextResponse.json({ ok: true, count }, { headers: { "Cache-Control": "no-store" } })
+    const url = new URL(req.url)
+    const betRaw = url.searchParams.get("bet")
+    const roundsRaw = url.searchParams.get("rounds")
+    const weeklyMode = url.searchParams.get("weeklyMode") ?? ""
+    const bet = betRaw != null ? Number(betRaw) : NaN
+    const rounds = roundsRaw != null ? Number(roundsRaw) : NaN
+    const globalLive = getLiveVkPlayersInMatchmaking()
+    if (
+      Number.isFinite(bet) &&
+      (rounds === 1 || rounds === 3 || rounds === 5) &&
+      weeklyMode.length > 0
+    ) {
+      const bucketLive = getLiveVkPlayersInBucket(bet, rounds, weeklyMode)
+      return NextResponse.json(
+        { ok: true, count: bucketLive, globalLive },
+        { headers: { "Cache-Control": "no-store" } },
+      )
+    }
+    return NextResponse.json({ ok: true, count: globalLive, globalLive }, { headers: { "Cache-Control": "no-store" } })
   } catch {
     return NextResponse.json({ ok: false, error: "server", count: 0 }, { status: 500 })
   }

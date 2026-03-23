@@ -30,19 +30,13 @@ function getTierBadge(rounds: number) {
 }
 
 export function BetSelect() {
-  const { setScreen, setCurrentBet, setTotalRounds, player, setPlayer, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
+  const { setScreen, setCurrentBet, setTotalRounds, player, setPlayer, setOpponent, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
   const isBossWeekEvent = weeklyRules?.event.mode === "boss_week"
   const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("live")
   /** Онлайн ВК в игре (heartbeat, см. /api/presence/online-count) */
   const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
   /** В очереди матчмейкинга (см. /api/match/live-count) */
   const [vkInMatchmaking, setVkInMatchmaking] = useState<number | null>(null)
-  const displayVkOnline =
-    vkOnlineInGame === null
-      ? null
-      : player.id.startsWith("vk_")
-        ? Math.max(vkOnlineInGame, 1)
-        : vkOnlineInGame
 
   useEffect(() => {
     if (!isBossWeekEvent) return
@@ -114,6 +108,7 @@ export function BetSelect() {
         bossWeekMatchChoice: undefined,
       }))
     }
+    setOpponent(null)
     setScreen("matchmaking")
   }
 
@@ -178,9 +173,9 @@ export function BetSelect() {
               <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
               <span className="flex flex-col items-center gap-0.5 min-w-0">
                 <span>Живая игра</span>
-                {displayVkOnline !== null && (
+                {vkOnlineInGame !== null && (
                   <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
-                    {displayVkOnline} онлайн
+                    {vkOnlineInGame} онлайн в игре
                     {vkInMatchmaking !== null && vkInMatchmaking > 0
                       ? ` · ${vkInMatchmaking} в поиске`
                       : ""}
