@@ -37,8 +37,6 @@ export function BetSelect() {
   const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
   /** В очереди матчмейкинга (см. /api/match/live-count) */
   const [vkInMatchmaking, setVkInMatchmaking] = useState<number | null>(null)
-  /** true: статический хост без API или 501 — счётчик недоступен (не путать с «0 игроков») */
-  const [presenceApiUnavailable, setPresenceApiUnavailable] = useState(false)
 
   useEffect(() => {
     if (!isBossWeekEvent) return
@@ -84,15 +82,12 @@ export function BetSelect() {
           presenceData?.ok === false ||
           presenceData?.error === "no_server"
         if (presenceBad || presenceData == null) {
-          setPresenceApiUnavailable(true)
           setVkOnlineInGame(null)
         } else if (typeof presenceData.count === "number") {
-          setPresenceApiUnavailable(false)
           const raw = presenceData.count
           /** Минимум 1 для vk: вы в игре; сервер после фикса тоже учитывает ?userId */
           setVkOnlineInGame(player.id.startsWith("vk_") ? Math.max(raw, 1) : raw)
         } else {
-          setPresenceApiUnavailable(true)
           setVkOnlineInGame(null)
         }
 
@@ -107,7 +102,6 @@ export function BetSelect() {
         }
       } catch {
         if (!cancelled) {
-          setPresenceApiUnavailable(true)
           setVkOnlineInGame(null)
           setVkInMatchmaking(null)
         }
@@ -203,12 +197,7 @@ export function BetSelect() {
               <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
               <span className="flex flex-col items-center gap-0.5 min-w-0">
                 <span>Живая игра</span>
-                {presenceApiUnavailable && (
-                  <span className="text-[10px] font-medium text-amber-200/90 leading-tight text-center px-1">
-                    Онлайн недоступен: статика без API. Укажите NEXT_PUBLIC_API_BASE_URL на бэкенд или откройте игру с VPS.
-                  </span>
-                )}
-                {!presenceApiUnavailable && vkOnlineInGame !== null && (
+                {vkOnlineInGame !== null && (
                   <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
                     {vkOnlineInGame} онлайн в игре
                     {vkInMatchmaking !== null && vkInMatchmaking > 0
