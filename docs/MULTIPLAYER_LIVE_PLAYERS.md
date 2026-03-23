@@ -105,7 +105,7 @@
 ## 7. Этапы внедрения
 
 1. **Очередь + пара по HTTP** (polling): без WS, только «найти пару», затем оба заходят в матч по `matchId` (хуже по UX, проще отладка).  
-   **Реализация в коде:** `lib/match-queue-store.ts` (in-memory), `app/api/match/queue/route.ts` (POST/DELETE), `app/api/match/poll/route.ts` (GET), клиент — `components/matchmaking.tsx`. Корзина: `bet` + `totalRounds` + `weeklyMode`.
+   **Реализация в коде:** `lib/match-queue-store.ts` (состояние очереди в SQLite `game-state.sqlite` через `lib/server-game-db.ts`, чтобы PM2 cluster / несколько воркеров видели одну очередь), `app/api/match/queue/route.ts` (POST/DELETE), `app/api/match/poll/route.ts` (GET), клиент — `components/matchmaking.tsx`. Корзина: `bet` + `totalRounds` + `weeklyMode`. Heartbeat «онлайн» — таблица `presence` в том же SQLite (`lib/presence-store.ts`).
 2. **WebSocket**: push «соперник найден», «соперник сходил», «раунд завершён».
 3. Подкрутить **формулу ботов** в UI под §2.
 4. Анти-чит: только сервер считает исход; клиент только отображает.

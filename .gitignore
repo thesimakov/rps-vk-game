@@ -3,6 +3,7 @@ node_modules
 out
 data/referrals.json
 data/presence.json
+data/game-state.sqlite
 .pnpm-store
 .env
 .DS_Store

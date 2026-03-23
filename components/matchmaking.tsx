@@ -436,9 +436,6 @@ export function Matchmaking() {
                 В поиске {globalLive}+ игроков — приоритет соединения живых пар (FIFO)
               </p>
             )}
-            <p className="text-[10px] leading-snug opacity-90">
-              Ожидание в комнате: до конца события недели, пока не найдётся соперник или вы не отмените поиск.
-            </p>
           </div>
         </div>
       )}

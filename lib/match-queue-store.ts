@@ -1,11 +1,11 @@
 /**
- * In-memory очередь матчмейкинга (MVP).
- * Подходит для одного инстанса Node (dev / один сервер).
- * На serverless без общего стора — пары между разными воркерами не гарантируются; для продакшена — Redis и т.п.
+ * Очередь матчмейкинга: состояние в SQLite (WAL), чтобы PM2 cluster / несколько воркеров
+ * видели одну очередь. Раньше было только in-memory — пары и счётчики ломались между процессами.
  */
 
 import { randomUUID } from "crypto"
 import { isValidPlayerId } from "@/lib/player-store"
+import { getGameStateDb } from "@/lib/server-game-db"
 
 export interface QueuePlayerPayload {
   userId: string
@@ -35,23 +35,49 @@ interface QueuedEntry extends QueuePlayerPayload {
   enqueuedAt: number
 }
 
-const QUEUE_TTL_MS = 120_000
+interface StoredState {
+  buckets: Record<string, QueuedEntry[]>
+  pending: Record<string, { matchId: string; opponent: QueueOpponent }>
+}
 
-const buckets = new Map<string, QueuedEntry[]>()
-/** Игрок, который ждал в очереди первым — получает соперника через poll */
-const pendingForWaiter = new Map<string, { matchId: string; opponent: QueueOpponent }>()
+const QUEUE_TTL_MS = 120_000
 
 function bucketKey(bet: number, rounds: number, weeklyMode: string) {
   return `${bet}_${rounds}_${weeklyMode}`
 }
 
-function removeUserFromAllQueues(userId: string) {
-  for (const [key, arr] of buckets.entries()) {
+function loadState(): StoredState {
+  const row = getGameStateDb()
+    .prepare("SELECT data FROM match_queue_state WHERE id = 1")
+    .get() as { data: string }
+  const parsed = JSON.parse(row.data) as StoredState
+  if (!parsed.buckets || typeof parsed.buckets !== "object") parsed.buckets = {}
+  if (!parsed.pending || typeof parsed.pending !== "object") parsed.pending = {}
+  pruneStale(parsed)
+  return parsed
+}
+
+function saveState(state: StoredState) {
+  pruneStale(state)
+  getGameStateDb()
+    .prepare("UPDATE match_queue_state SET data = ? WHERE id = 1")
+    .run(JSON.stringify(state))
+}
+
+function pruneStale(state: StoredState) {
+  const now = Date.now()
+  for (const [key, arr] of Object.entries(state.buckets)) {
+    const next = arr.filter((e) => now - e.enqueuedAt < QUEUE_TTL_MS)
+    if (next.length === 0) delete state.buckets[key]
+    else state.buckets[key] = next
+  }
+}
+
+function removeUserFromAllQueues(state: StoredState, userId: string) {
+  for (const [key, arr] of Object.entries(state.buckets)) {
     const next = arr.filter((e) => e.userId !== userId)
-    if (next.length !== arr.length) {
-      if (next.length === 0) buckets.delete(key)
-      else buckets.set(key, next)
-    }
+    if (next.length === 0) delete state.buckets[key]
+    else state.buckets[key] = next
   }
 }
 
@@ -77,81 +103,104 @@ function payloadToOpponent(p: QueuePlayerPayload): QueueOpponent {
 export function joinQueue(payload: QueuePlayerPayload):
   | { ok: true; matched: false }
   | { ok: true; matched: true; matchId: string; opponent: QueueOpponent } {
-  const key = bucketKey(payload.bet, payload.rounds, payload.weeklyMode)
-  removeUserFromAllQueues(payload.userId)
+  const db = getGameStateDb()
+  return db.transaction(() => {
+    const state = loadState()
+    const key = bucketKey(payload.bet, payload.rounds, payload.weeklyMode)
+    removeUserFromAllQueues(state, payload.userId)
 
-  let waiting = buckets.get(key) ?? []
-  const now = Date.now()
-  waiting = waiting.filter((e) => now - e.enqueuedAt < QUEUE_TTL_MS)
-  /** Старшие в очереди первыми — при 5+ живых в сети важнее FIFO-порядок */
-  waiting.sort((a, b) => a.enqueuedAt - b.enqueuedAt)
+    let waiting = state.buckets[key] ?? []
+    const now = Date.now()
+    waiting = waiting.filter((e) => now - e.enqueuedAt < QUEUE_TTL_MS)
+    waiting.sort((a, b) => a.enqueuedAt - b.enqueuedAt)
 
-  const partner = waiting.find((e) => e.userId !== payload.userId)
-  if (partner) {
-    const remaining = waiting.filter((e) => e.userId !== partner.userId)
-    if (remaining.length === 0) buckets.delete(key)
-    else buckets.set(key, remaining)
-    const matchId = randomUUID()
-    const joinerAsOpponent = payloadToOpponent(payload)
-    const partnerAsOpponent = payloadToOpponent(partner)
-    pendingForWaiter.set(partner.userId, { matchId, opponent: joinerAsOpponent })
-    return { ok: true, matched: true, matchId, opponent: partnerAsOpponent }
-  }
+    const partner = waiting.find((e) => e.userId !== payload.userId)
+    if (partner) {
+      const remaining = waiting.filter((e) => e.userId !== partner.userId)
+      if (remaining.length === 0) delete state.buckets[key]
+      else state.buckets[key] = remaining
+      const matchId = randomUUID()
+      const joinerAsOpponent = payloadToOpponent(payload)
+      const partnerAsOpponent = payloadToOpponent(partner)
+      state.pending[partner.userId] = { matchId, opponent: joinerAsOpponent }
+      saveState(state)
+      return { ok: true as const, matched: true as const, matchId, opponent: partnerAsOpponent }
+    }
 
-  const entry: QueuedEntry = { ...payload, enqueuedAt: now }
-  waiting.push(entry)
-  buckets.set(key, waiting)
-  return { ok: true, matched: false }
+    const entry: QueuedEntry = { ...payload, enqueuedAt: now }
+    waiting.push(entry)
+    state.buckets[key] = waiting
+    saveState(state)
+    return { ok: true as const, matched: false as const }
+  })()
 }
 
 export function pollMatch(userId: string):
   | { ok: true; matched: false }
   | { ok: true; matched: true; matchId: string; opponent: QueueOpponent } {
   if (!isValidPlayerId(userId)) {
-    return { ok: true, matched: false }
+    return { ok: true as const, matched: false as const }
   }
-  const pending = pendingForWaiter.get(userId)
-  if (!pending) {
-    return { ok: true, matched: false }
-  }
-  pendingForWaiter.delete(userId)
-  return {
-    ok: true,
-    matched: true,
-    matchId: pending.matchId,
-    opponent: pending.opponent,
-  }
+  const db = getGameStateDb()
+  return db.transaction(() => {
+    const state = loadState()
+    const pending = state.pending[userId]
+    if (!pending) {
+      return { ok: true as const, matched: false as const }
+    }
+    delete state.pending[userId]
+    saveState(state)
+    return {
+      ok: true as const,
+      matched: true as const,
+      matchId: pending.matchId,
+      opponent: pending.opponent,
+    }
+  })()
 }
 
 export function leaveQueue(userId: string) {
   if (!isValidPlayerId(userId)) return
-  removeUserFromAllQueues(userId)
-  pendingForWaiter.delete(userId)
+  const db = getGameStateDb()
+  db.transaction(() => {
+    const state = loadState()
+    removeUserFromAllQueues(state, userId)
+    delete state.pending[userId]
+    saveState(state)
+  })()
 }
 
 /** Уникальные vk_* в конкретной корзине (ставка / раунды / режим недели) */
 export function getLiveVkPlayersInBucket(bet: number, rounds: number, weeklyMode: string): number {
-  const key = bucketKey(bet, rounds, weeklyMode)
-  const waiting = buckets.get(key) ?? []
-  const now = Date.now()
-  const ids = new Set<string>()
-  for (const e of waiting) {
-    if (now - e.enqueuedAt >= QUEUE_TTL_MS) continue
-    if (e.userId.startsWith("vk_")) ids.add(e.userId)
-  }
-  return ids.size
+  const db = getGameStateDb()
+  return db.transaction(() => {
+    const state = loadState()
+    const key = bucketKey(bet, rounds, weeklyMode)
+    const waiting = state.buckets[key] ?? []
+    const now = Date.now()
+    const ids = new Set<string>()
+    for (const e of waiting) {
+      if (now - e.enqueuedAt >= QUEUE_TTL_MS) continue
+      if (e.userId.startsWith("vk_")) ids.add(e.userId)
+    }
+    return ids.size
+  })()
 }
 
 /** Уникальные игроки ВК, сейчас в матчмейкинге: очередь + ожидание poll после пары */
 export function getLiveVkPlayersInMatchmaking(): number {
-  const ids = new Set<string>()
-  for (const arr of buckets.values()) {
-    for (const e of arr) {
-      if (e.userId.startsWith("vk_")) ids.add(e.userId)
+  const db = getGameStateDb()
+  return db.transaction(() => {
+    const state = loadState()
+    const ids = new Set<string>()
+    for (const arr of Object.values(state.buckets)) {
+      for (const e of arr) {
+        if (e.userId.startsWith("vk_")) ids.add(e.userId)
+      }
     }
-  }
-  for (const userId of pendingForWaiter.keys()) {
-    if (userId.startsWith("vk_")) ids.add(userId)
-  }
-  return ids.size
+    for (const userId of Object.keys(state.pending)) {
+      if (userId.startsWith("vk_")) ids.add(userId)
+    }
+    return ids.size
+  })()
 }

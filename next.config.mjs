@@ -19,6 +19,7 @@ const isExport =
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  serverExternalPackages: ["better-sqlite3"],
   basePath: basePathEnv || undefined,
   assetPrefix: basePathEnv || undefined,
   output: isExport ? "export" : undefined,
