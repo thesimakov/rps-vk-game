@@ -35,9 +35,16 @@ interface QueuedEntry extends QueuePlayerPayload {
   enqueuedAt: number
 }
 
+interface PendingMatch {
+  matchId: string
+  opponent: QueueOpponent
+  /** Корзина матча (ставка_раунды_режим) — для подсчёта live-count, пока ждущий ещё не сделал poll */
+  bucketKey: string
+}
+
 interface StoredState {
   buckets: Record<string, QueuedEntry[]>
-  pending: Record<string, { matchId: string; opponent: QueueOpponent }>
+  pending: Record<string, PendingMatch | { matchId: string; opponent: QueueOpponent }>
 }
 
 const QUEUE_TTL_MS = 120_000
@@ -122,7 +129,7 @@ export function joinQueue(payload: QueuePlayerPayload):
       const matchId = randomUUID()
       const joinerAsOpponent = payloadToOpponent(payload)
       const partnerAsOpponent = payloadToOpponent(partner)
-      state.pending[partner.userId] = { matchId, opponent: joinerAsOpponent }
+      state.pending[partner.userId] = { matchId, opponent: joinerAsOpponent, bucketKey: key }
       saveState(state)
       return { ok: true as const, matched: true as const, matchId, opponent: partnerAsOpponent }
     }
@@ -182,6 +189,12 @@ export function getLiveVkPlayersInBucket(bet: number, rounds: number, weeklyMode
     for (const e of waiting) {
       if (now - e.enqueuedAt >= QUEUE_TTL_MS) continue
       if (e.userId.startsWith("vk_")) ids.add(e.userId)
+    }
+    /** Ждущий poll после пары не в buckets — без этого count=0 и клиент думает «один», включает бота */
+    for (const [userId, p] of Object.entries(state.pending)) {
+      if (!userId.startsWith("vk_")) continue
+      const bk = "bucketKey" in p && typeof p.bucketKey === "string" ? p.bucketKey : ""
+      if (bk === key) ids.add(userId)
     }
     return ids.size
   })()

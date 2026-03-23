@@ -100,6 +100,10 @@ export function Matchmaking() {
   const [bucketLive, setBucketLive] = useState<number | null>(null)
   /** vk во всех корзинах */
   const [globalLive, setGlobalLive] = useState<number | null>(null)
+  /** POST /api/match/queue завершён — до этого не включаем таймер бота */
+  const [queuePostDone, setQueuePostDone] = useState(false)
+  /** Идёт poll пары — соперник уже может быть на сервере в pending; бота не подбираем */
+  const [pollingForMatch, setPollingForMatch] = useState(false)
 
   useEffect(() => {
     if (!isBossWeek) return
@@ -146,6 +150,9 @@ export function Matchmaking() {
       }
     }
 
+    setQueuePostDone(false)
+    setPollingForMatch(false)
+
     void (async () => {
       /** Ждём правила здесь, а не в deps — иначе при догрузке/обновлении weeklyRules эффект перезапускался → leaveQueue → нет пары */
       for (let i = 0; i < 300; i++) {
@@ -160,6 +167,7 @@ export function Matchmaking() {
         const res = await fetch(appPath("/api/match/queue"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          cache: "no-store",
           body: JSON.stringify({
             userId: p.id,
             name: p.name,
@@ -177,16 +185,19 @@ export function Matchmaking() {
           opponent?: QueueOpponentDto
         }
         if (cancelled) return
+        setQueuePostDone(true)
         if (data.ok && data.matched && data.opponent) {
           setOpponent(dtoToPlayer(data.opponent))
           return
         }
         if (!data.ok) return
 
+        setPollingForMatch(true)
         pollRef.current = setInterval(async () => {
           try {
             const pollRes = await fetch(
               appPath(`/api/match/poll?userId=${encodeURIComponent(playerRef.current.id)}`),
+              { cache: "no-store" },
             )
             const pollData = (await pollRes.json()) as {
               ok?: boolean
@@ -195,6 +206,7 @@ export function Matchmaking() {
             }
             if (cancelled) return
             if (pollData.ok && pollData.matched && pollData.opponent) {
+              setPollingForMatch(false)
               setOpponent(dtoToPlayer(pollData.opponent))
               clearPoll()
             }
@@ -204,12 +216,14 @@ export function Matchmaking() {
         }, POLL_MS)
       } catch {
         /* сеть / static export — остаёмся без PvP */
+        if (!cancelled) setQueuePostDone(true)
       }
     })()
 
     return () => {
       cancelled = true
       clearPoll()
+      setPollingForMatch(false)
       void leaveMatchQueue(player.id)
     }
     /** Только корзина (ставка/раунды) и vk id. Не weeklyMode / weeklyRules / setOpponent — любое обновление снимало бы игрока с очереди. */
@@ -261,6 +275,10 @@ export function Matchmaking() {
     if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
     if (opponent?.id?.startsWith("vk_")) return
+    /** Пока не встали в очередь на сервере — ждём POST; иначе ложный «один» и ранний бот */
+    if (!queuePostDone) return
+    /** Ждём poll — пара уже может быть создана (второй игрок уже в арене) */
+    if (pollingForMatch) return
 
     if (botTimeoutRef.current) {
       clearTimeout(botTimeoutRef.current)
@@ -268,7 +286,7 @@ export function Matchmaking() {
     }
     setProgress(0)
 
-    /** Пока корзина неизвестна — считаем «мало игроков»; после ответа API уточняется */
+    /** Пока корзина неизвестна — считаем «мало игроков»; после ответа API уточняется (включая pending на сервере) */
     const alone = bucketLive === null || bucketLive < 2
     if (!alone) {
       return
@@ -305,6 +323,8 @@ export function Matchmaking() {
     bucketLive,
     useFastSearch,
     opponent?.id,
+    queuePostDone,
+    pollingForMatch,
     setPlayer,
     ensureRandomBotOpponent,
     setScreen,
