@@ -130,17 +130,27 @@ async function writeDb(db: PlayerDb) {
   await fs.rename(tmp, getDbPath())
 }
 
-/** Проверка id для API: допускаем vk_/VK_, обрезаем пробелы (прокси/клиенты). */
+function normalizeIdForValidation(id: string): string {
+  const trimmed = id.trim().replace(/^\uFEFF/, "")
+  try {
+    return trimmed.normalize("NFKC")
+  } catch {
+    /** Битая UTF-16 — normalize может кинуть; для vk id достаточно trim. */
+    return trimmed
+  }
+}
+
+/** Проверка id для API: vk_/VK_, NFKC (полноширинные символы), BOM, пробелы. */
 export function isValidPlayerId(id: string) {
   if (typeof id !== "string") return false
-  const s = id.trim()
+  const s = normalizeIdForValidation(id)
   if (s.length <= 3) return false
   return /^vk_/i.test(s)
 }
 
 /** Единый вид `vk_*` для ключей очереди/SQLite (poll и join должны совпадать). */
 export function normalizeVkPlayerId(id: string): string {
-  const t = typeof id === "string" ? id.trim() : ""
+  const t = typeof id === "string" ? normalizeIdForValidation(id) : ""
   return t.replace(/^vk_/i, "vk_")
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
 import { listIncomingInvites } from "@/lib/play-invite-store"
+import { getUserIdFromGetRequest } from "@/lib/query-user-id"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 export const dynamic = "force-static"
@@ -11,9 +12,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
   }
   try {
-    const raw = req.nextUrl.searchParams.get("userId") ?? ""
+    const raw = getUserIdFromGetRequest(req)
     if (!isValidPlayerId(raw)) {
-      return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
+      return NextResponse.json({ ok: true, invites: [] }, { headers: { "Cache-Control": "no-store" } })
     }
     const invites = listIncomingInvites(normalizeVkPlayerId(raw))
     return NextResponse.json({ ok: true, invites }, { headers: { "Cache-Control": "no-store" } })

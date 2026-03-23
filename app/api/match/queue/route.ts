@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
 import { joinQueue, leaveQueue, type QueuePlayerPayload } from "@/lib/match-queue-store"
+import { getUserIdFromGetRequest } from "@/lib/query-user-id"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
@@ -66,7 +67,7 @@ export async function DELETE(req: NextRequest) {
       userId = ""
     }
     if (!userId) {
-      userId = req.nextUrl.searchParams.get("userId") ?? ""
+      userId = getUserIdFromGetRequest(req)
     }
     if (!isValidPlayerId(userId)) {
       return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
