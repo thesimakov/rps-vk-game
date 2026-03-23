@@ -4,6 +4,7 @@
 import { getGameStateDb } from "@/lib/server-game-db"
 import { getRoundOutcome } from "@/lib/match-outcome"
 import type { RpsMove } from "@/lib/match-outcome"
+import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
 
 const MODE_MOVES: Record<string, RpsMove[]> = {
   elements_tournament: ["fire", "water", "rock"],
@@ -79,7 +80,8 @@ export function submitPvpMove(
   userId: string,
   move: string,
 ): { ok: true; draw?: boolean } | { ok: false; error: string } {
-  if (!isValidUser(userId)) return { ok: false, error: "invalid_user" }
+  if (!isValidPlayerId(userId)) return { ok: false, error: "invalid_user" }
+  const uid = normalizeVkPlayerId(userId)
   const m = move as RpsMove
   const db = getGameStateDb()
   return db.transaction((): { ok: true; draw?: boolean } | { ok: false; error: string } => {
@@ -89,8 +91,8 @@ export function submitPvpMove(
     if (row.pending_result) return { ok: false as const, error: "ack_pending" }
     if (!isAllowed(m, row.weekly_mode)) return { ok: false as const, error: "bad_move" }
 
-    const isP1 = userId === row.p1_id
-    const isP2 = userId === row.p2_id
+    const isP1 = uid === normalizeVkPlayerId(row.p1_id)
+    const isP2 = uid === normalizeVkPlayerId(row.p2_id)
     if (!isP1 && !isP2) return { ok: false as const, error: "not_in_match" }
 
     if (isP1 && row.p1_move) return { ok: false as const, error: "already_moved" }
@@ -142,20 +144,17 @@ export function submitPvpMove(
   })()
 }
 
-function isValidUser(id: string) {
-  return typeof id === "string" && id.startsWith("vk_") && id.length > 3
-}
-
 export function ackPvpRound(matchId: string, userId: string): { ok: true } | { ok: false; error: string } {
-  if (!isValidUser(userId)) return { ok: false, error: "invalid_user" }
+  if (!isValidPlayerId(userId)) return { ok: false, error: "invalid_user" }
+  const uid = normalizeVkPlayerId(userId)
   const db = getGameStateDb()
   return db.transaction((): { ok: true } | { ok: false; error: string } => {
     const row = getRow(matchId)
     if (!row) return { ok: false as const, error: "no_session" }
     if (!row.pending_result) return { ok: false as const, error: "no_pending" }
 
-    const isP1 = userId === row.p1_id
-    const isP2 = userId === row.p2_id
+    const isP1 = uid === normalizeVkPlayerId(row.p1_id)
+    const isP2 = uid === normalizeVkPlayerId(row.p2_id)
     if (!isP1 && !isP2) return { ok: false as const, error: "not_in_match" }
 
     const p1Ack = isP1 ? 1 : row.p1_ack
@@ -184,7 +183,8 @@ export function ackPvpRound(matchId: string, userId: string): { ok: true } | { o
 }
 
 export function getPvpState(matchId: string, userId: string) {
-  if (!isValidUser(userId)) return { ok: false as const, error: "invalid_user" as const }
+  if (!isValidPlayerId(userId)) return { ok: false as const, error: "invalid_user" as const }
+  const uid = normalizeVkPlayerId(userId)
   const row = getRow(matchId)
   if (!row) return { ok: false as const, error: "no_session" as const }
   if (row.finished) {
@@ -205,7 +205,7 @@ export function getPvpState(matchId: string, userId: string) {
       p2_score: number
       match_over: boolean
     }
-    const isP1 = userId === row.p1_id
+    const isP1 = uid === normalizeVkPlayerId(row.p1_id)
     const myMove = isP1 ? pr.p1_move : pr.p2_move
     const opponentMove = isP1 ? pr.p2_move : pr.p1_move
     const base = getRoundOutcome(pr.p1_move, pr.p2_move)
@@ -227,7 +227,7 @@ export function getPvpState(matchId: string, userId: string) {
     }
   }
 
-  const isP1 = userId === row.p1_id
+  const isP1 = uid === normalizeVkPlayerId(row.p1_id)
   const myMove = isP1 ? row.p1_move : row.p2_move
   const oppMove = isP1 ? row.p2_move : row.p1_move
 
