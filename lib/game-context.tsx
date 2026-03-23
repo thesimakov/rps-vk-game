@@ -422,17 +422,24 @@ const SAVE_VERSION = 2
 const BRIDGE_INIT_TIMEOUT_MS = 6000
 const AUTH_RESOLVE_TIMEOUT_MS = 7000
 
+const POST_JSON_TIMEOUT_MS = 18_000
+
 async function postJSON<T = unknown>(url: string, body: unknown): Promise<T | null> {
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), POST_JSON_TIMEOUT_MS)
   try {
     const res = await fetch(appPath(url), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
+      signal: ctrl.signal,
     })
     if (!res.ok) return null
     return (await res.json()) as T
   } catch {
     return null
+  } finally {
+    clearTimeout(timer)
   }
 }
 
