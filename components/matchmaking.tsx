@@ -310,6 +310,7 @@ export function Matchmaking() {
         setPlayer((p) => ({ ...p, fastMatchBoosts: Math.max(0, (p.fastMatchBoosts ?? 0) - 1) }))
       }
       void leaveMatchQueue(player.id)
+      setPvpMatchId(null)
       ensureRandomBotOpponent()
       setScreen("arena")
     }, ms)
@@ -332,6 +333,7 @@ export function Matchmaking() {
     pollingForMatch,
     setPlayer,
     ensureRandomBotOpponent,
+    setPvpMatchId,
     setScreen,
   ])
 
