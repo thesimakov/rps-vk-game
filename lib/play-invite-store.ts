@@ -51,10 +51,12 @@ export function isMatchBusyScreen(screen: string | null | undefined): boolean {
   return screen === "arena" || screen === "matchmaking" || screen === "result"
 }
 
-/** Только referred → его referrer */
-export async function createPlayInvite(fromUserId: string, toUserId: string):
+export type CreatePlayInviteResult =
   | { ok: true; inviteId: string; waiterLabel: "waiting_tournament" | "waiting_response" }
-  | { ok: false; error: string } {
+  | { ok: false; error: string }
+
+/** Только referred → его referrer */
+export async function createPlayInvite(fromUserId: string, toUserId: string): Promise<CreatePlayInviteResult> {
   if (!isValidPlayerId(fromUserId) || !isValidPlayerId(toUserId)) {
     return { ok: false, error: "invalid_user" }
   }
