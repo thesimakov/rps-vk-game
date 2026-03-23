@@ -24,6 +24,8 @@ let bridgeReady = false
 let launchParamsLoaded = false
 let startParams = new URLSearchParams()
 
+const VK_GET_USER_TIMEOUT_MS = 10_000
+
 function ensureStartParams() {
   if (typeof window === "undefined" || launchParamsLoaded) return
   launchParamsLoaded = true
@@ -67,7 +69,12 @@ export async function getVKUser(): Promise<VKUser | null> {
   }
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
-    const data = await vkBridge.default.send("VKWebAppGetUserInfo")
+    const data = await Promise.race([
+      vkBridge.default.send("VKWebAppGetUserInfo"),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("VKWebAppGetUserInfo timeout")), VK_GET_USER_TIMEOUT_MS)
+      }),
+    ])
     return data as VKUser
   } catch {
     return null
