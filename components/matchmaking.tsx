@@ -367,7 +367,7 @@ export function Matchmaking() {
       <h2 className="text-base font-bold text-foreground mb-2">
         {isBossWeek ? `Ищем Босса${dots}` : `Ищем соперника${dots}`}
       </h2>
-      {opponent && !opponent.id.startsWith("vk_") && (
+      {opponent && (
         <div className="flex items-center gap-3 mb-6 px-4 py-2 rounded-2xl bg-card/40 border border-border/30">
           {opponent.vip ? (
             <div className="relative inline-flex flex-shrink-0">
