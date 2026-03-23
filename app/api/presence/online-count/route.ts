@@ -5,6 +5,8 @@ const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 /** С `output: export` нельзя force-dynamic; runtime-guard ниже оставляет поведение API прежним. */
 export const dynamic = "force-static"
+/** SQLite / better-sqlite3 только в Node, не в Edge */
+export const runtime = "nodejs"
 
 /**
  * Сколько игроков ВК считаются онлайн (недавний heartbeat).
@@ -22,7 +24,8 @@ export async function GET(req: Request) {
     }
     const count = await getOnlineVkCount()
     return NextResponse.json({ ok: true, count }, { headers: { "Cache-Control": "no-store" } })
-  } catch {
+  } catch (err) {
+    console.error("[api/presence/online-count]", err)
     return NextResponse.json({ ok: false, error: "server", count: 0 }, { status: 500 })
   }
 }

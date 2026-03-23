@@ -4,6 +4,7 @@ import { getLiveVkPlayersInBucket, getLiveVkPlayersInMatchmaking } from "@/lib/m
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 export const dynamic = "force-static"
+export const runtime = "nodejs"
 
 /**
  * Сколько vk_* в матчмейкинге.

@@ -5,6 +5,7 @@ const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 /** С `output: export` нельзя force-dynamic; runtime-guard ниже оставляет поведение API прежним. */
 export const dynamic = "force-static"
+export const runtime = "nodejs"
 
 /** Клиент шлёт раз в ~40 с, пока игрок ВК в приложении (не экран входа) */
 export async function POST(req: Request) {
@@ -20,7 +21,8 @@ export async function POST(req: Request) {
     }
     await recordPresence(userId)
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
-  } catch {
+  } catch (err) {
+    console.error("[api/presence/heartbeat]", err)
     return NextResponse.json({ ok: false, error: "server" }, { status: 500 })
   }
 }

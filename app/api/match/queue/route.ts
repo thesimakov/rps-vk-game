@@ -6,6 +6,7 @@ const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 /** С `output: export` допустим только force-static; при реальном SSR см. IS_STATIC_EXPORT в обработчике */
 export const dynamic = "force-static"
+export const runtime = "nodejs"
 
 function parseBody(body: unknown): QueuePlayerPayload | null {
   if (!body || typeof body !== "object") return null
