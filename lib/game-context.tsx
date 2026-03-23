@@ -277,6 +277,9 @@ interface GameState {
   pickRandomOpponent: () => void
   /** Если соперника ещё нет — подобрать бота (для таймаута очереди PvP) */
   ensureRandomBotOpponent: () => void
+  /** Id серверной сессии vk vs vk (ходы через /api/match/pvp-*) */
+  pvpMatchId: string | null
+  setPvpMatchId: (id: string | null) => void
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -450,13 +453,15 @@ function xpFromMatchStats(wins: number, losses: number): number {
 
 function deriveInitialLevelXp(player: Pick<Player, "levelXp" | "ratingPoints" | "wins" | "losses">): number {
   const fromMatches = clampLevelXp(xpFromMatchStats(player.wins ?? 0, player.losses ?? 0))
-  if (typeof player.levelXp === "number") {
-    const stored = clampLevelXp(player.levelXp)
+  const raw = player.levelXp
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    const stored = clampLevelXp(raw)
     // Миграция: в БД могло быть 0 до ввода levelXp, при этом wins/losses уже есть.
     if (stored === 0 && fromMatches > 0) return fromMatches
     return stored
   }
-  return clampLevelXp(Math.max(player.ratingPoints ?? 0, fromMatches))
+  /** Не подставлять ratingPoints — это рейтинг недели, не XP; иначе новый игрок мог получать «Миф» с первого входа */
+  return clampLevelXp(fromMatches)
 }
 
 function toStoredPlayer(player: Player): import("./player-store").StoredPlayer {
@@ -667,6 +672,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [totalRounds, setTotalRounds] = useState<1 | 3 | 5>(1)
   const [lavaCardStock, setLavaCardStock] = useState(3)
   const [weeklyRules, setWeeklyRules] = useState<WeeklyRules | null>(null)
+  const [pvpMatchId, setPvpMatchId] = useState<string | null>(null)
   const [hasLoadedSave, setHasLoadedSave] = useState(false)
   const leaderboardDataRef = useRef(
     STATIC_LEADERBOARD.map((e) => ({ ...e }))
@@ -723,6 +729,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     screenRef.current = screen
+  }, [screen])
+
+  useEffect(() => {
+    if (screen === "menu" || screen === "entry") {
+      setPvpMatchId(null)
+    }
   }, [screen])
 
   // Загрузка сохранённых данных (совместимость с будущими версиями: новые поля берутся из дефолтов)
@@ -789,7 +801,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     if (!userId.startsWith("vk_")) return
 
     const send = () => {
-      sendPresenceHeartbeat(userId)
+      sendPresenceHeartbeat(userId, screen)
     }
     send()
     const interval = setInterval(send, 25_000)
@@ -1422,6 +1434,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         weeklyRules,
         pickRandomOpponent,
         ensureRandomBotOpponent,
+        pvpMatchId,
+        setPvpMatchId,
       }}
     >
       {children}

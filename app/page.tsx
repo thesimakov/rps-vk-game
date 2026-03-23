@@ -24,6 +24,7 @@ import { ParticlesBg } from "@/components/particles-bg"
 import { EntryScreen } from "@/components/entry-screen"
 import { GameLoader } from "@/components/game-loader"
 import { AdminScreen } from "@/components/admin-screen"
+import { PlayInviteIncoming } from "@/components/play-invite-incoming"
 
 function GameScreen() {
   const { screen, vkUser } = useGame()
@@ -156,6 +157,7 @@ function GameLayout() {
 
         {showBottomNav && <BottomNav />}
       </div>
+      {vkUser != null && player.id.startsWith("vk_") && <PlayInviteIncoming />}
     </div>
   )
 }

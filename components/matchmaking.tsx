@@ -71,6 +71,7 @@ export function Matchmaking() {
     totalRounds,
     pickRandomOpponent,
     ensureRandomBotOpponent,
+    setPvpMatchId,
   } = useGame()
   const [dots, setDots] = useState("")
   const [progress, setProgress] = useState(0)
@@ -182,11 +183,13 @@ export function Matchmaking() {
         const data = (await res.json()) as {
           ok?: boolean
           matched?: boolean
+          matchId?: string
           opponent?: QueueOpponentDto
         }
         if (cancelled) return
         setQueuePostDone(true)
         if (data.ok && data.matched && data.opponent) {
+          if (typeof data.matchId === "string") setPvpMatchId(data.matchId)
           setOpponent(dtoToPlayer(data.opponent))
           return
         }
@@ -202,10 +205,12 @@ export function Matchmaking() {
             const pollData = (await pollRes.json()) as {
               ok?: boolean
               matched?: boolean
+              matchId?: string
               opponent?: QueueOpponentDto
             }
             if (cancelled) return
             if (pollData.ok && pollData.matched && pollData.opponent) {
+              if (typeof pollData.matchId === "string") setPvpMatchId(pollData.matchId)
               setPollingForMatch(false)
               setOpponent(dtoToPlayer(pollData.opponent))
               clearPoll()

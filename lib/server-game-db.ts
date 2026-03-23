@@ -37,6 +37,24 @@ export function getGameStateDb(): GameStateDb {
       last_seen INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_presence_last_seen ON presence(last_seen);
+    CREATE TABLE IF NOT EXISTS pvp_match_sessions (
+      match_id TEXT PRIMARY KEY NOT NULL,
+      p1_id TEXT NOT NULL,
+      p2_id TEXT NOT NULL,
+      total_rounds INTEGER NOT NULL,
+      bet INTEGER NOT NULL,
+      weekly_mode TEXT NOT NULL,
+      current_round INTEGER NOT NULL DEFAULT 1,
+      p1_score INTEGER NOT NULL DEFAULT 0,
+      p2_score INTEGER NOT NULL DEFAULT 0,
+      p1_move TEXT,
+      p2_move TEXT,
+      pending_result TEXT,
+      p1_ack INTEGER NOT NULL DEFAULT 0,
+      p2_ack INTEGER NOT NULL DEFAULT 0,
+      finished INTEGER NOT NULL DEFAULT 0,
+      updated_at INTEGER NOT NULL
+    );
   `)
   const row = instance.prepare("SELECT data FROM match_queue_state WHERE id = 1").get() as { data: string } | undefined
   if (!row) {

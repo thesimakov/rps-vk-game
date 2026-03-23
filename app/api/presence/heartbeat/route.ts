@@ -14,12 +14,13 @@ export async function POST(req: Request) {
   }
   try {
     const { recordPresence } = await import("@/lib/presence-store")
-    const body = (await req.json()) as { userId?: string }
+    const body = (await req.json()) as { userId?: string; screen?: string }
     const userId = typeof body.userId === "string" ? body.userId : ""
+    const screen = typeof body.screen === "string" ? body.screen.slice(0, 32) : undefined
     if (!isValidPlayerId(userId)) {
       return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
     }
-    await recordPresence(userId)
+    await recordPresence(userId, screen)
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
   } catch (err) {
     console.error("[api/presence/heartbeat]", err)

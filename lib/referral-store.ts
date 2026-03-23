@@ -121,6 +121,12 @@ export async function recordSpend(userId: ReferralUserId, amount: number, reason
   return { commission }
 }
 
+export async function getReferrerForUser(userId: ReferralUserId): Promise<ReferralUserId | null> {
+  const db = await readDb()
+  const r = db.users[userId]?.referrerId
+  return r ?? null
+}
+
 export async function getStats(referrerId: ReferralUserId) {
   const db = await readDb()
   const referredCount = Object.values(db.users).filter((u) => u.referrerId === referrerId).length

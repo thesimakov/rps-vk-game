@@ -6,6 +6,7 @@
 import { randomUUID } from "crypto"
 import { isValidPlayerId } from "@/lib/player-store"
 import { getGameStateDb } from "@/lib/server-game-db"
+import { createPvpSession } from "@/lib/pvp-session-store"
 
 export interface QueuePlayerPayload {
   userId: string
@@ -111,7 +112,16 @@ export function joinQueue(payload: QueuePlayerPayload):
   | { ok: true; matched: false }
   | { ok: true; matched: true; matchId: string; opponent: QueueOpponent } {
   const db = getGameStateDb()
-  return db.transaction(() => {
+  let pvpMeta: {
+    matchId: string
+    p1Id: string
+    p2Id: string
+    totalRounds: number
+    bet: number
+    weeklyMode: string
+  } | null = null
+
+  const result = db.transaction(() => {
     const state = loadState()
     const key = bucketKey(payload.bet, payload.rounds, payload.weeklyMode)
     removeUserFromAllQueues(state, payload.userId)
@@ -131,6 +141,14 @@ export function joinQueue(payload: QueuePlayerPayload):
       const partnerAsOpponent = payloadToOpponent(partner)
       state.pending[partner.userId] = { matchId, opponent: joinerAsOpponent, bucketKey: key }
       saveState(state)
+      pvpMeta = {
+        matchId,
+        p1Id: partner.userId,
+        p2Id: payload.userId,
+        totalRounds: payload.rounds,
+        bet: payload.bet,
+        weeklyMode: payload.weeklyMode,
+      }
       return { ok: true as const, matched: true as const, matchId, opponent: partnerAsOpponent }
     }
 
@@ -140,6 +158,16 @@ export function joinQueue(payload: QueuePlayerPayload):
     saveState(state)
     return { ok: true as const, matched: false as const }
   })()
+
+  if (pvpMeta) {
+    try {
+      createPvpSession(pvpMeta)
+    } catch {
+      /* не блокируем матч — клиент всё равно увидит соперника; PvP-сессия поднимется при следующем деплое/миграции */
+    }
+  }
+
+  return result
 }
 
 export function pollMatch(userId: string):

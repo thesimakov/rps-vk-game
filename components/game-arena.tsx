@@ -7,6 +7,8 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown, ShieldAlert } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { sendMatchResult } from "@/lib/liveops/client"
+import { appPath } from "@/lib/app-path"
+import { getRoundOutcome as getOutcome } from "@/lib/match-outcome"
 
 const BASE_MOVES: { key: Move; label: string; icon: string; color: string }[] = [
   { key: "rock", label: "Камень", icon: "\uD83E\uDEA8", color: "border-secondary/50 shadow-secondary/10" },
@@ -26,35 +28,6 @@ const WATER_MOVE: { key: Move; label: string; icon: string; color: string } = {
   label: "Вода",
   icon: "\uD83C\uDF0A",
   color: "border-sky-500/50 shadow-sky-500/10",
-}
-
-function getOutcome(p: Move, o: Move): "win" | "loss" | "draw" {
-  if (p === o) return "draw"
-  const isElementalP = p === "fire" || p === "water" || p === "rock"
-  const isElementalO = o === "fire" || o === "water" || o === "rock"
-  if (isElementalP && isElementalO) {
-    if ((p === "fire" && o === "rock") || (p === "rock" && o === "water") || (p === "water" && o === "fire")) {
-      return "win"
-    }
-    return "loss"
-  }
-  // Вода: побеждает камень, проигрывает бумаге, ничья с ножницами
-  if (p === "water") {
-    if (o === "rock") return "win"
-    if (o === "paper") return "loss"
-    return "draw" // water vs scissors
-  }
-  if (o === "water") {
-    if (p === "rock") return "loss"
-    if (p === "paper") return "win"
-    return "draw" // scissors vs water
-  }
-  if (
-    (p === "rock" && o === "scissors") ||
-    (p === "scissors" && o === "paper") ||
-    (p === "paper" && o === "rock")
-  ) return "win"
-  return "loss"
 }
 
 function getRandomMove(): Move {
@@ -143,7 +116,8 @@ function getOutcomePhrase(playerMove: Move, opponentMove: Move, outcome: "win" |
 type Phase = "choosing" | "locked" | "revealing" | "resolved"
 
 export function GameArena() {
-  const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds, weeklyRules } = useGame()
+  const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds, weeklyRules, pvpMatchId } =
+    useGame()
   const activeMode = player.activeWeeklyMode ?? weeklyRules?.event.mode
   const isElementsMode = activeMode === "elements_tournament"
   const isTimeMoneyMode = activeMode === "time_is_money"
@@ -254,7 +228,7 @@ export function GameArena() {
   }
 
   const resolveRound = useCallback(
-    (playerMove: Move) => {
+    (playerMove: Move, forcedOpponentMove?: Move) => {
       // Prevent double fire
       if (resolvedRef.current) return
       resolvedRef.current = true
@@ -263,11 +237,14 @@ export function GameArena() {
       const isBot = opponent?.id?.startsWith("bot-") ?? false
       const history = roundsHistoryRef.current.map((r) => r.playerMove)
       const eventRandom = getRandomMoveFrom(allowedMovesByMode)
-      const oppMove = isBossMode
-        ? getBossMove(history, allowedMovesByMode)
-        : isBot && !activeMode && currentBet > 100
-          ? getMoveThatBeats(playerMove)
-          : eventRandom
+      const oppMove =
+        forcedOpponentMove !== undefined
+          ? forcedOpponentMove
+          : isBossMode
+            ? getBossMove(history, allowedMovesByMode)
+            : isBot && !activeMode && currentBet > 100
+              ? getMoveThatBeats(playerMove)
+              : eventRandom
 
       setPhase("locked")
       setOpponentMove(oppMove)
@@ -389,6 +366,14 @@ export function GameArena() {
 
         const doneTimer = setTimeout(() => {
           setRoundHintMessage(null)
+          if (pvpMatchId && player.id) {
+            void fetch(appPath("/api/match/pvp-ack"), {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              cache: "no-store",
+              body: JSON.stringify({ matchId: pvpMatchId, userId: player.id }),
+            })
+          }
           const nextRound = roundCount + 1
           if (nextRound > totalRounds) {
             // Матч завершён.
@@ -480,6 +465,8 @@ export function GameArena() {
       playerScore,
       opponentScore,
       trackLiveOpsMatch,
+      pvpMatchId,
+      player.id,
     ]
   )
 
@@ -517,6 +504,55 @@ export function GameArena() {
   const handleSelectMove = (move: Move) => {
     if (phase !== "choosing") return
     setSelectedMove(move)
+    if (pvpMatchId && opponent?.id?.startsWith("vk_")) {
+      resolvedRef.current = true
+      void (async () => {
+        try {
+          const res = await fetch(appPath("/api/match/pvp-move"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({ matchId: pvpMatchId, userId: player.id, move }),
+          })
+          const data = (await res.json()) as { ok?: boolean; draw?: boolean }
+          if (!data.ok) {
+            resolvedRef.current = false
+            return
+          }
+          if (data.draw) {
+            resolvedRef.current = false
+            return
+          }
+          for (let i = 0; i < 200; i++) {
+            await new Promise((r) => setTimeout(r, 350))
+            const stRes = await fetch(
+              appPath(
+                `/api/match/pvp-state?matchId=${encodeURIComponent(pvpMatchId)}&userId=${encodeURIComponent(player.id)}`,
+              ),
+              { cache: "no-store" },
+            )
+            const st = (await stRes.json()) as {
+              ok?: boolean
+              phase?: string
+              opponentMove?: Move
+              finished?: boolean
+            }
+            if (st.finished) {
+              resolvedRef.current = false
+              return
+            }
+            if (st.ok && st.phase === "round_result" && st.opponentMove) {
+              resolveRound(move, st.opponentMove)
+              return
+            }
+          }
+          resolvedRef.current = false
+        } catch {
+          resolvedRef.current = false
+        }
+      })()
+      return
+    }
     resolveRound(move)
   }
 

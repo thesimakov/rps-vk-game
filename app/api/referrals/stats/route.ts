@@ -16,10 +16,10 @@ export async function GET(req: Request) {
       return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
     }
 
-    const { upsertUser, getStats } = await import("@/lib/referral-store")
+    const { upsertUser, getStats, getReferrerForUser } = await import("@/lib/referral-store")
     await upsertUser(userId)
-    const stats = await getStats(userId)
-    return NextResponse.json({ ok: true, ...stats })
+    const [stats, myReferrerId] = await Promise.all([getStats(userId), getReferrerForUser(userId)])
+    return NextResponse.json({ ok: true, ...stats, myReferrerId })
   } catch {
     return NextResponse.json({ ok: false, error: "server_error" }, { status: 500 })
   }

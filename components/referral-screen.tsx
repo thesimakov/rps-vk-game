@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
-import { ArrowLeft, Copy, Coins, Users, Link as LinkIcon, RefreshCw, HandCoins } from "lucide-react"
+import { ArrowLeft, Copy, Coins, Users, Link as LinkIcon, RefreshCw, HandCoins, Handshake } from "lucide-react"
 import { formatAmount } from "@/lib/format-amount"
+import { openBetSelectWithSharedPreset, normalizeSharedPreset } from "@/lib/play-invite-client"
 
 type ReferralStatItem = {
   id: string
@@ -25,6 +26,8 @@ type ReferralStatsResponse =
       totalEarned: number
       availableToClaim: number
       last: ReferralStatItem[]
+      /** Реферер, если вы зашли по чужой ссылке */
+      myReferrerId?: string | null
     }
 
 async function safeCopy(text: string) {
@@ -50,11 +53,14 @@ async function safeCopy(text: string) {
 }
 
 export function ReferralScreen() {
-  const { setScreen, player, vkUser, setPlayer } = useGame()
+  const { setScreen, player, vkUser, setPlayer, setCurrentBet, setTotalRounds } = useGame()
   const [stats, setStats] = useState<ReferralStatsResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [claiming, setClaiming] = useState(false)
   const [copied, setCopied] = useState<"link" | "code" | null>(null)
+  const [playInviteId, setPlayInviteId] = useState<string | null>(null)
+  const [playInviteHint, setPlayInviteHint] = useState<string | null>(null)
+  const [playInviteSending, setPlayInviteSending] = useState(false)
 
   const userId = player.id
   const canUse = vkUser != null && userId.startsWith("vk_")
@@ -84,6 +90,104 @@ export function ReferralScreen() {
     void load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canUse, userId])
+
+  const myReferrerId =
+    stats && stats.ok && typeof stats.myReferrerId === "string" && stats.myReferrerId.length > 0
+      ? stats.myReferrerId
+      : null
+
+  useEffect(() => {
+    if (!playInviteId || !canUse) return
+    let cancelled = false
+    const poll = async () => {
+      try {
+        const res = await fetch(
+          appPath(
+            `/api/play-invite/waiter?inviteId=${encodeURIComponent(playInviteId)}&userId=${encodeURIComponent(userId)}`,
+          ),
+          { cache: "no-store" },
+        )
+        const data = (await res.json()) as {
+          ok?: boolean
+          ui?: string
+          preset?: unknown
+        }
+        if (cancelled) return
+        if (!data.ok) {
+          setPlayInviteId(null)
+          setPlayInviteHint("Запрос недоступен или истёк.")
+          return
+        }
+        if (data.ui === "declined") {
+          setPlayInviteHint("Игрок отклонил — ищем дальше: можно зайти в быстрый матч или отправить запрос позже.")
+          setPlayInviteId(null)
+          return
+        }
+        if (data.ui === "accepted") {
+          openBetSelectWithSharedPreset(normalizeSharedPreset(data.preset), {
+            setCurrentBet,
+            setTotalRounds,
+            setPlayer,
+            setScreen,
+          })
+          setPlayInviteHint("Реферер принял — общий режим ставки.")
+          setPlayInviteId(null)
+          return
+        }
+        if (data.ui === "waiting_tournament") {
+          setPlayInviteHint("Ожидаем окончание турнира у реферера…")
+        } else if (data.ui === "waiting_response") {
+          setPlayInviteHint("Ждём ответа реферера…")
+        } else if (data.ui === "expired") {
+          setPlayInviteHint(null)
+          setPlayInviteId(null)
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    void poll()
+    const t = setInterval(poll, 4000)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
+  }, [playInviteId, canUse, userId])
+
+  const handleProposeGameToReferrer = async () => {
+    if (!myReferrerId || playInviteSending) return
+    setPlayInviteSending(true)
+    try {
+      const res = await fetch(appPath("/api/play-invite/create"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ fromUserId: userId, toUserId: myReferrerId }),
+      })
+      const data = (await res.json()) as {
+        ok?: boolean
+        inviteId?: string
+        waiterLabel?: string
+        error?: string
+      }
+      if (data.ok && data.inviteId) {
+        setPlayInviteId(data.inviteId)
+        setPlayInviteHint(
+          data.waiterLabel === "waiting_tournament"
+            ? "Ожидаем окончание турнира у реферера…"
+            : "Ждём ответа реферера…",
+        )
+      } else if (data.error === "already_pending") {
+        setPlayInviteHint("Запрос уже отправлен — дождитесь ответа.")
+      } else {
+        setPlayInviteHint("Не удалось отправить запрос. Попробуйте позже.")
+      }
+    } catch {
+      setPlayInviteHint("Ошибка сети.")
+    } finally {
+      setPlayInviteSending(false)
+    }
+  }
 
   const handleCopyLink = async () => {
     if (!referralLink) return
@@ -193,6 +297,30 @@ export function ReferralScreen() {
               Приглашайте друзей по ссылке/коду — вы получаете <span className="font-bold">10%</span> от их трат в игре.
             </p>
           </div>
+
+          {myReferrerId && (
+            <div className="w-full max-w-lg bg-card/40 backdrop-blur-sm border border-cyan-400/35 rounded-2xl p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Handshake className="h-4 w-4 text-cyan-300" />
+                <span className="font-bold text-foreground">Игра с реферером</span>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">
+                Вы зашли по приглашению. Можно отправить рефереру запрос сыграть вместе: пока он в матче, статус —
+                «ожидаем окончание турнира»; ему придёт уведомление с кнопками «Принять» и «Отклонить».
+              </p>
+              <button
+                type="button"
+                onClick={() => void handleProposeGameToReferrer()}
+                disabled={playInviteSending || !!playInviteId}
+                className="w-full py-2.5 rounded-xl bg-cyan-600/90 text-white text-sm font-bold disabled:opacity-50"
+              >
+                {playInviteSending ? "Отправка…" : playInviteId ? "Запрос активен" : "Предложить игру рефереру"}
+              </button>
+              {playInviteHint && (
+                <p className="mt-2 text-xs text-cyan-200/90 font-medium leading-relaxed">{playInviteHint}</p>
+              )}
+            </div>
+          )}
 
           <div className="w-full max-w-lg grid grid-cols-3 gap-3 mb-4">
             <div className="bg-card/50 border border-border/30 rounded-2xl px-3 py-3 flex flex-col items-center">

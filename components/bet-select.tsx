@@ -30,7 +30,18 @@ function getTierBadge(rounds: number) {
 }
 
 export function BetSelect() {
-  const { setScreen, setCurrentBet, setTotalRounds, player, setPlayer, setOpponent, toDisplayAmount, currencyLabel, weeklyRules } = useGame()
+  const {
+    setScreen,
+    setCurrentBet,
+    setTotalRounds,
+    player,
+    setPlayer,
+    setOpponent,
+    setPvpMatchId,
+    toDisplayAmount,
+    currencyLabel,
+    weeklyRules,
+  } = useGame()
   const isBossWeekEvent = weeklyRules?.event.mode === "boss_week"
   const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("live")
   /** Онлайн ВК в игре (heartbeat, см. /api/presence/online-count) */
@@ -47,7 +58,7 @@ export function BetSelect() {
 
   useEffect(() => {
     if (!isBossWeekEvent) return
-    sendPresenceHeartbeat(player.id)
+    sendPresenceHeartbeat(player.id, "bet-select")
   }, [isBossWeekEvent, player.id])
 
   useEffect(() => {
@@ -133,6 +144,7 @@ export function BetSelect() {
       }))
     }
     setOpponent(null)
+    setPvpMatchId(null)
     setScreen("matchmaking")
   }
 
