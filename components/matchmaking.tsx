@@ -291,11 +291,10 @@ export function Matchmaking() {
     }
     setProgress(0)
 
-    /** Пока корзина неизвестна — считаем «мало игроков»; после ответа API уточняется (включая pending на сервере) */
-    const alone = bucketLive === null || bucketLive < 2
-    if (!alone) {
-      return
-    }
+    /** В корзине мало людей; глобально ≥2 — кто-то ищет в другой ставке/раундах/режиме — не подменяем ботом */
+    const aloneInBucket = bucketLive === null || bucketLive < 2
+    if (!aloneInBucket) return
+    if (globalLive !== null && globalLive >= 2) return
 
     const ms = useFastSearch ? ALONE_BOT_MS_FAST : ALONE_BOT_MS_NORMAL
     const deadline = Date.now() + ms
@@ -326,6 +325,7 @@ export function Matchmaking() {
     isBossWeek,
     player.id,
     bucketLive,
+    globalLive,
     useFastSearch,
     opponent?.id,
     queuePostDone,
@@ -372,6 +372,9 @@ export function Matchmaking() {
     player.id.startsWith("vk_") &&
     (bucketLive === null || bucketLive < 2) &&
     !opponent?.id?.startsWith("vk_")
+
+  const othersInDifferentBucket =
+    globalLive !== null && globalLive >= 2 && (bucketLive === null || bucketLive < 2)
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-4 pb-36 pt-8">
@@ -465,6 +468,11 @@ export function Matchmaking() {
             {globalLive !== null && globalLive >= PRIORITY_LIVE_MATCHMAKING && (
               <p className="text-amber-200/95 font-medium">
                 В поиске {globalLive}+ игроков — приоритет соединения живых пар (FIFO)
+              </p>
+            )}
+            {othersInDifferentBucket && (
+              <p className="text-amber-100/90 font-medium leading-snug">
+                Другие игроки в поиске, но в другой корзине (ставка, раунды и режим недели должны совпадать). Бот не подставляем — измените настройки или договоритесь с другом.
               </p>
             )}
           </div>

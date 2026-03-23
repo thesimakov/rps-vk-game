@@ -163,6 +163,9 @@ export function GameArena() {
   const [stickers, setStickers] = useState<{ id: number; emoji: string; dx: number; dy: number; dur: number }[]>([])
   const stickerIdRef = useRef(1)
 
+  /** PvP: ждём ответ сервера — локальный таймер не должен обнуляться и давать «проигрыш по времени» */
+  const [pvpAwaitingServer, setPvpAwaitingServer] = useState(false)
+
   // Ref to prevent double-resolution
   const resolvedRef = useRef(false)
   // Refs for timeouts — очищаем при размонтировании, чтобы не вызывать setState после unmount
@@ -232,6 +235,7 @@ export function GameArena() {
       // Prevent double fire
       if (resolvedRef.current) return
       resolvedRef.current = true
+      setPvpAwaitingServer(false)
 
       // Правило для робота: до 50 монет — случайный исход, выше 100 монет — игрок проигрывает
       const isBot = opponent?.id?.startsWith("bot-") ?? false
@@ -467,12 +471,14 @@ export function GameArena() {
       trackLiveOpsMatch,
       pvpMatchId,
       player.id,
+      setPvpAwaitingServer,
     ]
   )
 
   // Timer countdown
   useEffect(() => {
     if (phase !== "choosing") return
+    if (pvpAwaitingServer) return
 
     if (timeLeft <= 0) {
       // Не выбрал карту вовремя — сразу экран результата с «Кто-то уснул»
@@ -499,13 +505,26 @@ export function GameArena() {
 
     const id = setInterval(() => setTimeLeft((t) => t - 1), 1000)
     return () => clearInterval(id)
-  }, [timeLeft, phase, selectedMove, currentBet, setPlayer, setLastResult, setScreen, resolveRound, baseTimer, trackLiveOpsMatch])
+  }, [
+    timeLeft,
+    phase,
+    selectedMove,
+    currentBet,
+    setPlayer,
+    setLastResult,
+    setScreen,
+    resolveRound,
+    baseTimer,
+    trackLiveOpsMatch,
+    pvpAwaitingServer,
+  ])
 
   const handleSelectMove = (move: Move) => {
     if (phase !== "choosing") return
     setSelectedMove(move)
     if (pvpMatchId && opponent?.id?.startsWith("vk_")) {
       resolvedRef.current = true
+      setPvpAwaitingServer(true)
       void (async () => {
         try {
           const res = await fetch(appPath("/api/match/pvp-move"), {
@@ -517,10 +536,13 @@ export function GameArena() {
           const data = (await res.json()) as { ok?: boolean; draw?: boolean }
           if (!data.ok) {
             resolvedRef.current = false
+            setPvpAwaitingServer(false)
             return
           }
           if (data.draw) {
             resolvedRef.current = false
+            setPvpAwaitingServer(false)
+            setSelectedMove(null)
             return
           }
           for (let i = 0; i < 200; i++) {
@@ -539,16 +561,21 @@ export function GameArena() {
             }
             if (st.finished) {
               resolvedRef.current = false
+              setPvpAwaitingServer(false)
               return
             }
             if (st.ok && st.phase === "round_result" && st.opponentMove) {
+              // handleSelectMove для PvP ставит resolvedRef=true, иначе resolveRound сразу выходит
+              resolvedRef.current = false
               resolveRound(move, st.opponentMove)
               return
             }
           }
           resolvedRef.current = false
+          setPvpAwaitingServer(false)
         } catch {
           resolvedRef.current = false
+          setPvpAwaitingServer(false)
         }
       })()
       return
