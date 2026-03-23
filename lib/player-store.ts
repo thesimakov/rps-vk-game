@@ -130,8 +130,18 @@ async function writeDb(db: PlayerDb) {
   await fs.rename(tmp, getDbPath())
 }
 
+/** Проверка id для API: допускаем vk_/VK_, обрезаем пробелы (прокси/клиенты). */
 export function isValidPlayerId(id: string) {
-  return id.startsWith("vk_") && id.length > 3
+  if (typeof id !== "string") return false
+  const s = id.trim()
+  if (s.length <= 3) return false
+  return /^vk_/i.test(s)
+}
+
+/** Единый вид `vk_*` для ключей очереди/SQLite (poll и join должны совпадать). */
+export function normalizeVkPlayerId(id: string): string {
+  const t = typeof id === "string" ? id.trim() : ""
+  return t.replace(/^vk_/i, "vk_")
 }
 
 export async function loadPlayer(userId: PlayerId): Promise<StoredPlayer | null> {

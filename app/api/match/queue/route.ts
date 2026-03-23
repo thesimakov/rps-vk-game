@@ -1,5 +1,5 @@
-import { NextResponse } from "next/server"
-import { isValidPlayerId } from "@/lib/player-store"
+import { NextResponse, type NextRequest } from "next/server"
+import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
 import { joinQueue, leaveQueue, type QueuePlayerPayload } from "@/lib/match-queue-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
@@ -20,7 +20,7 @@ function parseBody(body: unknown): QueuePlayerPayload | null {
   const rounds = o.rounds === 1 || o.rounds === 3 || o.rounds === 5 ? o.rounds : 3
   const weeklyMode = typeof o.weeklyMode === "string" ? o.weeklyMode.slice(0, 64) : "elements_tournament"
   if (!isValidPlayerId(userId)) return null
-  return { userId, name, avatar, avatarUrl, vip, bet, rounds, weeklyMode }
+  return { userId: normalizeVkPlayerId(userId), name, avatar, avatarUrl, vip, bet, rounds, weeklyMode }
 }
 
 /** Встать в очередь матчмейкинга */
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
 }
 
 /** Покинуть очередь (отмена поиска, таймаут клиента) */
-export async function DELETE(req: Request) {
+export async function DELETE(req: NextRequest) {
   if (IS_STATIC_EXPORT) {
     return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
   }
@@ -66,13 +66,12 @@ export async function DELETE(req: Request) {
       userId = ""
     }
     if (!userId) {
-      const url = new URL(req.url)
-      userId = url.searchParams.get("userId") ?? ""
+      userId = req.nextUrl.searchParams.get("userId") ?? ""
     }
     if (!isValidPlayerId(userId)) {
       return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
     }
-    leaveQueue(userId)
+    leaveQueue(normalizeVkPlayerId(userId))
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
   } catch {
     return NextResponse.json({ ok: false, error: "server" }, { status: 500 })
