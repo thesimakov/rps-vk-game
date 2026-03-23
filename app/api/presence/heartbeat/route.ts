@@ -4,7 +4,8 @@ import { recordPresence } from "@/lib/presence-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
-export const dynamic = "force-dynamic"
+/** С `output: export` нельзя force-dynamic; runtime-guard ниже оставляет поведение API прежним. */
+export const dynamic = "force-static"
 
 /** Клиент шлёт раз в ~40 с, пока игрок ВК в приложении (не экран входа) */
 export async function POST(req: Request) {

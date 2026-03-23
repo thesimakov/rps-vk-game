@@ -4,7 +4,8 @@ import { isValidPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
-export const dynamic = "force-dynamic"
+/** С `output: export` нельзя force-dynamic; runtime-guard ниже оставляет поведение API прежним. */
+export const dynamic = "force-static"
 
 /**
  * Сколько игроков ВК считаются онлайн (недавний heartbeat).
