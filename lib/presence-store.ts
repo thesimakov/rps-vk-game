@@ -31,13 +31,28 @@ async function ensurePresenceDir() {
   await fs.mkdir(path.dirname(getPresencePath()), { recursive: true })
 }
 
+function collectPresenceEntries(parsed: Record<string, unknown>): [string, number][] {
+  const out: [string, number][] = []
+  const nested = parsed.lastSeen
+  if (nested && typeof nested === "object" && !Array.isArray(nested)) {
+    for (const [uid, t] of Object.entries(nested as Record<string, unknown>)) {
+      if (typeof t === "number" && Number.isFinite(t)) out.push([uid, t])
+    }
+  }
+  for (const [uid, t] of Object.entries(parsed)) {
+    if (uid === "lastSeen") continue
+    if (typeof t === "number" && Number.isFinite(t)) out.push([uid, t])
+  }
+  return out
+}
+
 async function mergeFromDisk(): Promise<void> {
   try {
     const raw = await fs.readFile(getPresencePath(), "utf8")
     const parsed = JSON.parse(raw) as Record<string, unknown>
     const now = Date.now()
-    for (const [uid, t] of Object.entries(parsed)) {
-      if (!uid.startsWith("vk_") || typeof t !== "number" || !Number.isFinite(t)) continue
+    for (const [uid, t] of collectPresenceEntries(parsed)) {
+      if (!uid.startsWith("vk_")) continue
       if (now - t > STALE_PURGE_MS) continue
       const prev = lastSeen.get(uid) ?? 0
       if (t > prev) lastSeen.set(uid, t)
@@ -68,10 +83,15 @@ async function flushToDisk(): Promise<void> {
   }
 }
 
-export function recordPresence(userId: string) {
+/**
+ * Фиксируем heartbeat. Ждём сброс на диск — иначе другой воркер/nginx при следующем
+ * GET /online-count видит пустую память и «0 онлайн».
+ */
+export async function recordPresence(userId: string): Promise<void> {
   if (!isValidPlayerId(userId)) return
   lastSeen.set(userId, Date.now())
   persistChain = persistChain.then(() => flushToDisk())
+  await persistChain
 }
 
 function countOnlineVk(now: number): number {

@@ -10,7 +10,7 @@ import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 
 const POLL_MS = 1000
 const LIVE_COUNT_POLL_MS = 3000
-/** Если в вашей корзине (ставка+режим) меньше 2 игроков — через столько времени подключаем бота */
+/** Если в вашей корзине (ставка+режим) меньше 2 игроков — через столько времени подбираем соперника (на сервере/клиенте без раскрытия типа) */
 const ALONE_BOT_MS_NORMAL = 120_000
 const ALONE_BOT_MS_FAST = 45_000
 /** Глобально столько vk в поиске — усиливаем FIFO и подпись «приоритет» */
@@ -56,12 +56,6 @@ async function leaveMatchQueue(userId: string) {
   }
 }
 
-function formatMmSs(totalSec: number): string {
-  const m = Math.floor(totalSec / 60)
-  const s = totalSec % 60
-  return `${m}:${s.toString().padStart(2, "0")}`
-}
-
 export function Matchmaking() {
   const {
     setScreen,
@@ -97,7 +91,6 @@ export function Matchmaking() {
   const [bucketLive, setBucketLive] = useState<number | null>(null)
   /** vk во всех корзинах */
   const [globalLive, setGlobalLive] = useState<number | null>(null)
-  const [secondsToBot, setSecondsToBot] = useState<number | null>(null)
 
   useEffect(() => {
     if (!isBossWeek) return
@@ -257,7 +250,7 @@ export function Matchmaking() {
     }
   }, [isBossWeek, player.id, currentBet, totalRounds, weeklyMode])
 
-  /** Таймер бота: только если в вашей корзине < 2 живых; иначе ждём человека (до отмены / ивента) */
+  /** Таймер подбора: только если в вашей корзине < 2 живых; иначе ждём соперника (до отмены / ивента) */
   useEffect(() => {
     if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
@@ -267,7 +260,6 @@ export function Matchmaking() {
       clearTimeout(botTimeoutRef.current)
       botTimeoutRef.current = null
     }
-    setSecondsToBot(null)
     setProgress(0)
 
     /** Пока корзина неизвестна — считаем «мало игроков»; после ответа API уточняется */
@@ -278,11 +270,9 @@ export function Matchmaking() {
 
     const ms = useFastSearch ? ALONE_BOT_MS_FAST : ALONE_BOT_MS_NORMAL
     const deadline = Date.now() + ms
-    setSecondsToBot(Math.ceil(ms / 1000))
 
     const tick = setInterval(() => {
       const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
-      setSecondsToBot(left)
       const elapsed = ms - left * 1000
       setProgress(Math.min(100, (elapsed / ms) * 100))
     }, 250)
@@ -433,14 +423,12 @@ export function Matchmaking() {
             {bucketLive === null && <p className="text-sky-200/80">Загрузка очереди…</p>}
             {bucketLive !== null && bucketLive >= 2 && (
               <p className="text-sky-200/95 font-semibold">
-                В вашей категории ставки уже {bucketLive} игрок(ов) — ищем живого соперника без таймера на бота
+                В вашей категории ставки уже {bucketLive} игрок(ов) — ищем подходящего соперника
               </p>
             )}
-            {alonePhase && secondsToBot !== null && (
-              <p className="text-foreground font-semibold">
-                Поиск живого соперника: до бота осталось{" "}
-                <span className="tabular-nums text-primary">{formatMmSs(secondsToBot)}</span>
-                {useFastSearch && <span className="text-[10px] ml-1 opacity-80">(ускоренный поиск)</span>}
+            {alonePhase && useFastSearch && (
+              <p className="text-foreground font-semibold text-xs">
+                Ускоренный поиск активен
               </p>
             )}
             {globalLive !== null && globalLive >= PRIORITY_LIVE_MATCHMAKING && (

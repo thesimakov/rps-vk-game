@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     if (!isValidPlayerId(userId)) {
       return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
     }
-    recordPresence(userId)
+    await recordPresence(userId)
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
   } catch {
     return NextResponse.json({ ok: false, error: "server" }, { status: 500 })

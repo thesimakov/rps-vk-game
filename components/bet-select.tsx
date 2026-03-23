@@ -88,7 +88,9 @@ export function BetSelect() {
           setVkOnlineInGame(null)
         } else if (typeof presenceData.count === "number") {
           setPresenceApiUnavailable(false)
-          setVkOnlineInGame(presenceData.count)
+          const raw = presenceData.count
+          /** Минимум 1 для vk: вы в игре; сервер после фикса тоже учитывает ?userId */
+          setVkOnlineInGame(player.id.startsWith("vk_") ? Math.max(raw, 1) : raw)
         } else {
           setPresenceApiUnavailable(true)
           setVkOnlineInGame(null)
