@@ -63,6 +63,8 @@ async function mergeFromDisk(): Promise<void> {
 }
 
 async function flushToDisk(): Promise<void> {
+  /** Иначе при нескольких воркерах/nginx каждый пишет только своих vk_* и затирает чужие записи → «всегда 1 онлайн». */
+  await mergeFromDisk()
   const now = Date.now()
   const obj: Record<string, number> = {}
   for (const [uid, t] of lastSeen.entries()) {
