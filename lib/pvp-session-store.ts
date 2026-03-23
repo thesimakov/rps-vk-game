@@ -82,19 +82,19 @@ export function submitPvpMove(
   if (!isValidUser(userId)) return { ok: false, error: "invalid_user" }
   const m = move as RpsMove
   const db = getGameStateDb()
-  return db.transaction(() => {
+  return db.transaction((): { ok: true; draw?: boolean } | { ok: false; error: string } => {
     const row = getRow(matchId)
-    if (!row) return { ok: false, error: "no_session" }
-    if (row.finished) return { ok: false, error: "finished" }
-    if (row.pending_result) return { ok: false, error: "ack_pending" }
-    if (!isAllowed(m, row.weekly_mode)) return { ok: false, error: "bad_move" }
+    if (!row) return { ok: false as const, error: "no_session" }
+    if (row.finished) return { ok: false as const, error: "finished" }
+    if (row.pending_result) return { ok: false as const, error: "ack_pending" }
+    if (!isAllowed(m, row.weekly_mode)) return { ok: false as const, error: "bad_move" }
 
     const isP1 = userId === row.p1_id
     const isP2 = userId === row.p2_id
-    if (!isP1 && !isP2) return { ok: false, error: "not_in_match" }
+    if (!isP1 && !isP2) return { ok: false as const, error: "not_in_match" }
 
-    if (isP1 && row.p1_move) return { ok: false, error: "already_moved" }
-    if (isP2 && row.p2_move) return { ok: false, error: "already_moved" }
+    if (isP1 && row.p1_move) return { ok: false as const, error: "already_moved" }
+    if (isP2 && row.p2_move) return { ok: false as const, error: "already_moved" }
 
     const p1Next = (isP1 ? m : row.p1_move) as RpsMove | null
     const p2Next = (isP2 ? m : row.p2_move) as RpsMove | null
@@ -103,7 +103,7 @@ export function submitPvpMove(
       db.prepare(
         `UPDATE pvp_match_sessions SET p1_move = ?, p2_move = ?, updated_at = ? WHERE match_id = ?`,
       ).run(p1Next, p2Next, Date.now(), matchId)
-      return { ok: true }
+      return { ok: true as const }
     }
 
     const o = getRoundOutcome(p1Next, p2Next)
@@ -111,7 +111,7 @@ export function submitPvpMove(
       db.prepare(
         `UPDATE pvp_match_sessions SET p1_move = NULL, p2_move = NULL, updated_at = ? WHERE match_id = ?`,
       ).run(Date.now(), matchId)
-      return { ok: true, draw: true }
+      return { ok: true as const, draw: true as const }
     }
 
     let p1s = row.p1_score
@@ -138,7 +138,7 @@ export function submitPvpMove(
       WHERE match_id = ?`,
     ).run(p1s, p2s, pending, Date.now(), matchId)
 
-    return { ok: true }
+    return { ok: true as const }
   })()
 }
 
@@ -149,14 +149,14 @@ function isValidUser(id: string) {
 export function ackPvpRound(matchId: string, userId: string): { ok: true } | { ok: false; error: string } {
   if (!isValidUser(userId)) return { ok: false, error: "invalid_user" }
   const db = getGameStateDb()
-  return db.transaction(() => {
+  return db.transaction((): { ok: true } | { ok: false; error: string } => {
     const row = getRow(matchId)
-    if (!row) return { ok: false, error: "no_session" }
-    if (!row.pending_result) return { ok: false, error: "no_pending" }
+    if (!row) return { ok: false as const, error: "no_session" }
+    if (!row.pending_result) return { ok: false as const, error: "no_pending" }
 
     const isP1 = userId === row.p1_id
     const isP2 = userId === row.p2_id
-    if (!isP1 && !isP2) return { ok: false, error: "not_in_match" }
+    if (!isP1 && !isP2) return { ok: false as const, error: "not_in_match" }
 
     const p1Ack = isP1 ? 1 : row.p1_ack
     const p2Ack = isP2 ? 1 : row.p2_ack
@@ -179,7 +179,7 @@ export function ackPvpRound(matchId: string, userId: string): { ok: true } | { o
       ).run(p1Ack, p2Ack, Date.now(), matchId)
     }
 
-    return { ok: true }
+    return { ok: true as const }
   })()
 }
 
