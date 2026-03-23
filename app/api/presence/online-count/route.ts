@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { getOnlineVkCount, recordPresence } from "@/lib/presence-store"
 import { isValidPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
@@ -16,6 +15,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false, error: "no_server", count: 0 }, { status: 501 })
   }
   try {
+    const { getOnlineVkCount, recordPresence } = await import("@/lib/presence-store")
     const userId = new URL(req.url).searchParams.get("userId") ?? ""
     if (userId && isValidPlayerId(userId)) {
       await recordPresence(userId)

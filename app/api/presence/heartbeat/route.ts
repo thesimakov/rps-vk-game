@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { isValidPlayerId } from "@/lib/player-store"
-import { recordPresence } from "@/lib/presence-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
@@ -13,6 +12,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
   }
   try {
+    const { recordPresence } = await import("@/lib/presence-store")
     const body = (await req.json()) as { userId?: string }
     const userId = typeof body.userId === "string" ? body.userId : ""
     if (!isValidPlayerId(userId)) {
