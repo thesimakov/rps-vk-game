@@ -7,9 +7,24 @@ export const APP_BASE_PATH = (typeof process !== "undefined" && process.env.NEXT
   : ""
 ).replace(/\/$/, "")
 
+/**
+ * Оригин бэкенда с API (VPS / Node), если фронт отдаётся статикой (GitHub Pages) без Route Handlers.
+ * Пример: https://play.example.com — к нему добавляется basePath + /api/...
+ * На бэкенде нужен CORS для origin страницы (GitHub Pages / VK).
+ */
+export const API_BASE_ORIGIN = (typeof process !== "undefined" && process.env.NEXT_PUBLIC_API_BASE_URL
+  ? String(process.env.NEXT_PUBLIC_API_BASE_URL).replace(/\/$/, "")
+  : ""
+).trim()
+
 /** Абсолютный путь внутри приложения, с учётом basePath (для fetch к Route Handlers). */
 export function appPath(href: string): string {
   if (href.startsWith("http://") || href.startsWith("https://")) return href
   const path = href.startsWith("/") ? href : `/${href}`
-  return `${APP_BASE_PATH}${path}`
+  const relative = `${APP_BASE_PATH}${path}`
+  /** Статический export: HTML с GitHub Pages, а /api на том же origin не существует — шлём на бэкенд. */
+  if (API_BASE_ORIGIN && path.startsWith("/api/")) {
+    return `${API_BASE_ORIGIN}${relative}`
+  }
+  return relative
 }

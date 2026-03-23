@@ -37,6 +37,8 @@ export function BetSelect() {
   const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
   /** В очереди матчмейкинга (см. /api/match/live-count) */
   const [vkInMatchmaking, setVkInMatchmaking] = useState<number | null>(null)
+  /** true: статический хост без API или 501 — счётчик недоступен (не путать с «0 игроков») */
+  const [presenceApiUnavailable, setPresenceApiUnavailable] = useState(false)
 
   useEffect(() => {
     if (!isBossWeekEvent) return
@@ -63,21 +65,47 @@ export function BetSelect() {
           fetch(presenceUrl, { cache: "no-store" }),
           fetch(appPath("/api/match/live-count"), { cache: "no-store" }),
         ])
-        const presenceData = (await presenceRes.json()) as { ok?: boolean; count?: number }
-        const queueData = (await queueRes.json()) as { ok?: boolean; count?: number }
+        const parseJson = async (res: Response) => {
+          const ct = res.headers.get("content-type") ?? ""
+          if (!ct.includes("application/json")) return null
+          try {
+            return (await res.json()) as { ok?: boolean; count?: number; error?: string }
+          } catch {
+            return null
+          }
+        }
+        const presenceData = await parseJson(presenceRes)
+        const queueData = await parseJson(queueRes)
         if (cancelled) return
-        if (presenceData.ok && typeof presenceData.count === "number") {
+
+        const presenceBad =
+          !presenceRes.ok ||
+          presenceRes.status === 501 ||
+          presenceData?.ok === false ||
+          presenceData?.error === "no_server"
+        if (presenceBad || presenceData == null) {
+          setPresenceApiUnavailable(true)
+          setVkOnlineInGame(null)
+        } else if (typeof presenceData.count === "number") {
+          setPresenceApiUnavailable(false)
           setVkOnlineInGame(presenceData.count)
         } else {
+          setPresenceApiUnavailable(true)
           setVkOnlineInGame(null)
         }
-        if (queueData.ok && typeof queueData.count === "number") {
+
+        const queueBad =
+          !queueRes.ok || queueRes.status === 501 || queueData?.ok === false || queueData?.error === "no_server"
+        if (queueBad || queueData == null) {
+          setVkInMatchmaking(null)
+        } else if (typeof queueData.count === "number") {
           setVkInMatchmaking(queueData.count)
         } else {
           setVkInMatchmaking(null)
         }
       } catch {
         if (!cancelled) {
+          setPresenceApiUnavailable(true)
           setVkOnlineInGame(null)
           setVkInMatchmaking(null)
         }
@@ -173,7 +201,12 @@ export function BetSelect() {
               <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
               <span className="flex flex-col items-center gap-0.5 min-w-0">
                 <span>Живая игра</span>
-                {vkOnlineInGame !== null && (
+                {presenceApiUnavailable && (
+                  <span className="text-[10px] font-medium text-amber-200/90 leading-tight text-center px-1">
+                    Онлайн недоступен: статика без API. Укажите NEXT_PUBLIC_API_BASE_URL на бэкенд или откройте игру с VPS.
+                  </span>
+                )}
+                {!presenceApiUnavailable && vkOnlineInGame !== null && (
                   <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
                     {vkOnlineInGame} онлайн в игре
                     {vkInMatchmaking !== null && vkInMatchmaking > 0

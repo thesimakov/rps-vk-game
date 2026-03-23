@@ -35,6 +35,8 @@ jobs:
       - name: Build static site (Next export)
         env:
           NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
+          # Опционально: origin VPS с полноценным Next (иначе /api/presence и матчмейкинг не работают на Pages)
+          NEXT_PUBLIC_API_BASE_URL: ${{ secrets.VPS_API_BASE_URL }}
           NEXT_OUTPUT_EXPORT: "export"
           NODE_ENV: production
         run: pnpm run build
