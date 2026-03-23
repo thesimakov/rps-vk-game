@@ -89,6 +89,12 @@ export function Matchmaking() {
   /** Актуальный профиль для POST очереди без лишних перезапусков эффекта (имя/аватар/VIP не должны вызывать leaveQueue) */
   const playerRef = useRef(player)
   playerRef.current = player
+  /** Режим недели для корзины: обновляем каждый рендер, но не кладём в deps — иначе при hydrate weeklyRules эффект снимал игрока с очереди */
+  const weeklyModeRef = useRef(weeklyMode)
+  weeklyModeRef.current = weeklyMode
+  /** Примитивы для deps: объект weeklyRules с родителя может менять ссылку каждый рендер */
+  const hasWeeklyRules = Boolean(weeklyRules)
+  const weeklyRulesModeKey = weeklyRules?.event.mode ?? ""
 
   /** vk в той же корзине (ставка/раунды/режим) */
   const [bucketLive, setBucketLive] = useState<number | null>(null)
@@ -130,6 +136,8 @@ export function Matchmaking() {
   useEffect(() => {
     if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
+    /** Пока weeklyRules не загружены, weeklyMode может быть неверным — не встаём в очередь (иначе разные корзины у двух игроков) */
+    if (!hasWeeklyRules) return
 
     let cancelled = false
 
@@ -154,7 +162,7 @@ export function Matchmaking() {
             vip: p.vip,
             bet: currentBet,
             rounds: totalRounds,
-            weeklyMode,
+            weeklyMode: weeklyModeRef.current,
           }),
         })
         const data = (await res.json()) as {
@@ -198,8 +206,11 @@ export function Matchmaking() {
       clearPoll()
       void leaveMatchQueue(player.id)
     }
-    /** Только id корзины (ставка/раунды/режим) и vk id — иначе любое обновление профиля (имя, аватар, VIP, weekly hydrate) снимало игрока с очереди и ломало пару. */
-  }, [isBossWeek, player.id, currentBet, totalRounds, weeklyMode, setOpponent])
+    /**
+     * Не включаем weeklyMode в deps: при подгрузке weeklyRules он меняется → cleanup → leaveQueue → первый игрок без пары, второй один в корзине.
+     * hasWeeklyRules + weeklyRulesModeKey — без ссылки на объект weeklyRules.
+     */
+  }, [isBossWeek, player.id, currentBet, totalRounds, hasWeeklyRules, weeklyRulesModeKey, setOpponent])
 
   /** Статистика очереди: своя корзина + глобально */
   useEffect(() => {
