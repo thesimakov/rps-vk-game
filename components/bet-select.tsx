@@ -1,8 +1,12 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Flame } from "lucide-react"
+import { ArrowLeft, Coins, Flame, Search, Users } from "lucide-react"
+import { useEffect, useState } from "react"
+
+const STATUS_POLL_MS = 4000
 
 /** Ставка: 5,10 = быстрая игра (1 ход); 25,50 = 3 хода; 100,250 = 5 ходов */
 const BET_OPTIONS: { value: number; rounds: 1 | 3 | 5 }[] = [
@@ -38,6 +42,43 @@ export function BetSelect() {
     toDisplayAmount,
     currencyLabel,
   } = useGame()
+
+  const [onlineCount, setOnlineCount] = useState<number | null>(null)
+  const [queueCount, setQueueCount] = useState<number | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const onlineUrl =
+          player.id.startsWith("vk_")
+            ? appPath(`/api/presence/online-count?userId=${encodeURIComponent(player.id)}`)
+            : appPath("/api/presence/online-count")
+        const [onlineRes, queueRes] = await Promise.all([
+          fetch(onlineUrl, { cache: "no-store" }),
+          fetch(appPath("/api/match/live-count"), { cache: "no-store" }),
+        ])
+        const onlineData = (await onlineRes.json()) as { ok?: boolean; count?: number }
+        const queueData = (await queueRes.json()) as { ok?: boolean; count?: number }
+        if (cancelled) return
+        setOnlineCount(
+          onlineData.ok && typeof onlineData.count === "number" ? onlineData.count : null,
+        )
+        setQueueCount(queueData.ok && typeof queueData.count === "number" ? queueData.count : null)
+      } catch {
+        if (!cancelled) {
+          setOnlineCount(null)
+          setQueueCount(null)
+        }
+      }
+    }
+    void load()
+    const t = setInterval(load, STATUS_POLL_MS)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
+  }, [player.id])
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
@@ -80,6 +121,33 @@ export function BetSelect() {
 
       <p className="text-muted-foreground text-sm mb-6 text-center font-medium">
         Выберите ставку: 5–10 монет — быстрая игра, 25–50 монет — 3 хода, 100–250 монет — 5 ходов
+      </p>
+
+      {/* Онлайн и очередь матчмейкинга — перед выбором ставки */}
+      <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-6">
+        <div className="flex items-center gap-2.5 bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
+          <Users className="h-4 w-4 shrink-0 text-sky-400/90" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Онлайн</p>
+            <p className="text-lg font-extrabold tabular-nums text-foreground leading-tight">
+              {onlineCount === null ? "…" : onlineCount}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2.5 bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
+          <Search className="h-4 w-4 shrink-0 text-amber-400/90" aria-hidden />
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+              В очереди
+            </p>
+            <p className="text-lg font-extrabold tabular-nums text-foreground leading-tight">
+              {queueCount === null ? "…" : queueCount}
+            </p>
+          </div>
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground/90 text-center mb-4 -mt-2 max-w-md font-medium">
+        В очереди — игроки ВКонтакте в поиске соперника (комната ожидания)
       </p>
 
       {/* Сетка: ставка + число раундов */}
