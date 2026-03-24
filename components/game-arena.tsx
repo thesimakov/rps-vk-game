@@ -885,30 +885,29 @@ export function GameArena() {
         })}
       </div>
 
-      {/* Исход раунда / ничья — между зоной карт и аватаром игрока (визуально между аватарками) */}
-      {(drawMessage || (roundHintMessage && !drawMessage)) && (
-        <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto mb-2 px-2 text-center">
-          {drawMessage && (
-            <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
-          )}
-          {roundHintMessage && !drawMessage && (
-            <p
-              className={`text-sm font-bold animate-in fade-in ${
-                roundHintMessage.startsWith("Побед")
-                  ? "text-emerald-400"
-                  : roundHintMessage.startsWith("Поражен")
-                    ? "text-red-400"
-                    : "text-white/90"
-              }`}
-            >
-              {roundHintMessage}
-            </p>
-          )}
-        </div>
-      )}
-
-      {/* Игрок: аватар, имя, баланс */}
+      {/* Нижняя зона: исход раунда сразу над аватаром игрока (mt-auto тянет блок к низу — статус между «полем» и аватаром) */}
       <div className="mt-auto flex flex-col items-center w-full max-w-lg mx-auto pb-2">
+        {(drawMessage || (roundHintMessage && !drawMessage)) && (
+          <div className="flex flex-col items-center justify-center w-full px-2 text-center mb-5">
+            {drawMessage && (
+              <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
+            )}
+            {roundHintMessage && !drawMessage && (
+              <p
+                className={`text-sm font-bold animate-in fade-in max-w-[18rem] leading-snug ${
+                  roundHintMessage.startsWith("Побед")
+                    ? "text-emerald-400"
+                    : roundHintMessage.startsWith("Поражен")
+                      ? "text-red-400"
+                      : "text-white/90"
+                }`}
+              >
+                {roundHintMessage}
+              </p>
+            )}
+          </div>
+        )}
+      {/* Игрок: аватар, имя, баланс */}
         {player.avatarFrame === "gold" ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="gold-frame-outer w-16 h-16">
