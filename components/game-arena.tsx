@@ -632,6 +632,8 @@ export function GameArena() {
   const movesLeft = Math.max(0, totalRounds - roundCount + 1)
   const bankAmount = getEffectiveStake(roundCount) * 2
   const bankDisplay = formatAmount(bankAmount)
+  /** Подсказка исхода раунда — под картами выбора, над аватаром игрока */
+  const showRoundOutcomeHint = drawMessage || Boolean(roundHintMessage && !drawMessage)
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
@@ -845,7 +847,11 @@ export function GameArena() {
       </div>
 
       {/* Кнопки выбора: три карты лицевой стороной — игрок сразу видит Камень, Ножницы, Бумагу */}
-      <div className="flex justify-center gap-4 w-full max-w-lg mx-auto mb-6">
+      <div
+        className={`flex justify-center gap-4 w-full max-w-lg mx-auto ${
+          showRoundOutcomeHint ? "mb-2" : "mb-6"
+        }`}
+      >
         {MOVES.map((move) => {
           const isSelected = selectedMove === move.key
           const isChoosing = phase === "choosing"
@@ -885,29 +891,36 @@ export function GameArena() {
         })}
       </div>
 
-      {/* Нижняя зона: исход раунда сразу над аватаром игрока (mt-auto тянет блок к низу — статус между «полем» и аватаром) */}
-      <div className="mt-auto flex flex-col items-center w-full max-w-lg mx-auto pb-2">
-        {(drawMessage || (roundHintMessage && !drawMessage)) && (
-          <div className="flex flex-col items-center justify-center w-full px-2 text-center mb-5">
-            {drawMessage && (
-              <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
-            )}
-            {roundHintMessage && !drawMessage && (
-              <p
-                className={`text-sm font-bold animate-in fade-in max-w-[18rem] leading-snug ${
-                  roundHintMessage.startsWith("Побед")
-                    ? "text-emerald-400"
-                    : roundHintMessage.startsWith("Поражен")
-                      ? "text-red-400"
-                      : "text-white/90"
-                }`}
-              >
-                {roundHintMessage}
-              </p>
-            )}
-          </div>
-        )}
-      {/* Игрок: аватар, имя, баланс */}
+      {/* Исход раунда / ничья — сразу под картами выбора */}
+      {showRoundOutcomeHint && (
+        <div className="w-full max-w-lg mx-auto px-3 flex flex-col items-center justify-center text-center mt-2 mb-2 min-h-[2.5rem]">
+          {drawMessage && (
+            <p className="text-sm sm:text-base text-amber-400 font-bold animate-in fade-in leading-snug">
+              Ничья! Ещё раунд...
+            </p>
+          )}
+          {roundHintMessage && !drawMessage && (
+            <p
+              className={`text-xs sm:text-base font-bold animate-in fade-in leading-snug ${
+                roundHintMessage.startsWith("Побед")
+                  ? "text-emerald-400"
+                  : roundHintMessage.startsWith("Поражен")
+                    ? "text-red-400"
+                    : "text-white/90"
+              }`}
+            >
+              {roundHintMessage}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Нижняя зона: аватар — mt-auto только без подсказки, иначе блок идёт сразу под статусом */}
+      <div
+        className={`flex flex-col items-center w-full max-w-lg mx-auto pb-2 ${
+          showRoundOutcomeHint ? "mt-1" : "mt-auto"
+        }`}
+      >
         {player.avatarFrame === "gold" ? (
           <div className="relative inline-flex flex-shrink-0">
             <div className="gold-frame-outer w-16 h-16">

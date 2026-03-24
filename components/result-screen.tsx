@@ -129,6 +129,14 @@ export function ResultScreen() {
 
   if (!lastResult) return null
 
+  /** Сумма для UI: при рассогласовании исхода и знака (редкий баг/старый стейт) ориентируемся на outcome */
+  const displayEarnings =
+    lastResult.outcome === "win" && lastResult.earnings < 0
+      ? Math.abs(lastResult.earnings)
+      : lastResult.outcome === "loss" && lastResult.earnings > 0
+        ? -Math.abs(lastResult.earnings)
+        : lastResult.earnings
+
   const bankAmount = lastResult.bet * 2
   const totalRating = player.ratingPoints ?? 0
 
@@ -288,7 +296,7 @@ export function ResultScreen() {
       </div>
 
       {/* Контент по центру: исход, карты (или «Кто-то уснул»), история раундов, награда, кнопки */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 py-6">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 py-4 sm:py-5">
       {isAsleep ? (
         /* Блок «Кто-то уснул» вместо поражения: луна, солнце, Z z z */
         <>
@@ -498,7 +506,7 @@ export function ResultScreen() {
       )}
 
       {/* Две основные карты: симметричная сетка (игрок | центр | соперник) */}
-      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 sm:gap-6 w-full max-w-lg mx-auto mb-4">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-3 sm:gap-6 w-full max-w-lg mx-auto mb-1.5">
         <div className="result-card-left justify-self-center w-full max-w-[160px] flex flex-col items-center gap-3" style={{ animationDelay: "0.35s" }}>
           <div
             className={`card-medieval w-32 h-40 sm:w-36 sm:h-44 flex flex-col items-center justify-center gap-0 ${
@@ -601,33 +609,35 @@ export function ResultScreen() {
         </>
       )}
 
-      {/* Итог матча: сколько денег выиграно / проиграно */}
-      <div className="flex flex-col items-center mb-8 gap-1">
+      {/* Итог матча: та же «капсула», что при поражении — золотая обводка, тёмный фон, монеты + сумма */}
+      <div className="flex flex-col items-center w-full max-w-sm mx-auto mb-6 mt-1">
         <div
-          className={`result-earnings-in flex items-center justify-center gap-2 rounded-full border-2 border-amber-400/60 bg-amber-500/20 px-5 py-2.5 w-fit mx-auto ${
-            lastResult.earnings > 0 ? "result-earnings-win" : ""
-          }`}
+          className="result-earnings-in flex items-center justify-center gap-2 rounded-full border-2 border-amber-400/70 bg-stone-950/90 px-5 py-2.5 w-fit max-w-full mx-auto shadow-sm"
           style={{ animationDelay: "0.65s" }}
         >
-          <Coins className="h-5 w-5 text-amber-400" />
+          <Coins className="h-5 w-5 flex-shrink-0 text-amber-400" />
           <span
             className={`text-base font-bold tabular-nums ${
-              lastResult.earnings > 0 ? "text-amber-400" : lastResult.earnings < 0 ? "text-red-400" : "text-amber-400"
+              displayEarnings > 0
+                ? "text-emerald-400"
+                : displayEarnings < 0
+                  ? "text-rose-400"
+                  : "text-white/75"
             }`}
           >
-            {lastResult.earnings > 0 ? "+" : ""}
-            {formatAmount(toDisplayAmount(lastResult.earnings))} {currencyLabel}
+            {displayEarnings > 0 ? "+" : ""}
+            {formatAmount(toDisplayAmount(displayEarnings))} {currencyLabel}
           </span>
         </div>
-        <p className="text-xs text-white/70">
-          {lastResult.earnings > 0
-            ? `Вы выиграли ${formatAmount(toDisplayAmount(lastResult.earnings))} ${currencyLabel}`
-            : lastResult.earnings < 0
-              ? `Вы проиграли ${formatAmount(toDisplayAmount(Math.abs(lastResult.earnings)))} ${currencyLabel}`
+        <p className="mt-2 text-center text-xs text-white/65 max-w-[280px] leading-snug">
+          {displayEarnings > 0
+            ? `Вы выиграли ${formatAmount(toDisplayAmount(displayEarnings))} ${currencyLabel}`
+            : displayEarnings < 0
+              ? `Вы проиграли ${formatAmount(toDisplayAmount(Math.abs(displayEarnings)))} ${currencyLabel}`
               : "Ничья — баланс не изменился"}
         </p>
         {stakeMultiplier > 1 && (
-          <span className="mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
+          <span className="mt-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40">
             Множитель ставки: x{stakeMultiplier}
           </span>
         )}
