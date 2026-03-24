@@ -4,7 +4,7 @@ import { respondPlayInvite } from "@/lib/play-invite-store"
 import { resolveSharedMatchPreset } from "@/lib/play-invite-preset"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-static"
+export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
 export const runtime = "nodejs"
 
 export async function POST(req: Request) {

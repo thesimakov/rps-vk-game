@@ -1,22 +1,8 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 
-// Подготовка данных для VKWebAppOpenPayForm для ПЛАТЕЖЕЙ ВИРТУАЛЬНОЙ ВАЛЮТОЙ (virtual goods).
-// Здесь считаем, что сам вызов bridge будет иметь вид:
-// VKWebAppOpenPayForm({
-//   app_id,
-//   action: "pay-to-service",
-//   params: {
-//     amount,
-//     description,
-//     order_id,
-//     currency: "votes",
-//     data,
-//     sign,
-//   }
-// })
-
-export const dynamic = "force-static"
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
+export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
 
 function getAppId() {
   // Берём ID приложения из env, при отсутствии — жёстко подставляем 54475232.

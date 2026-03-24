@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { isValidPlayerId, loadPlayer, savePlayer, type StoredPlayer } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-static"
+export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
 const ONE_DAY_MS = 24 * 60 * 60 * 1000
 const TIMER_UPDATE_GRACE_MS = 5 * 60 * 1000
 

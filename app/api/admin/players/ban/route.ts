@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { backupDb, banPlayerForOneDay, isValidPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-static"
+export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
 
 // Для простоты делаем так же, как в list/delete:
 // считаем, что доступ уже ограничен логином/паролем на /admin-lemnity.

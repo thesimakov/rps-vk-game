@@ -2,7 +2,7 @@ import { loadLiveOpsConfig } from "@/lib/liveops/config"
 import { getWeeklyEventRuleSet } from "@/lib/liveops/engine"
 import { IS_STATIC_EXPORT, jsonNoStore } from "@/lib/liveops/api-utils"
 
-export const dynamic = "force-static"
+export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
 
 export async function GET() {
   if (IS_STATIC_EXPORT) {
