@@ -391,6 +391,7 @@ function buildMockBetsFromBots(bots: Player[]): BetEntry[] {
 }
 
 const OPPONENTS = buildBots()
+export { OPPONENTS as BOT_OPPONENTS }
 const STATIC_LEADERBOARD = buildLeaderboardFromBots(OPPONENTS)
 const MOCK_BETS = buildMockBetsFromBots(OPPONENTS)
 

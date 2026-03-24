@@ -1,9 +1,11 @@
 "use client"
 
 import { appPath } from "@/lib/app-path"
-import { useGame } from "@/lib/game-context"
+import { useGame, BOT_OPPONENTS } from "@/lib/game-context"
+import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Flame, Search, Users } from "lucide-react"
+import { PlayerAvatar } from "@/components/player-avatar"
+import { ArrowLeft, Coins, Flame, Search, Shield, Swords, Trophy, Users } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const STATUS_POLL_MS = 4000
@@ -39,15 +41,16 @@ export function BetSelect() {
     setPlayer,
     setOpponent,
     setPvpMatchId,
-    pickRandomOpponent,
     toDisplayAmount,
     currencyLabel,
     offlineMode,
+    setOfflineMode,
   } = useGame()
 
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [queueCount, setQueueCount] = useState<number | null>(null)
   const [bucketCounts, setBucketCounts] = useState<Record<string, number>>({})
+  const [selectedBot, setSelectedBot] = useState<Player | null>(null)
 
   useEffect(() => {
     if (offlineMode) return
@@ -103,7 +106,12 @@ export function BetSelect() {
     setPvpMatchId(null)
 
     if (offlineMode) {
-      pickRandomOpponent()
+      if (selectedBot) {
+        setOpponent(selectedBot)
+      } else {
+        const idx = Math.floor(Math.random() * BOT_OPPONENTS.length)
+        setOpponent(BOT_OPPONENTS[idx])
+      }
       setScreen("arena")
     } else {
       setOpponent(null)
@@ -114,7 +122,7 @@ export function BetSelect() {
   return (
     <div className="flex flex-col items-center min-h-screen px-4 py-8">
       {/* Header */}
-      <div className="w-full max-w-lg flex items-center mb-8">
+      <div className="w-full max-w-lg flex items-center mb-6">
         <button
           onClick={() => setScreen("menu")}
           className="p-2 rounded-xl hover:bg-muted/40 transition-colors text-foreground"
@@ -123,30 +131,50 @@ export function BetSelect() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-center text-base font-bold text-foreground uppercase tracking-wider">
-          {offlineMode ? "Оффлайн игра" : "Выбор ставки"}
+          Выбор ставки
         </h1>
         <div className="w-9" />
       </div>
 
+      {/* Онлайн / Оффлайн toggle */}
+      <div className="w-full max-w-lg grid grid-cols-2 gap-2 mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-1.5">
+        <button
+          onClick={() => { setOfflineMode(false); setSelectedBot(null) }}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            !offlineMode
+              ? "bg-sky-500 text-white shadow-md shadow-sky-500/30"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/60"
+          }`}
+        >
+          <Swords className="h-4 w-4" />
+          Онлайн
+        </button>
+        <button
+          onClick={() => setOfflineMode(true)}
+          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+            offlineMode
+              ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/60"
+          }`}
+        >
+          <Shield className="h-4 w-4" />
+          Оффлайн
+        </button>
+      </div>
+
       {/* Balance */}
-      <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-accent/20 rounded-full px-5 py-2.5 mb-6">
+      <div className="flex items-center gap-2.5 bg-card/60 backdrop-blur-sm border border-accent/20 rounded-full px-5 py-2.5 mb-5">
         <Coins className="h-4 w-4 text-accent" />
         <span className="text-base font-extrabold text-accent tabular-nums">
           {formatAmount(toDisplayAmount(player.balance))} {currencyLabel}
         </span>
       </div>
 
-      <p className="text-muted-foreground text-sm mb-6 text-center font-medium">
+      <p className="text-muted-foreground text-sm mb-5 text-center font-medium">
         Выберите ставку: 5–10 монет — быстрая игра, 25–50 монет — 3 хода, 100–250 монет — 5 ходов
       </p>
 
-      {offlineMode && (
-        <div className="w-full max-w-lg bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-4 py-3 mb-6 text-center">
-          <p className="text-sm font-semibold text-emerald-300">Режим игры с ботами</p>
-          <p className="text-[11px] text-emerald-200/70 mt-0.5">Выберите ставку — соперник подберётся мгновенно</p>
-        </div>
-      )}
-
+      {/* Онлайн: статистика очереди */}
       {!offlineMode && (
         <>
           <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-6">
@@ -175,6 +203,55 @@ export function BetSelect() {
             В очереди — игроки ВКонтакте в поиске соперника (комната ожидания)
           </p>
         </>
+      )}
+
+      {/* Оффлайн: список ботов */}
+      {offlineMode && (
+        <div className="w-full max-w-lg mb-5">
+          <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-2.5">
+            Выберите соперника ({BOT_OPPONENTS.length} ботов)
+          </p>
+          <div className="max-h-40 overflow-y-auto rounded-2xl bg-card/40 border border-border/30 p-2 space-y-1">
+            {BOT_OPPONENTS.map((bot) => {
+              const isSelected = selectedBot?.id === bot.id
+              return (
+                <button
+                  key={bot.id}
+                  onClick={() => setSelectedBot(isSelected ? null : bot)}
+                  className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-all ${
+                    isSelected
+                      ? "bg-emerald-500/20 border border-emerald-500/50"
+                      : "hover:bg-card/80 border border-transparent"
+                  }`}
+                >
+                  <div className="relative h-8 w-8 flex-shrink-0">
+                    <PlayerAvatar
+                      name={bot.name}
+                      avatar={bot.avatar}
+                      avatarUrl={bot.avatarUrl}
+                      size="sm"
+                      variant="muted"
+                      vip={bot.vip}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${isSelected ? "text-emerald-300" : "text-foreground"}`}>
+                      {bot.name}
+                      {bot.vip && <span className="ml-1.5 text-[10px] text-amber-400 font-bold">VIP</span>}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground tabular-nums flex-shrink-0">
+                    <Trophy className="h-3 w-3 text-amber-400/70" />
+                    {bot.wins} побед, {bot.losses} поражений
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground/80 text-center">
+            {selectedBot ? `Соперник: ${selectedBot.name}` : "Или соперник подберётся случайно"}
+          </p>
+        </div>
       )}
 
       {/* Сетка: ставка + число раундов */}
