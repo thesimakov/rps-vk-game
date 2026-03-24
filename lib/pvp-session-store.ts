@@ -72,6 +72,24 @@ type Row = {
   p2_ack: number
   finished: number
   updated_at: number
+  reaction_seq?: number
+  reaction_emoji?: string | null
+  reaction_from?: string | null
+}
+
+/** Эмоции на арене — только те, что есть в UI (анти-спам / валидация). */
+const PVP_REACTION_EMOJIS = new Set(["🤔", "👀", "🔥"])
+
+function opponentRemoteReaction(
+  row: Row,
+  viewerUserId: string,
+): { seq: number; emoji: string } | undefined {
+  const seq = Number(row.reaction_seq ?? 0)
+  const emoji = row.reaction_emoji
+  const from = row.reaction_from
+  if (!emoji || !from || seq < 1) return undefined
+  if (normalizeVkPlayerId(from) === normalizeVkPlayerId(viewerUserId)) return undefined
+  return { seq, emoji }
 }
 
 function getRow(matchId: string): Row | undefined {
@@ -205,6 +223,33 @@ export function ackPvpRound(matchId: string, userId: string): { ok: true } | { o
   })()
 }
 
+export function submitPvpReaction(
+  matchId: string,
+  userId: string,
+  emoji: string,
+): { ok: true } | { ok: false; error: string } {
+  if (!PVP_REACTION_EMOJIS.has(emoji)) return { ok: false, error: "bad_emoji" }
+  if (!isValidPlayerId(userId)) return { ok: false, error: "invalid_user" }
+  const uid = normalizeVkPlayerId(userId)
+  const db = getGameStateDb()
+  const row = getRow(matchId)
+  if (!row) return { ok: false, error: "no_session" }
+  if (row.finished) return { ok: false, error: "finished" }
+  const isP1 = uid === normalizeVkPlayerId(row.p1_id)
+  const isP2 = uid === normalizeVkPlayerId(row.p2_id)
+  if (!isP1 && !isP2) return { ok: false, error: "not_in_match" }
+
+  db.prepare(
+    `UPDATE pvp_match_sessions SET
+      reaction_seq = COALESCE(reaction_seq, 0) + 1,
+      reaction_emoji = ?,
+      reaction_from = ?,
+      updated_at = ?
+    WHERE match_id = ?`,
+  ).run(emoji, uid, Date.now(), matchId)
+  return { ok: true as const }
+}
+
 export function getPvpState(matchId: string, userId: string) {
   if (!isValidPlayerId(userId)) return { ok: false as const, error: "invalid_user" as const }
   const uid = normalizeVkPlayerId(userId)
@@ -218,6 +263,8 @@ export function getPvpState(matchId: string, userId: string) {
       p2Score: row.p2_score,
     }
   }
+
+  const remoteReaction = opponentRemoteReaction(row, uid)
 
   if (row.pending_result) {
     const pr = JSON.parse(row.pending_result) as {
@@ -248,6 +295,7 @@ export function getPvpState(matchId: string, userId: string) {
       p1Score: pr.p1_score,
       p2Score: pr.p2_score,
       matchOver: pr.match_over,
+      ...(remoteReaction ? { remoteReaction } : {}),
     }
   }
 
@@ -264,5 +312,6 @@ export function getPvpState(matchId: string, userId: string) {
     p2Score: row.p2_score,
     waitingOpponent: !!myMove && !oppMove,
     waitingSelf: !myMove,
+    ...(remoteReaction ? { remoteReaction } : {}),
   }
 }

@@ -27,6 +27,7 @@ type QueueOpponentDto = {
   weekWins: number
   weekEarnings: number
   balance: number
+  cardDeck?: "ancient-rus"
 }
 
 function dtoToPlayer(o: QueueOpponentDto): Player {
@@ -41,6 +42,7 @@ function dtoToPlayer(o: QueueOpponentDto): Player {
     weekWins: o.weekWins,
     weekEarnings: o.weekEarnings,
     vip: o.vip,
+    ...(o.cardDeck === "ancient-rus" ? { cardDeck: "ancient-rus" as const } : {}),
   }
 }
 
@@ -136,6 +138,7 @@ export function Matchmaking() {
             vip: p.vip,
             bet: currentBet,
             rounds: totalRounds,
+            ...(p.cardDeck === "ancient-rus" ? { cardDeck: "ancient-rus" as const } : {}),
           }),
         })
         const data = (await res.json()) as {

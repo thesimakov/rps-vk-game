@@ -146,6 +146,8 @@ export function GameArena() {
   /** Наклейки/смайлики, которые игрок кидает сопернику во время таймера */
   const [stickers, setStickers] = useState<{ id: number; emoji: string; dx: number; dy: number; dur: number }[]>([])
   const stickerIdRef = useRef(1)
+  /** PvP: seq последней реакции соперника с сервера (чтобы не дублировать анимацию при опросе). */
+  const lastRemoteReactionSeqRef = useRef(0)
 
   /** PvP: ждём ответ сервера — локальный таймер не должен обнуляться и давать «проигрыш по времени» */
   const [pvpAwaitingServer, setPvpAwaitingServer] = useState(false)
@@ -192,22 +194,67 @@ export function GameArena() {
     return clearTimers
   }, [clearTimers])
 
-  const canSpamStickers = phase === "choosing" && timeLeft > 0
+  useEffect(() => {
+    lastRemoteReactionSeqRef.current = 0
+  }, [pvpMatchId])
 
-  const sendSticker = (emoji: string) => {
-    if (!canSpamStickers) return
+  const pushSticker = useCallback((emoji: string) => {
     const id = stickerIdRef.current++
-    // Случайное направление и расстояние от таймера (центр арены)
     const angle = Math.random() * Math.PI * 2
-    const distance = 80 + Math.random() * 100 // 80–180px — разлёт шире
+    const distance = 80 + Math.random() * 100
     const dx = Math.cos(angle) * distance
-    const dy = -Math.abs(Math.sin(angle) * distance) // летят чуть вверх
-    const dur = 1.3 + Math.random() * 0.7 // 1.3–2.0s
+    const dy = -Math.abs(Math.sin(angle) * distance)
+    const dur = 1.3 + Math.random() * 0.7
     const sticker = { id, emoji, dx, dy, dur }
     setStickers((prev) => [...prev, sticker])
     setTimeout(() => {
       setStickers((prev) => prev.filter((s) => s.id !== id))
     }, 1300)
+  }, [])
+
+  const canSpamStickers = phase === "choosing" && timeLeft > 0
+  const isLivePvpOpponent = Boolean(pvpMatchId && opponent?.id?.startsWith("vk_"))
+
+  /** PvP: подтягиваем реакции соперника с сервера (локально sendSticker только у себя). */
+  useEffect(() => {
+    if (!pvpMatchId || !opponent?.id?.startsWith("vk_")) return
+    if (phase !== "choosing") return
+
+    const tick = async () => {
+      try {
+        const stRes = await fetch(
+          appPath(
+            `/api/match/pvp-state?matchId=${encodeURIComponent(pvpMatchId)}&userId=${encodeURIComponent(player.id)}`,
+          ),
+          { cache: "no-store" },
+        )
+        const st = (await stRes.json()) as { ok?: boolean; remoteReaction?: { seq: number; emoji: string } }
+        if (!st.ok || !st.remoteReaction) return
+        const { seq, emoji } = st.remoteReaction
+        if (seq <= lastRemoteReactionSeqRef.current) return
+        lastRemoteReactionSeqRef.current = seq
+        pushSticker(emoji)
+      } catch {
+        /* сеть / экспорт без API */
+      }
+    }
+
+    void tick()
+    const id = setInterval(() => void tick(), 600)
+    return () => clearInterval(id)
+  }, [pvpMatchId, opponent?.id, phase, player.id, pushSticker])
+
+  const sendSticker = (emoji: string) => {
+    if (!canSpamStickers) return
+    pushSticker(emoji)
+    if (isLivePvpOpponent) {
+      void fetch(appPath("/api/match/pvp-reaction"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ matchId: pvpMatchId, userId: player.id, emoji }),
+      }).catch(() => {})
+    }
   }
 
   const resolveRound = useCallback(
@@ -678,26 +725,29 @@ export function GameArena() {
         <div
           className={`card-flip-wrap w-28 h-36 ${
             phase !== "choosing" && opponentMove && showOpponentCard ? "flipped" : ""
-          } ${opponent?.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
+          }`}
         >
           <div className="card-flip-inner w-full h-full">
-            {/* Лицевая сторона (пока соперник не открыл карту): просто рубашка */}
-            <div className="card-flip-front card-medieval card-medieval-back" />
-            {/* Обратная сторона: та же карта, что и у игрока (камень/бумага/ножницы) */}
+            {/* Колода соперника — card-set-ancient только на гранях, не на обёртке (иначе наследование переменных). */}
+            <div
+              className={`card-flip-front card-medieval card-medieval-back ${
+                opponent?.cardDeck === "ancient-rus" ? "card-set-ancient" : ""
+              }`}
+            />
             <div
               className={`card-flip-back card-medieval card-medieval-opponent ${
                 opponentMove === "rock"
                   ? "card-medieval-rock"
                   : opponentMove === "paper"
-                  ? "card-medieval-paper"
-                  : opponentMove === "scissors"
-                  ? "card-medieval-scissors"
-                  : opponentMove === "water"
-                  ? "card-medieval-water"
-                  : opponentMove === "fire"
-                  ? "card-medieval-fire"
-                  : ""
-              }`}
+                    ? "card-medieval-paper"
+                    : opponentMove === "scissors"
+                      ? "card-medieval-scissors"
+                      : opponentMove === "water"
+                        ? "card-medieval-water"
+                        : opponentMove === "fire"
+                          ? "card-medieval-fire"
+                          : ""
+              } ${opponent?.cardDeck === "ancient-rus" ? "card-set-ancient" : ""}`}
             />
           </div>
         </div>
@@ -791,18 +841,6 @@ export function GameArena() {
               <ChevronDown className="h-4 w-4 text-emerald-300" aria-label="Вы" />
             </div>
           )}
-          {drawMessage && (
-            <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
-          )}
-          {roundHintMessage && !drawMessage && (
-            <p
-              className={`text-sm font-bold animate-in fade-in ${
-                roundHintMessage.startsWith("Побед") ? "text-emerald-400" : roundHintMessage.startsWith("Поражен") ? "text-red-400" : "text-white/90"
-              }`}
-            >
-              {roundHintMessage}
-            </p>
-          )}
         </div>
       </div>
 
@@ -846,6 +884,28 @@ export function GameArena() {
           )
         })}
       </div>
+
+      {/* Исход раунда / ничья — между зоной карт и аватаром игрока (визуально между аватарками) */}
+      {(drawMessage || (roundHintMessage && !drawMessage)) && (
+        <div className="flex flex-col items-center justify-center w-full max-w-lg mx-auto mb-2 px-2 text-center">
+          {drawMessage && (
+            <p className="text-sm text-amber-400 font-bold animate-in fade-in">Ничья! Ещё раунд...</p>
+          )}
+          {roundHintMessage && !drawMessage && (
+            <p
+              className={`text-sm font-bold animate-in fade-in ${
+                roundHintMessage.startsWith("Побед")
+                  ? "text-emerald-400"
+                  : roundHintMessage.startsWith("Поражен")
+                    ? "text-red-400"
+                    : "text-white/90"
+              }`}
+            >
+              {roundHintMessage}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Игрок: аватар, имя, баланс */}
       <div className="mt-auto flex flex-col items-center w-full max-w-lg mx-auto pb-2">

@@ -17,6 +17,8 @@ export interface QueuePlayerPayload {
   vip: boolean
   bet: number
   rounds: number
+  /** Набор карт для отрисовки у соперника (классика = поле отсутствует). */
+  cardDeck?: "ancient-rus"
 }
 
 export interface QueueOpponent {
@@ -30,6 +32,7 @@ export interface QueueOpponent {
   weekWins: number
   weekEarnings: number
   balance: number
+  cardDeck?: "ancient-rus"
 }
 
 interface QueuedEntry extends QueuePlayerPayload {
@@ -101,6 +104,7 @@ function payloadToOpponent(p: QueuePlayerPayload): QueueOpponent {
     weekWins: 0,
     weekEarnings: 0,
     balance: 0,
+    ...(p.cardDeck === "ancient-rus" ? { cardDeck: "ancient-rus" as const } : {}),
   }
 }
 

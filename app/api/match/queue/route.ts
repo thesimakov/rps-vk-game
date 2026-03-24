@@ -22,8 +22,18 @@ function parseBody(body: unknown): QueuePlayerPayload | null {
   const vip = Boolean(o.vip)
   const bet = typeof o.bet === "number" && Number.isFinite(o.bet) ? o.bet : 0
   const rounds = o.rounds === 1 || o.rounds === 3 || o.rounds === 5 ? o.rounds : 3
+  const cardDeck = o.cardDeck === "ancient-rus" ? ("ancient-rus" as const) : undefined
   if (!isValidPlayerId(userId)) return null
-  return { userId: normalizeVkPlayerId(userId), name, avatar, avatarUrl, vip, bet, rounds }
+  return {
+    userId: normalizeVkPlayerId(userId),
+    name,
+    avatar,
+    avatarUrl,
+    vip,
+    bet,
+    rounds,
+    ...(cardDeck ? { cardDeck } : {}),
+  }
 }
 
 /** Встать в очередь матчмейкинга */

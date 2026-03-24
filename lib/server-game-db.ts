@@ -56,6 +56,17 @@ export function getGameStateDb(): GameStateDb {
       updated_at INTEGER NOT NULL
     );
   `)
+  const pvpCols = instance.prepare("PRAGMA table_info(pvp_match_sessions)").all() as { name: string }[]
+  const pvpColNames = new Set(pvpCols.map((c) => c.name))
+  if (!pvpColNames.has("reaction_seq")) {
+    instance.exec(`ALTER TABLE pvp_match_sessions ADD COLUMN reaction_seq INTEGER NOT NULL DEFAULT 0`)
+  }
+  if (!pvpColNames.has("reaction_emoji")) {
+    instance.exec(`ALTER TABLE pvp_match_sessions ADD COLUMN reaction_emoji TEXT`)
+  }
+  if (!pvpColNames.has("reaction_from")) {
+    instance.exec(`ALTER TABLE pvp_match_sessions ADD COLUMN reaction_from TEXT`)
+  }
   const row = instance.prepare("SELECT data FROM match_queue_state WHERE id = 1").get() as { data: string } | undefined
   if (!row) {
     instance.prepare("INSERT INTO match_queue_state (id, data) VALUES (1, ?)").run(

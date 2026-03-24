@@ -1,0 +1,28 @@
+import { NextResponse } from "next/server"
+import { isValidPlayerId } from "@/lib/player-store"
+import { submitPvpReaction } from "@/lib/pvp-session-store"
+
+const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
+export const runtime = "nodejs"
+
+export async function POST(req: Request) {
+  if (IS_STATIC_EXPORT) {
+    return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
+  }
+  try {
+    const body = (await req.json()) as { matchId?: string; userId?: string; emoji?: string }
+    const matchId = typeof body.matchId === "string" ? body.matchId : ""
+    const userId = typeof body.userId === "string" ? body.userId : ""
+    const emoji = typeof body.emoji === "string" ? body.emoji : ""
+    if (!matchId || !isValidPlayerId(userId) || !emoji) {
+      return NextResponse.json({ ok: false, error: "invalid" }, { status: 400 })
+    }
+    const r = submitPvpReaction(matchId, userId, emoji)
+    if (!r.ok) {
+      return NextResponse.json({ ok: false, error: r.error }, { status: 400 })
+    }
+    return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
+  } catch {
+    return NextResponse.json({ ok: false, error: "server" }, { status: 500 })
+  }
+}
