@@ -115,9 +115,23 @@ export function submitPvpMove(
 
     const o = getRoundOutcome(p1Next, p2Next)
     if (o === "draw") {
+      // Иначе клиент, сходивший первым, крутит poll до 200×350 мс — ждёт round_result, которого не было.
+      const pending = JSON.stringify({
+        is_draw: true,
+        round: row.current_round,
+        p1_move: p1Next,
+        p2_move: p2Next,
+        p1_score: row.p1_score,
+        p2_score: row.p2_score,
+        match_over: false,
+      })
       db.prepare(
-        `UPDATE pvp_match_sessions SET p1_move = NULL, p2_move = NULL, updated_at = ? WHERE match_id = ?`,
-      ).run(Date.now(), matchId)
+        `UPDATE pvp_match_sessions SET
+          p1_move = NULL, p2_move = NULL,
+          pending_result = ?, p1_ack = 0, p2_ack = 0,
+          updated_at = ?
+        WHERE match_id = ?`,
+      ).run(pending, Date.now(), matchId)
       return { ok: true as const, draw: true as const }
     }
 
@@ -165,10 +179,14 @@ export function ackPvpRound(matchId: string, userId: string): { ok: true } | { o
     const p1Ack = isP1 ? 1 : row.p1_ack
     const p2Ack = isP2 ? 1 : row.p2_ack
 
-    const pr = JSON.parse(row.pending_result) as { match_over: boolean }
+    const pr = JSON.parse(row.pending_result) as { match_over: boolean; is_draw?: boolean }
 
     if (p1Ack && p2Ack) {
-      if (pr.match_over) {
+      if (pr.is_draw) {
+        db.prepare(
+          `UPDATE pvp_match_sessions SET pending_result = NULL, p1_ack = 0, p2_ack = 0, updated_at = ? WHERE match_id = ?`,
+        ).run(Date.now(), matchId)
+      } else if (pr.match_over) {
         db.prepare(
           `UPDATE pvp_match_sessions SET pending_result = NULL, p1_ack = 0, p2_ack = 0, finished = 1, updated_at = ? WHERE match_id = ?`,
         ).run(Date.now(), matchId)
@@ -209,6 +227,7 @@ export function getPvpState(matchId: string, userId: string) {
       p1_score: number
       p2_score: number
       match_over: boolean
+      is_draw?: boolean
     }
     const isP1 = uid === normalizeVkPlayerId(row.p1_id)
     const myMove = isP1 ? pr.p1_move : pr.p2_move

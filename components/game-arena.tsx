@@ -257,6 +257,14 @@ export function GameArena() {
             setPhase("choosing")
             setTimeLeft(baseTimer)
             resolvedRef.current = false
+            if (pvpMatchId && player.id) {
+              void fetch(appPath("/api/match/pvp-ack"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                cache: "no-store",
+                body: JSON.stringify({ matchId: pvpMatchId, userId: player.id }),
+              })
+            }
           }, 2000)
           timersRef.current.push(drawTimer)
           return
@@ -517,9 +525,9 @@ export function GameArena() {
             return
           }
           if (data.draw) {
-            resolvedRef.current = false
             setPvpAwaitingServer(false)
-            setSelectedMove(null)
+            resolvedRef.current = false
+            resolveRound(move, move)
             return
           }
           for (let i = 0; i < 200; i++) {
