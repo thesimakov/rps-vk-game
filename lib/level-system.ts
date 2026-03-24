@@ -1,9 +1,8 @@
 /** XP за матч (см. game-context: начисление по дельте побед/поражений). */
-export const MATCH_WIN_XP = 30
-export const MATCH_LOSS_XP = 12
+export const MATCH_WIN_XP = 5
+export const MATCH_LOSS_XP = 0
 
-/** XP до следующего номера уровня. Раньше было 100 — уровень почти не менялся при +30 за победу. */
-export const LEVEL_STEP_XP = 40
+export const LEVEL_STEP_XP = 100
 export const MAX_LEVEL = 30
 export const MAX_LEVEL_XP = LEVEL_STEP_XP * MAX_LEVEL
 

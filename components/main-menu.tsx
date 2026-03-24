@@ -401,7 +401,7 @@ export function MainMenu() {
           className="w-full flex items-center justify-center gap-2.5 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
         >
           <Shield className="h-5 w-5 text-emerald-400" />
-          <span>Оффлайн игра (с ботами)</span>
+          <span>Оффлайн игра</span>
         </button>
 
         <button
