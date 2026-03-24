@@ -44,9 +44,10 @@ function dtoToPlayer(o: QueueOpponentDto): Player {
   }
 }
 
-async function leaveMatchQueue(userId: string) {
+async function leaveMatchQueue(userId: string, opts?: { bucketsOnly?: boolean }) {
   try {
-    await fetch(appPath("/api/match/queue"), {
+    const q = opts?.bucketsOnly ? "?bucketsOnly=true" : ""
+    await fetch(appPath(`/api/match/queue${q}`), {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ userId }),
@@ -186,7 +187,8 @@ export function Matchmaking() {
       cancelled = true
       clearPoll()
       setPollingForMatch(false)
-      void leaveMatchQueue(player.id)
+      /** Не сбрасываем pending: иначе ждущий первым теряет пару при перезапуске эффекта/размонтинге. */
+      void leaveMatchQueue(player.id, { bucketsOnly: true })
     }
   }, [player.id, currentBet, totalRounds, setOpponent, setPvpMatchId])
 

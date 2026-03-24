@@ -1,6 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
-import { joinQueue, leaveQueue, type QueuePlayerPayload } from "@/lib/match-queue-store"
+import {
+  abortMatchmaking,
+  joinQueue,
+  removeFromQueueBucketsOnly,
+  type QueuePlayerPayload,
+} from "@/lib/match-queue-store"
 import { getUserIdFromGetRequest } from "@/lib/query-user-id"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
@@ -52,12 +57,18 @@ export async function POST(req: Request) {
   }
 }
 
-/** Покинуть очередь (отмена поиска, таймаут клиента) */
+/**
+ * Покинуть очередь.
+ * По умолчанию — полная отмена (корзины + pending), кнопка «Отмена».
+ * `?bucketsOnly=true` — только убрать из корзин ожидания; pending не трогаем
+ * (размонтирование matchmaking, чтобы не сбрасывать готовую пару для игрока, который ждал первым).
+ */
 export async function DELETE(req: NextRequest) {
   if (IS_STATIC_EXPORT) {
     return NextResponse.json({ ok: false, error: "no_server" }, { status: 501 })
   }
   try {
+    const bucketsOnly = req.nextUrl.searchParams.get("bucketsOnly") === "true"
     let userId = ""
     try {
       const body = (await req.json()) as { userId?: string }
@@ -71,7 +82,12 @@ export async function DELETE(req: NextRequest) {
     if (!isValidPlayerId(userId)) {
       return NextResponse.json({ ok: false, error: "invalid_user" }, { status: 400 })
     }
-    leaveQueue(normalizeVkPlayerId(userId))
+    const id = normalizeVkPlayerId(userId)
+    if (bucketsOnly) {
+      removeFromQueueBucketsOnly(id)
+    } else {
+      abortMatchmaking(id)
+    }
     return NextResponse.json({ ok: true }, { headers: { "Cache-Control": "no-store" } })
   } catch {
     return NextResponse.json({ ok: false, error: "server" }, { status: 500 })

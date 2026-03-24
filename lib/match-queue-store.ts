@@ -117,6 +117,11 @@ export function joinQueue(payload: QueuePlayerPayload):
     const state = loadState()
     const key = bucketKey(payload.bet, payload.rounds)
     removeUserFromAllQueues(state, payload.userId)
+    /** Повторный POST (перезапуск эффекта) при уже готовой паре — не возвращать в корзину, иначе возможен второй матч. */
+    if (state.pending[payload.userId]) {
+      saveState(state)
+      return { ok: true as const, matched: false as const }
+    }
 
     let waiting = state.buckets[key] ?? []
     const now = Date.now()
@@ -177,7 +182,23 @@ export function pollMatch(userId: string):
   })()
 }
 
-export function leaveQueue(userId: string) {
+/**
+ * Убрать игрока только из корзин ожидания (без сброса pending).
+ * Нужен при размонтировании matchmaking: иначе «тихий» leave стирал готовую пару
+ * у игрока, который ждал первым, пока второй уже получил матч и ушёл в арену.
+ */
+export function removeFromQueueBucketsOnly(userId: string) {
+  if (!isValidPlayerId(userId)) return
+  const db = getGameStateDb()
+  db.transaction(() => {
+    const state = loadState()
+    removeUserFromAllQueues(state, userId)
+    saveState(state)
+  })()
+}
+
+/** Полный выход: корзины + отмена готовой пары (явная «Отмена» в UI). */
+export function abortMatchmaking(userId: string) {
   if (!isValidPlayerId(userId)) return
   const db = getGameStateDb()
   db.transaction(() => {
