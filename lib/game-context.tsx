@@ -705,16 +705,10 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const s = screenRef.current
-      if (s === "arena" || s === "matchmaking" || s === "result") return
-
       const now = Date.now()
       setBets((prev) => {
-        const next = prev.filter((b) => !b.botExpiresAt || b.botExpiresAt > now)
-        const shouldAddBot = now - lastBotBetAddedRef.current >= 8000
-        if (!shouldAddBot && next.length === prev.length) return prev
-
-        if (shouldAddBot) {
+        let next = prev.filter((b) => !b.botExpiresAt || b.botExpiresAt > now)
+        if (now - lastBotBetAddedRef.current >= 8000 + Math.random() * 10000) {
           lastBotBetAddedRef.current = now
           const r = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)]
           const amounts = [25, 50, 100, 150, 200]
@@ -730,7 +724,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
             vip: r.vip,
             botExpiresAt: now + 10000 + Math.random() * 10000,
           }
-          return [newBet, ...next]
+          next = [newBet, ...next]
         }
         return next
       })
@@ -1391,69 +1385,58 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const toDisplayAmount = useCallback((amount: number) => amount, [])
   const currencyLabel = "монет"
 
-  const contextValue = useMemo(() => ({
-    screen,
-    setScreen: handleSetScreen,
-    player,
-    setPlayer,
-    opponent,
-    setOpponent,
-    currentBet,
-    setCurrentBet,
-    lastResult,
-    setLastResult,
-    leaderboard,
-    playerRank,
-    rankTrend,
-    leaderboardVersion,
-    purchaseRankBoost,
-    vkUser,
-    loginWithVK,
-    loginWithoutVK,
-    logoutWithVK,
-    isLoading,
-    loadingStage,
-    loadingProgress,
-    loginErrorMessage,
-    bets,
-    pendingBet,
-    betResponse,
-    createBet,
-    removeBet,
-    updatePendingBetAmount,
-    acceptBetResponse,
-    declineBetResponse,
-    clearPendingBet,
-    totalRounds,
-    setTotalRounds,
-    lavaCardStock,
-    purchaseLavaCard,
-    purchaseWaterCard,
-    trackSpend,
-    toDisplayAmount,
-    currencyLabel,
-    weeklyRules,
-    pickRandomOpponent,
-    ensureRandomBotOpponent,
-    pvpMatchId,
-    setPvpMatchId,
-    offlineMode,
-    setOfflineMode,
-  }), [
-    screen, handleSetScreen, player, opponent, currentBet, lastResult,
-    leaderboard, playerRank, rankTrend, leaderboardVersion, purchaseRankBoost,
-    vkUser, loginWithVK, loginWithoutVK, logoutWithVK,
-    isLoading, loadingStage, loadingProgress, loginErrorMessage,
-    bets, pendingBet, betResponse, createBet, removeBet,
-    updatePendingBetAmount, acceptBetResponse, declineBetResponse, clearPendingBet,
-    totalRounds, lavaCardStock, purchaseLavaCard, purchaseWaterCard, trackSpend,
-    toDisplayAmount, currencyLabel, weeklyRules,
-    pickRandomOpponent, ensureRandomBotOpponent, pvpMatchId, offlineMode,
-    setPlayer, setOpponent, setCurrentBet, setLastResult, setTotalRounds, setPvpMatchId, setOfflineMode,
-  ])
-
   return (
-    <GameContext.Provider value={contextValue}>
+    <GameContext.Provider
+      value={{
+        screen,
+        setScreen: handleSetScreen,
+        player,
+        setPlayer,
+        opponent,
+        setOpponent,
+        currentBet,
+        setCurrentBet,
+        lastResult,
+        setLastResult,
+        leaderboard,
+        playerRank,
+        rankTrend,
+        leaderboardVersion,
+        purchaseRankBoost,
+        vkUser,
+        loginWithVK,
+        loginWithoutVK,
+        logoutWithVK,
+        isLoading,
+        loadingStage,
+        loadingProgress,
+        loginErrorMessage,
+        bets,
+        pendingBet,
+        betResponse,
+        createBet,
+        removeBet,
+        updatePendingBetAmount,
+        acceptBetResponse,
+        declineBetResponse,
+        clearPendingBet,
+        totalRounds,
+        setTotalRounds,
+        lavaCardStock,
+        purchaseLavaCard,
+        purchaseWaterCard,
+        trackSpend,
+        toDisplayAmount,
+        currencyLabel,
+        weeklyRules,
+        pickRandomOpponent,
+        ensureRandomBotOpponent,
+        pvpMatchId,
+        setPvpMatchId,
+        offlineMode,
+        setOfflineMode,
+      }}
+    >
       {children}
     </GameContext.Provider>
   )

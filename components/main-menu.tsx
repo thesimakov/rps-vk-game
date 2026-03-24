@@ -1,5 +1,6 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useEffect, useMemo, useState } from "react"
@@ -215,7 +216,7 @@ export function MainMenu() {
         <div className="flex flex-col items-center gap-3 mb-2">
           <div className="w-28 h-28 flex items-center justify-center">
             <img
-              src="/logo.webp"
+              src={appPath("/logo.webp")}
               alt="RPS Arena"
               className="w-full h-full object-contain"
             />

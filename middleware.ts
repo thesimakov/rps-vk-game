@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server"
  * CORS для API, когда фронт на другом origin (GitHub Pages, VK), а бэкенд на VPS.
  *
  * На сервере в .env:
- * CORS_ALLOWED_ORIGINS=https://USER.github.io,https://web.vk.com,https://vk.com,https://m.vk.com,https://*.github.io
+ * CORS_ALLOWED_ORIGINS=https://USER.github.io,https://web.vk.com,https://vk.com,https://m.vk.com,https://vk.me,https://id.vk.com,https://*.github.io
  *
  * Последний пункт — любой поддомен github.io (страницы проектов).
  */

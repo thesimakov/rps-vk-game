@@ -1,5 +1,6 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { useEffect, useState } from "react"
 import Image from "next/image"
 
@@ -38,7 +39,7 @@ export function GameLoader({ stage, progress }: { stage?: string; progress?: num
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative h-44 w-44 sm:h-48 sm:w-48 animate-pulse">
           <Image
-            src="/logo.webp"
+            src={appPath("/logo.webp")}
             alt="Логотип игры"
             fill
             className="object-contain drop-shadow-[0_0_20px_rgba(34,211,238,0.65)]"

@@ -47,7 +47,7 @@
    Пример `.env` на сервере:
    ```env
    NEXT_OUTPUT_EXPORT=0
-   CORS_ALLOWED_ORIGINS=https://web.vk.com,https://vk.com,https://m.vk.com,https://vk.ru,https://YOUR.github.io,https://YOUR.pages.dev
+   CORS_ALLOWED_ORIGINS=https://web.vk.com,https://vk.com,https://m.vk.com,https://vk.ru,https://vk.me,https://id.vk.com,https://YOUR.github.io,https://YOUR.pages.dev
    ```
    Добавьте origin, с которого реально открывается ваш фронт (страница VK, Pages и т.д.). Для GitHub Pages удобно добавить `https://*.github.io` в списке (см. `middleware.ts`).
 

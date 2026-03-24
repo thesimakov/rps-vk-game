@@ -1,5 +1,6 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { LogIn, Trophy, Coins, Ticket } from "lucide-react"
 import { useEffect, useState } from "react"
@@ -50,7 +51,7 @@ export function EntryScreen() {
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="w-40 h-40 sm:w-44 sm:h-44 flex items-center justify-center">
             <img
-              src="/logo.webp"
+              src={appPath("/logo.webp")}
               alt="RPS Arena"
               className="w-full h-full object-contain"
             />
