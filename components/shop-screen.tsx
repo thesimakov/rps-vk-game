@@ -659,16 +659,22 @@ export function ShopScreen() {
             Для пополнения откройте приложение в ВКонтакте.
           </p>
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 gap-2.5">
           {VK_VOICE_PACKS.map((pack) => (
             <button
               key={pack.amount}
               onClick={() => handleTopUp(pack.amount)}
               disabled={topUpLoading !== null}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-primary text-primary-foreground text-sm font-bold transition-all active:scale-95 disabled:opacity-50"
+              className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-2xl bg-card/60 border border-primary/30 hover:border-primary/60 transition-all active:scale-[0.97] disabled:opacity-50"
             >
-              <Coins className="h-4 w-4" />
-              {topUpLoading === pack.amount ? "..." : `${pack.amount} монет`}
+              <Coins className="h-6 w-6 text-accent" />
+              <span className="text-base font-extrabold text-foreground tabular-nums">
+                {topUpLoading === pack.amount ? "..." : formatAmount(pack.amount)}
+              </span>
+              <span className="text-[10px] text-muted-foreground font-medium">монет</span>
+              <span className="mt-0.5 px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-[11px] font-bold tabular-nums">
+                {pack.votes} {pack.votes === 1 ? "голос" : pack.votes < 5 ? "голоса" : "голосов"}
+              </span>
             </button>
           ))}
         </div>
