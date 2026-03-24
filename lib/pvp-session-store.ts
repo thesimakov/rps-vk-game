@@ -10,7 +10,8 @@ import { PVP_RULESET_MODE } from "@/lib/pvp-ruleset"
 export { PVP_RULESET_MODE }
 
 const MODE_MOVES: Record<string, RpsMove[]> = {
-  classic: ["rock", "scissors", "paper"],
+  /** Как на клиенте в арене: классика + карта «Вода» при наличии использований */
+  classic: ["rock", "scissors", "paper", "water"],
   elements_tournament: ["fire", "water", "rock"],
   time_is_money: ["rock", "scissors", "paper"],
   blind_luck: ["rock", "scissors", "paper"],
