@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getLiveVkPlayersInBucket, getLiveVkPlayersInMatchmaking } from "@/lib/match-queue-store"
+import { getLiveVkPlayersInBucket, getLiveVkPlayersInMatchmaking, getLiveVkPlayersByBucket } from "@/lib/match-queue-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
@@ -7,7 +7,7 @@ export const runtime = "nodejs"
 
 /**
  * Сколько vk_* в матчмейкинге.
- * Без query — глобально по всем корзинам.
+ * Без query — глобально по всем корзинам + разбивка по корзинам (buckets).
  * С `bet`, `rounds` — только эта корзина (для таймера «бот через 2 мин»).
  */
 export async function GET(req: Request) {
@@ -28,7 +28,11 @@ export async function GET(req: Request) {
         { headers: { "Cache-Control": "no-store" } },
       )
     }
-    return NextResponse.json({ ok: true, count: globalLive, globalLive }, { headers: { "Cache-Control": "no-store" } })
+    const buckets = getLiveVkPlayersByBucket()
+    return NextResponse.json(
+      { ok: true, count: globalLive, globalLive, buckets },
+      { headers: { "Cache-Control": "no-store" } },
+    )
   } catch {
     return NextResponse.json({ ok: false, error: "server", count: 0 }, { status: 500 })
   }

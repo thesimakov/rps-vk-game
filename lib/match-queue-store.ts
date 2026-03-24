@@ -249,3 +249,30 @@ export function getLiveVkPlayersInMatchmaking(): number {
     return ids.size
   })()
 }
+
+/** Количество vk_* игроков в каждой корзине (ставка_раунды) */
+export function getLiveVkPlayersByBucket(): Record<string, number> {
+  const db = getGameStateDb()
+  return db.transaction(() => {
+    const state = loadState()
+    const now = Date.now()
+    const result: Record<string, number> = {}
+
+    for (const [key, arr] of Object.entries(state.buckets)) {
+      const ids = new Set<string>()
+      for (const e of arr) {
+        if (now - e.enqueuedAt >= QUEUE_TTL_MS) continue
+        if (e.userId.startsWith("vk_")) ids.add(e.userId)
+      }
+      if (ids.size > 0) result[key] = ids.size
+    }
+
+    for (const [userId, p] of Object.entries(state.pending)) {
+      if (!userId.startsWith("vk_")) continue
+      const bk = "bucketKey" in p && typeof p.bucketKey === "string" ? p.bucketKey : ""
+      if (bk) result[bk] = (result[bk] ?? 0) + 1
+    }
+
+    return result
+  })()
+}

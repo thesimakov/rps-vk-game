@@ -280,6 +280,9 @@ interface GameState {
   /** Id серверной сессии vk vs vk (ходы через /api/match/pvp-*) */
   pvpMatchId: string | null
   setPvpMatchId: (id: string | null) => void
+  /** Оффлайн-режим: играть с ботами, без матчмейкинга */
+  offlineMode: boolean
+  setOfflineMode: (v: boolean) => void
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -673,6 +676,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [lavaCardStock, setLavaCardStock] = useState(3)
   const [weeklyRules, setWeeklyRules] = useState<WeeklyRules | null>(null)
   const [pvpMatchId, setPvpMatchId] = useState<string | null>(null)
+  const [offlineMode, setOfflineMode] = useState(false)
   const [hasLoadedSave, setHasLoadedSave] = useState(false)
   const leaderboardDataRef = useRef(
     STATIC_LEADERBOARD.map((e) => ({ ...e }))
@@ -1428,6 +1432,8 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         ensureRandomBotOpponent,
         pvpMatchId,
         setPvpMatchId,
+        offlineMode,
+        setOfflineMode,
       }}
     >
       {children}

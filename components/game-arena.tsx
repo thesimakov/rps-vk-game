@@ -3,7 +3,7 @@
 import { useGame, type Move, type MatchRoundSummary } from "@/lib/game-context"
 import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown, ShieldAlert } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { sendMatchResult } from "@/lib/liveops/client"
@@ -113,9 +113,13 @@ export function GameArena() {
   /** Босс-неделя отключена в матчмейкинге; оставляем ветку для редкого opponent boss-npc */
   const isBossMode = opponent?.id === "boss-npc"
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
-  const allowedMovesByMode: Move[] = hasWaterCard
-    ? [...BASE_MOVES, WATER_MOVE].map((m) => m.key as Move)
-    : BASE_MOVES.map((m) => m.key as Move)
+  const allowedMovesByMode: Move[] = useMemo(
+    () =>
+      hasWaterCard
+        ? [...BASE_MOVES, WATER_MOVE].map((m) => m.key as Move)
+        : BASE_MOVES.map((m) => m.key as Move),
+    [hasWaterCard],
+  )
   const MOVES = hasWaterCard ? [...BASE_MOVES, WATER_MOVE] : BASE_MOVES
   const hasExtraTimer = (player.extraTimerUntil ?? 0) > Date.now()
   const baseTimer = hasExtraTimer ? 25 : 15
@@ -487,7 +491,6 @@ export function GameArena() {
     setPlayer,
     setLastResult,
     setScreen,
-    resolveRound,
     baseTimer,
     trackLiveOpsMatch,
     pvpAwaitingServer,

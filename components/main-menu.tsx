@@ -80,7 +80,7 @@ function getNextLottoDrawTimestamp(from: number = Date.now()): number {
 }
 
 export function MainMenu() {
-  const { setScreen, player, setPlayer, toDisplayAmount, currencyLabel } = useGame()
+  const { setScreen, player, setPlayer, toDisplayAmount, currencyLabel, setOfflineMode } = useGame()
   const [now, setNow] = useState(() => Date.now())
   const [showLotto, setShowLotto] = useState(false)
   const [tempSelection, setTempSelection] = useState<number[]>([])
@@ -386,14 +386,22 @@ export function MainMenu() {
         </div>
       </div>
 
-      {/* Кнопки: ИГРАТЬ, Таблица лидеров, Магазин и Профиль */}
+      {/* Кнопки: ИГРАТЬ, Оффлайн, Таблица лидеров, Магазин и Профиль */}
       <div className="w-full max-w-lg flex flex-col gap-3">
         <button
-          onClick={() => setScreen("bet-select")}
+          onClick={() => { setOfflineMode(false); setScreen("bet-select") }}
           className="w-full flex items-center justify-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-black text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"
         >
           <Swords className="h-6 w-6" />
-          <span>ИГРАТЬ</span>
+          <span>ИГРАТЬ ОНЛАЙН</span>
+        </button>
+
+        <button
+          onClick={() => { setOfflineMode(true); setScreen("bet-select") }}
+          className="w-full flex items-center justify-center gap-2.5 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
+        >
+          <Shield className="h-5 w-5 text-emerald-400" />
+          <span>Оффлайн игра (с ботами)</span>
         </button>
 
         <button

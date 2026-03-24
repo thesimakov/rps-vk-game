@@ -39,14 +39,18 @@ export function BetSelect() {
     setPlayer,
     setOpponent,
     setPvpMatchId,
+    pickRandomOpponent,
     toDisplayAmount,
     currencyLabel,
+    offlineMode,
   } = useGame()
 
   const [onlineCount, setOnlineCount] = useState<number | null>(null)
   const [queueCount, setQueueCount] = useState<number | null>(null)
+  const [bucketCounts, setBucketCounts] = useState<Record<string, number>>({})
 
   useEffect(() => {
+    if (offlineMode) return
     let cancelled = false
     const load = async () => {
       try {
@@ -59,12 +63,19 @@ export function BetSelect() {
           fetch(appPath("/api/match/live-count"), { cache: "no-store" }),
         ])
         const onlineData = (await onlineRes.json()) as { ok?: boolean; count?: number }
-        const queueData = (await queueRes.json()) as { ok?: boolean; count?: number }
+        const queueData = (await queueRes.json()) as {
+          ok?: boolean
+          count?: number
+          buckets?: Record<string, number>
+        }
         if (cancelled) return
         setOnlineCount(
           onlineData.ok && typeof onlineData.count === "number" ? onlineData.count : null,
         )
         setQueueCount(queueData.ok && typeof queueData.count === "number" ? queueData.count : null)
+        if (queueData.ok && queueData.buckets) {
+          setBucketCounts(queueData.buckets)
+        }
       } catch {
         if (!cancelled) {
           setOnlineCount(null)
@@ -78,7 +89,7 @@ export function BetSelect() {
       cancelled = true
       clearInterval(t)
     }
-  }, [player.id])
+  }, [player.id, offlineMode])
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
@@ -89,9 +100,15 @@ export function BetSelect() {
       activeWeeklyMode: undefined,
       bossWeekMatchChoice: undefined,
     }))
-    setOpponent(null)
     setPvpMatchId(null)
-    setScreen("matchmaking")
+
+    if (offlineMode) {
+      pickRandomOpponent()
+      setScreen("arena")
+    } else {
+      setOpponent(null)
+      setScreen("matchmaking")
+    }
   }
 
   return (
@@ -106,7 +123,7 @@ export function BetSelect() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-center text-base font-bold text-foreground uppercase tracking-wider">
-          Выбор ставки
+          {offlineMode ? "Оффлайн игра" : "Выбор ставки"}
         </h1>
         <div className="w-9" />
       </div>
@@ -123,38 +140,50 @@ export function BetSelect() {
         Выберите ставку: 5–10 монет — быстрая игра, 25–50 монет — 3 хода, 100–250 монет — 5 ходов
       </p>
 
-      {/* Онлайн и очередь матчмейкинга — перед выбором ставки */}
-      <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-6">
-        <div className="flex items-center gap-2.5 bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
-          <Users className="h-4 w-4 shrink-0 text-sky-400/90" aria-hidden />
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Онлайн</p>
-            <p className="text-lg font-extrabold tabular-nums text-foreground leading-tight">
-              {onlineCount === null ? "…" : onlineCount}
-            </p>
-          </div>
+      {offlineMode && (
+        <div className="w-full max-w-lg bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-4 py-3 mb-6 text-center">
+          <p className="text-sm font-semibold text-emerald-300">Режим игры с ботами</p>
+          <p className="text-[11px] text-emerald-200/70 mt-0.5">Выберите ставку — соперник подберётся мгновенно</p>
         </div>
-        <div className="flex items-center gap-2.5 bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
-          <Search className="h-4 w-4 shrink-0 text-amber-400/90" aria-hidden />
-          <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-              В очереди
-            </p>
-            <p className="text-lg font-extrabold tabular-nums text-foreground leading-tight">
-              {queueCount === null ? "…" : queueCount}
-            </p>
+      )}
+
+      {!offlineMode && (
+        <>
+          <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-6">
+            <div className="flex items-center gap-2.5 bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
+              <Users className="h-4 w-4 shrink-0 text-sky-400/90" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Онлайн</p>
+                <p className="text-lg font-extrabold tabular-nums text-foreground leading-tight">
+                  {onlineCount === null ? "…" : onlineCount}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 bg-card/50 backdrop-blur-sm border border-border/30 rounded-2xl px-4 py-3">
+              <Search className="h-4 w-4 shrink-0 text-amber-400/90" aria-hidden />
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                  В очереди
+                </p>
+                <p className="text-lg font-extrabold tabular-nums text-foreground leading-tight">
+                  {queueCount === null ? "…" : queueCount}
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <p className="text-[11px] text-muted-foreground/90 text-center mb-4 -mt-2 max-w-md font-medium">
-        В очереди — игроки ВКонтакте в поиске соперника (комната ожидания)
-      </p>
+          <p className="text-[11px] text-muted-foreground/90 text-center mb-4 -mt-2 max-w-md font-medium">
+            В очереди — игроки ВКонтакте в поиске соперника (комната ожидания)
+          </p>
+        </>
+      )}
 
       {/* Сетка: ставка + число раундов */}
       <div className="w-full max-w-lg grid grid-cols-2 gap-3">
         {BET_OPTIONS.map(({ value, rounds }) => {
           const canAfford = player.balance >= value
           const badge = getTierBadge(rounds)
+          const bucketKey = `${value}_${rounds}`
+          const inQueue = bucketCounts[bucketKey] ?? 0
           return (
             <button
               key={value}
@@ -175,6 +204,12 @@ export function BetSelect() {
               <span className={`mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>
                 {badge.label}
               </span>
+              {!offlineMode && inQueue > 0 && (
+                <span className="mt-1.5 flex items-center gap-1 text-[10px] font-semibold text-sky-400">
+                  <Users className="h-3 w-3" />
+                  {inQueue} в очереди
+                </span>
+              )}
               {rounds === 5 && canAfford && (
                 <Flame className="absolute top-2.5 left-2.5 h-4 w-4 text-destructive/50" />
               )}
