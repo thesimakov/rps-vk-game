@@ -97,7 +97,7 @@ export async function createPlayInvite(fromUserId: string, toUserId: string): Pr
 function refreshWaitingToPending(db: ReturnType<typeof getGameStateDb>, toUserId: string) {
   const rows = db
     .prepare(`SELECT id FROM play_invites WHERE to_user_id = ? AND state = 'waiting_match'`)
-    .all() as { id: string }[]
+    .all(toUserId) as { id: string }[]
   const screen = getLastScreen(toUserId)
   if (!isMatchBusyScreen(screen)) {
     const now = Date.now()
