@@ -1,5 +1,4 @@
-import { loadLiveOpsConfig } from "@/lib/liveops/config"
-import { getWeeklyEventRuleSet } from "@/lib/liveops/engine"
+import { PVP_RULESET_MODE } from "@/lib/pvp-session-store"
 
 /** Общий режим ставки для пары после принятия приглашения (совпадает с сеткой bet-select: 25 = 3 раунда). */
 export type SharedMatchPreset = {
@@ -9,11 +8,9 @@ export type SharedMatchPreset = {
 }
 
 export async function resolveSharedMatchPreset(): Promise<SharedMatchPreset> {
-  const config = await loadLiveOpsConfig()
-  const rules = getWeeklyEventRuleSet(config, Date.now())
   return {
     bet: 25,
     rounds: 3,
-    weeklyMode: rules.event.mode,
+    weeklyMode: PVP_RULESET_MODE,
   }
 }

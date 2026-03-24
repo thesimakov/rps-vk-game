@@ -1,20 +1,17 @@
 "use client"
 
-import { appPath } from "@/lib/app-path"
-import { sendPresenceHeartbeat } from "@/lib/presence-client"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { ArrowLeft, Coins, Flame, Skull, User } from "lucide-react"
-import { useEffect, useState } from "react"
+import { ArrowLeft, Coins, Flame } from "lucide-react"
 
-/** Ставка и режим: 5,10 = быстрая игра (1 ход); 25,50 = 3 хода; 100,250 = 5 ходов */
-const BET_OPTIONS: { value: number; rounds: 1 | 3 | 5; modeLabel: string }[] = [
-  { value: 5, rounds: 1, modeLabel: "Быстрая игра" },
-  { value: 10, rounds: 1, modeLabel: "Быстрая игра" },
-  { value: 25, rounds: 3, modeLabel: "3 хода" },
-  { value: 50, rounds: 3, modeLabel: "3 хода" },
-  { value: 100, rounds: 5, modeLabel: "5 ходов" },
-  { value: 250, rounds: 5, modeLabel: "5 ходов" },
+/** Ставка: 5,10 = быстрая игра (1 ход); 25,50 = 3 хода; 100,250 = 5 ходов */
+const BET_OPTIONS: { value: number; rounds: 1 | 3 | 5 }[] = [
+  { value: 5, rounds: 1 },
+  { value: 10, rounds: 1 },
+  { value: 25, rounds: 3 },
+  { value: 50, rounds: 3 },
+  { value: 100, rounds: 5 },
+  { value: 250, rounds: 5 },
 ]
 
 function getTierAccent(rounds: number) {
@@ -40,109 +37,17 @@ export function BetSelect() {
     setPvpMatchId,
     toDisplayAmount,
     currencyLabel,
-    weeklyRules,
   } = useGame()
-  const isBossWeekEvent = weeklyRules?.event.mode === "boss_week"
-  const [bossWeekChoice, setBossWeekChoice] = useState<"boss" | "live">("live")
-  /** Онлайн ВК в игре (heartbeat, см. /api/presence/online-count) */
-  const [vkOnlineInGame, setVkOnlineInGame] = useState<number | null>(null)
-  /** В очереди матчмейкинга (см. /api/match/live-count) */
-  const [vkInMatchmaking, setVkInMatchmaking] = useState<number | null>(null)
-
-  useEffect(() => {
-    if (!isBossWeekEvent) return
-    if (player.bossWeekMatchChoice === "live" || player.bossWeekMatchChoice === "boss") {
-      setBossWeekChoice(player.bossWeekMatchChoice)
-    }
-  }, [isBossWeekEvent, player.bossWeekMatchChoice])
-
-  useEffect(() => {
-    if (!isBossWeekEvent) return
-    sendPresenceHeartbeat(player.id, "bet-select")
-  }, [isBossWeekEvent, player.id])
-
-  useEffect(() => {
-    if (!isBossWeekEvent) return
-    let cancelled = false
-    const load = async () => {
-      try {
-        const base = appPath("/api/presence/online-count")
-        const presenceUrl = player.id.startsWith("vk_")
-          ? `${base}?userId=${encodeURIComponent(player.id)}`
-          : base
-        const [presenceRes, queueRes] = await Promise.all([
-          fetch(presenceUrl, { cache: "no-store" }),
-          fetch(appPath("/api/match/live-count"), { cache: "no-store" }),
-        ])
-        const parseJson = async (res: Response) => {
-          const ct = res.headers.get("content-type") ?? ""
-          if (!ct.includes("application/json")) return null
-          try {
-            return (await res.json()) as { ok?: boolean; count?: number; error?: string }
-          } catch {
-            return null
-          }
-        }
-        const presenceData = await parseJson(presenceRes)
-        const queueData = await parseJson(queueRes)
-        if (cancelled) return
-
-        const presenceBad =
-          !presenceRes.ok ||
-          presenceRes.status === 501 ||
-          presenceData?.ok === false ||
-          presenceData?.error === "no_server"
-        if (presenceBad || presenceData == null) {
-          setVkOnlineInGame(null)
-        } else if (typeof presenceData.count === "number") {
-          const raw = presenceData.count
-          /** Число с сервера; без Math.max(...,1) — иначе у каждого vk всегда минимум «1» и не видно второго игрока */
-          setVkOnlineInGame(raw)
-        } else {
-          setVkOnlineInGame(null)
-        }
-
-        const queueBad =
-          !queueRes.ok || queueRes.status === 501 || queueData?.ok === false || queueData?.error === "no_server"
-        if (queueBad || queueData == null) {
-          setVkInMatchmaking(null)
-        } else if (typeof queueData.count === "number") {
-          setVkInMatchmaking(queueData.count)
-        } else {
-          setVkInMatchmaking(null)
-        }
-      } catch {
-        if (!cancelled) {
-          setVkOnlineInGame(null)
-          setVkInMatchmaking(null)
-        }
-      }
-    }
-    void load()
-    const t = setInterval(load, 12_000)
-    return () => {
-      cancelled = true
-      clearInterval(t)
-    }
-  }, [isBossWeekEvent, player.id])
 
   const handleSelectBet = (value: number, rounds: 1 | 3 | 5) => {
     if (player.balance < value) return
     setCurrentBet(value)
     setTotalRounds(rounds)
-    if (weeklyRules?.event.mode === "boss_week") {
-      setPlayer((p) => ({
-        ...p,
-        bossWeekMatchChoice: bossWeekChoice,
-        activeWeeklyMode: bossWeekChoice === "boss" ? "boss_week" : undefined,
-      }))
-    } else if (weeklyRules?.event.mode) {
-      setPlayer((p) => ({
-        ...p,
-        activeWeeklyMode: weeklyRules.event.mode,
-        bossWeekMatchChoice: undefined,
-      }))
-    }
+    setPlayer((p) => ({
+      ...p,
+      activeWeeklyMode: undefined,
+      bossWeekMatchChoice: undefined,
+    }))
     setOpponent(null)
     setPvpMatchId(null)
     setScreen("matchmaking")
@@ -174,73 +79,12 @@ export function BetSelect() {
       </div>
 
       <p className="text-muted-foreground text-sm mb-6 text-center font-medium">
-        Выберите ставку и режим: 5–10 монет — быстрая игра, 25–50 монет — 3 хода, 100–250 монет — 5 ходов
+        Выберите ставку: 5–10 монет — быстрая игра, 25–50 монет — 3 хода, 100–250 монет — 5 ходов
       </p>
 
-      {weeklyRules && (
-        <div className="w-full max-w-lg mb-5 rounded-2xl border border-sky-400/30 bg-sky-500/10 p-3">
-          <p className="text-sm font-semibold text-sky-200">{weeklyRules.event.title}</p>
-          <p className="text-xs text-white/75 mt-1">{weeklyRules.event.description}</p>
-        </div>
-      )}
-
-      {isBossWeekEvent && (
-        <div className="w-full max-w-lg mb-5">
-          <p className="text-xs text-muted-foreground text-center mb-2 font-medium">
-            С кем играть в эту неделю?
-          </p>
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                setBossWeekChoice("live")
-                setPlayer((p) => ({
-                  ...p,
-                  bossWeekMatchChoice: "live",
-                  activeWeeklyMode: p.activeWeeklyMode === "boss_week" ? undefined : p.activeWeeklyMode,
-                }))
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
-                bossWeekChoice === "live"
-                  ? "border-sky-400/60 bg-sky-500/15 text-sky-100 shadow-[0_0_20px_rgba(56,189,248,0.12)]"
-                  : "border-border/40 bg-card/30 text-muted-foreground hover:border-border/60"
-              }`}
-            >
-              <User className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-              <span className="flex flex-col items-center gap-0.5 min-w-0">
-                <span>Живая игра</span>
-                {vkOnlineInGame !== null && (
-                  <span className="text-[10px] font-semibold tabular-nums text-sky-200/90">
-                    {vkOnlineInGame} онлайн в игре
-                    {vkInMatchmaking !== null && vkInMatchmaking > 0
-                      ? ` · ${vkInMatchmaking} в поиске`
-                      : ""}
-                  </span>
-                )}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setBossWeekChoice("boss")
-                setPlayer((p) => ({ ...p, bossWeekMatchChoice: "boss" }))
-              }}
-              className={`flex-1 flex items-center justify-center gap-2 py-3 px-3 rounded-2xl border text-sm font-bold transition-all active:scale-[0.98] ${
-                bossWeekChoice === "boss"
-                  ? "border-rose-400/50 bg-rose-950/50 text-rose-50 shadow-[0_0_20px_rgba(225,29,72,0.15)]"
-                  : "border-border/40 bg-card/30 text-muted-foreground hover:border-border/60"
-              }`}
-            >
-              <Skull className="h-4 w-4 shrink-0 opacity-90" aria-hidden />
-              Босс-неделя
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Сетка: ставка + режим (объединённое поле) */}
+      {/* Сетка: ставка + число раундов */}
       <div className="w-full max-w-lg grid grid-cols-2 gap-3">
-        {BET_OPTIONS.map(({ value, rounds, modeLabel }) => {
+        {BET_OPTIONS.map(({ value, rounds }) => {
           const canAfford = player.balance >= value
           const badge = getTierBadge(rounds)
           return (

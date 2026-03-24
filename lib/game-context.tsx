@@ -771,27 +771,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [hasLoadedSave, vkUser, player])
 
-  // Загружаем серверные weekly-правила события.
+  // Опционально подгружаем правила LiveOps (квесты и т.д.) без «режима недели» в матчах.
   useEffect(() => {
     let active = true
     const loadWeeklyRules = async () => {
       const res = await postJSON<{ ok: boolean; rules?: WeeklyRules }>("/api/liveops/weekly-rules", {})
       if (!active || !res?.ok || !res.rules) return
       setWeeklyRules(res.rules)
-      setPlayer((p) => ({
-        ...p,
-        // Не подставлять boss_week при выборе «живая игра» (иначе смешивается режим с очередью PvP)
-        activeWeeklyMode:
-          p.bossWeekMatchChoice === "live"
-            ? p.activeWeeklyMode
-            : (p.activeWeeklyMode ?? res.rules!.event.mode),
-      }))
     }
     void loadWeeklyRules()
     return () => {
       active = false
     }
-  }, [setPlayer])
+  }, [])
 
   /** Heartbeat для подсчёта «онлайн в игре» (игроки ВК после входа, любой экран кроме entry) */
   useEffect(() => {

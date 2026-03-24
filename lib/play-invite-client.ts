@@ -1,4 +1,5 @@
-import type { GameScreen, Player, WeeklyMode } from "@/lib/game-context"
+import type { GameScreen, Player } from "@/lib/game-context"
+import { PVP_RULESET_MODE } from "@/lib/pvp-session-store"
 import type { Dispatch, SetStateAction } from "react"
 
 /** Пресет с сервера — тот же для реферера и реферала после «Принять». */
@@ -11,7 +12,7 @@ export type SharedMatchPresetClient = {
 export const FALLBACK_SHARED_PRESET: SharedMatchPresetClient = {
   bet: 25,
   rounds: 3,
-  weeklyMode: "elements_tournament",
+  weeklyMode: PVP_RULESET_MODE,
 }
 
 export function normalizeSharedPreset(raw: unknown): SharedMatchPresetClient {
@@ -37,7 +38,7 @@ export function openBetSelectWithSharedPreset(
   setters.setTotalRounds(preset.rounds)
   setters.setPlayer((p) => ({
     ...p,
-    activeWeeklyMode: preset.weeklyMode as WeeklyMode,
+    activeWeeklyMode: undefined,
     bossWeekMatchChoice: undefined,
   }))
   setters.setScreen("bet-select")

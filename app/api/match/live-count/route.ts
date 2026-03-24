@@ -9,7 +9,7 @@ export const runtime = "nodejs"
 /**
  * Сколько vk_* в матчмейкинге.
  * Без query — глобально по всем корзинам.
- * С `bet`, `rounds`, `weeklyMode` — только эта корзина (для таймера «бот через 2 мин»).
+ * С `bet`, `rounds` — только эта корзина (для таймера «бот через 2 мин»).
  */
 export async function GET(req: Request) {
   if (IS_STATIC_EXPORT) {
@@ -19,16 +19,11 @@ export async function GET(req: Request) {
     const url = new URL(req.url)
     const betRaw = url.searchParams.get("bet")
     const roundsRaw = url.searchParams.get("rounds")
-    const weeklyMode = url.searchParams.get("weeklyMode") ?? ""
     const bet = betRaw != null ? Number(betRaw) : NaN
     const rounds = roundsRaw != null ? Number(roundsRaw) : NaN
     const globalLive = getLiveVkPlayersInMatchmaking()
-    if (
-      Number.isFinite(bet) &&
-      (rounds === 1 || rounds === 3 || rounds === 5) &&
-      weeklyMode.length > 0
-    ) {
-      const bucketLive = getLiveVkPlayersInBucket(bet, rounds, weeklyMode)
+    if (Number.isFinite(bet) && (rounds === 1 || rounds === 3 || rounds === 5)) {
+      const bucketLive = getLiveVkPlayersInBucket(bet, rounds)
       return NextResponse.json(
         { ok: true, count: bucketLive, globalLive },
         { headers: { "Cache-Control": "no-store" } },

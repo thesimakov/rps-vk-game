@@ -16,13 +16,6 @@ const BASE_MOVES: { key: Move; label: string; icon: string; color: string }[] = 
   { key: "paper", label: "Бумага", icon: "\uD83D\uDCC4", color: "border-primary/50 shadow-primary/10" },
 ]
 
-const FIRE_MOVE: { key: Move; label: string; icon: string; color: string } = {
-  key: "fire",
-  label: "Огонь",
-  icon: "\uD83D\uDD25",
-  color: "border-orange-500/60 shadow-orange-500/20",
-}
-
 const WATER_MOVE: { key: Move; label: string; icon: string; color: string } = {
   key: "water",
   label: "Вода",
@@ -116,27 +109,14 @@ function getOutcomePhrase(playerMove: Move, opponentMove: Move, outcome: "win" |
 type Phase = "choosing" | "locked" | "revealing" | "resolved"
 
 export function GameArena() {
-  const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds, weeklyRules, pvpMatchId } =
-    useGame()
-  const activeMode = player.activeWeeklyMode ?? weeklyRules?.event.mode
-  const isElementsMode = activeMode === "elements_tournament"
-  const isTimeMoneyMode = activeMode === "time_is_money"
-  /** Только при явном выборе боя с боссом; иначе живой/бот без ИИ босса */
-  const isBossMode =
-    (activeMode === "boss_week" || opponent?.id === "boss-npc") && player.bossWeekMatchChoice === "boss"
+  const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds, pvpMatchId } = useGame()
+  /** Босс-неделя отключена в матчмейкинге; оставляем ветку для редкого opponent boss-npc */
+  const isBossMode = opponent?.id === "boss-npc"
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
-  const allowedMovesByMode: Move[] = isElementsMode
-    ? ["fire", "water", "rock"]
-    : weeklyRules?.allowedMoves?.length
-      ? (weeklyRules.allowedMoves as Move[])
-      : hasWaterCard
-        ? [...BASE_MOVES, WATER_MOVE].map((m) => m.key as Move)
-        : BASE_MOVES.map((m) => m.key as Move)
-  const MOVES = isElementsMode
-    ? [FIRE_MOVE, WATER_MOVE, BASE_MOVES[0]]
-    : hasWaterCard
-      ? [...BASE_MOVES, WATER_MOVE]
-      : BASE_MOVES
+  const allowedMovesByMode: Move[] = hasWaterCard
+    ? [...BASE_MOVES, WATER_MOVE].map((m) => m.key as Move)
+    : BASE_MOVES.map((m) => m.key as Move)
+  const MOVES = hasWaterCard ? [...BASE_MOVES, WATER_MOVE] : BASE_MOVES
   const hasExtraTimer = (player.extraTimerUntil ?? 0) > Date.now()
   const baseTimer = hasExtraTimer ? 25 : 15
 
@@ -178,11 +158,10 @@ export function GameArena() {
 
   const getEffectiveStake = useCallback(
     (round: number) => {
-      if (!isTimeMoneyMode) return currentBet
-      const multiplier = Math.floor(Math.max(0, round - 1) / 2)
-      return currentBet * 2 ** multiplier
+      void round
+      return currentBet
     },
-    [currentBet, isTimeMoneyMode]
+    [currentBet]
   )
 
   const trackLiveOpsMatch = useCallback(
@@ -195,13 +174,10 @@ export function GameArena() {
         skinIdUsed: player.cardSkin,
         betVoices: currentBet,
         bankVoices: currentBet * 2,
-        mode: player.activeWeeklyMode,
+        mode: undefined,
       }).catch(() => {})
-      if (player.activeWeeklyMode || player.bossWeekMatchChoice) {
-        setPlayer((p) => ({ ...p, activeWeeklyMode: undefined, bossWeekMatchChoice: undefined }))
-      }
     },
-    [currentBet, player.activeWeeklyMode, player.bossWeekMatchChoice, player.cardSkin, player.id, setPlayer]
+    [currentBet, player.cardSkin, player.id, setPlayer]
   )
 
   useEffect(() => {
@@ -246,7 +222,7 @@ export function GameArena() {
           ? forcedOpponentMove
           : isBossMode
             ? getBossMove(history, allowedMovesByMode)
-            : isBot && !activeMode && currentBet > 100
+            : isBot && currentBet > 100
               ? getMoveThatBeats(playerMove)
               : eventRandom
 
@@ -331,7 +307,7 @@ export function GameArena() {
               weekEarnings: p.weekEarnings + Math.max(0, earningsInner),
               ratingPoints: Math.min(1000, (p.ratingPoints ?? 0) + bonusInner),
             }
-            if (playerMove === "water" && !isElementsMode) {
+            if (playerMove === "water") {
               next.waterCardUses = Math.max(0, (p.waterCardUses ?? 0) - 1)
             }
             if (outcome === "win" && isBossMode) {
@@ -358,7 +334,7 @@ export function GameArena() {
         } else {
           // В мульти-раундовых матчах (3 или 5 ходов) ставка относится ко всему матчу.
           // Здесь обновляем только использование карты «Вода», без изменения баланса и статистики.
-          if (playerMove === "water" && !isElementsMode) {
+          if (playerMove === "water") {
             setPlayer((p) => ({
               ...p,
               waterCardUses: Math.max(0, (p.waterCardUses ?? 0) - 1),
@@ -456,11 +432,9 @@ export function GameArena() {
       currentBet,
       opponent?.id,
       player.vip,
-      activeMode,
       allowedMovesByMode,
       isBossMode,
       getEffectiveStake,
-      isElementsMode,
       setPlayer,
       setLastResult,
       setScreen,
@@ -599,22 +573,12 @@ export function GameArena() {
   /** Сердечки = сколько ходов осталось (после победы/поражения один ход засчитывается) */
   const movesLeft = Math.max(0, totalRounds - roundCount + 1)
   const bankAmount = getEffectiveStake(roundCount) * 2
-  const playerStakeNow = getEffectiveStake(roundCount)
-  const isBlindLuckMode = activeMode === "blind_luck" || !!weeklyRules?.hideOpponentBet
-  const stakeMultiplier = Math.max(1, Math.round(getEffectiveStake(roundCount) / Math.max(1, currentBet)))
-  const bankDisplay = isBlindLuckMode ? `${formatAmount(playerStakeNow)} + ?` : formatAmount(bankAmount)
+  const bankDisplay = formatAmount(bankAmount)
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
       {/* Верхняя панель как в макете: БАНК | БОНУСЫ | РАУНД + сердечки */}
       <div className="w-full max-w-lg mx-auto mb-5">
-        {weeklyRules?.event && (
-          <div className="mb-3 flex items-center justify-center">
-            <span className="px-3 py-1 rounded-full text-[10px] uppercase tracking-wide font-bold bg-sky-500/20 border border-sky-400/40 text-sky-200">
-              {weeklyRules.event.title}
-            </span>
-          </div>
-        )}
         <div className="flex items-start justify-between gap-4">
           {/* Банк */}
           <div className="flex flex-col">
@@ -627,14 +591,7 @@ export function GameArena() {
                 {bankDisplay}
               </span>
             </div>
-            <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">
-              {isBlindLuckMode ? "моя ставка + скрытая" : "монет"}
-            </span>
-            {isTimeMoneyMode && (
-              <span className="mt-1 inline-flex w-fit px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-400/40 animate-pulse">
-                x{stakeMultiplier} (Time Is Money)
-              </span>
-            )}
+            <span className="mt-0.5 text-[11px] text-white/70 font-medium uppercase tracking-wide">монет</span>
           </div>
 
           {/* Бонусы */}

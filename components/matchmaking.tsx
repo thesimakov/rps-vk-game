@@ -4,13 +4,13 @@ import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Coins, Search, X } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 
 const POLL_MS = 1000
 const LIVE_COUNT_POLL_MS = 3000
-/** Если в вашей корзине (ставка+режим) меньше 2 игроков — через столько времени подбираем соперника (на сервере/клиенте без раскрытия типа) */
+/** Если в вашей корзине (ставка+раунды) меньше 2 игроков — через столько времени подбираем соперника (на сервере/клиенте без раскрытия типа) */
 const ALONE_BOT_MS_NORMAL = 120_000
 const ALONE_BOT_MS_FAST = 45_000
 /** Глобально столько vk в поиске — усиливаем FIFO и подпись «приоритет» */
@@ -67,7 +67,6 @@ export function Matchmaking() {
     setPlayer,
     toDisplayAmount,
     currencyLabel,
-    weeklyRules,
     totalRounds,
     pickRandomOpponent,
     ensureRandomBotOpponent,
@@ -76,28 +75,14 @@ export function Matchmaking() {
   const [dots, setDots] = useState("")
   const [progress, setProgress] = useState(0)
   const useFastSearch = (player.fastMatchBoosts ?? 0) > 0
-  const isBossWeek =
-    (player.activeWeeklyMode ?? weeklyRules?.event.mode) === "boss_week" &&
-    player.bossWeekMatchChoice === "boss"
-
-  const weeklyMode = useMemo(
-    () => player.activeWeeklyMode ?? weeklyRules?.event.mode ?? "elements_tournament",
-    [player.activeWeeklyMode, weeklyRules?.event.mode],
-  )
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const botTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   /** Актуальный профиль для POST очереди без лишних перезапусков эффекта (имя/аватар/VIP не должны вызывать leaveQueue) */
   const playerRef = useRef(player)
   playerRef.current = player
-  /** Режим недели для корзины: обновляем каждый рендер; не в deps эффекта очереди */
-  const weeklyModeRef = useRef(weeklyMode)
-  weeklyModeRef.current = weeklyMode
-  /** Не в deps — иначе при refetch LiveOps эффект перезапускался бы и снимал с очереди */
-  const weeklyRulesRef = useRef(weeklyRules)
-  weeklyRulesRef.current = weeklyRules
 
-  /** vk в той же корзине (ставка/раунды/режим) */
+  /** vk в той же корзине (ставка/раунды) */
   const [bucketLive, setBucketLive] = useState<number | null>(null)
   /** vk во всех корзинах */
   const [globalLive, setGlobalLive] = useState<number | null>(null)
@@ -107,39 +92,20 @@ export function Matchmaking() {
   const [pollingForMatch, setPollingForMatch] = useState(false)
 
   useEffect(() => {
-    if (!isBossWeek) return
-    setOpponent({
-      id: "boss-npc",
-      name: "Босс Эхо",
-      avatar: "Б",
-      avatarUrl: "",
-      balance: 10000,
-      wins: 999,
-      losses: 10,
-      weekWins: 999,
-      weekEarnings: 9999,
-      vip: true,
-    })
-  }, [isBossWeek, setOpponent])
-
-  useEffect(() => {
-    if (isBossWeek) return
     if (player.id.startsWith("vk_")) return
     pickRandomOpponent()
-  }, [isBossWeek, player.id, pickRandomOpponent])
+  }, [player.id, pickRandomOpponent])
 
   /** Найден живой соперник (vk) — сразу в арену */
   useEffect(() => {
     if (screen !== "matchmaking") return
-    if (isBossWeek) return
     if (!opponent?.id?.startsWith("vk_")) return
     void leaveMatchQueue(player.id)
     setScreen("arena")
-  }, [screen, isBossWeek, opponent?.id, player.id, setScreen])
+  }, [screen, opponent?.id, player.id, setScreen])
 
-  /** Очередь PvP (только vk_* и не неделя босса) */
+  /** Очередь PvP (только vk_*) */
   useEffect(() => {
-    if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
 
     let cancelled = false
@@ -155,14 +121,6 @@ export function Matchmaking() {
     setPollingForMatch(false)
 
     void (async () => {
-      /** Ждём правила здесь, а не в deps — иначе при догрузке/обновлении weeklyRules эффект перезапускался → leaveQueue → нет пары */
-      for (let i = 0; i < 300; i++) {
-        if (cancelled) return
-        if (weeklyRulesRef.current) break
-        await new Promise((r) => setTimeout(r, 50))
-      }
-      if (cancelled || !weeklyRulesRef.current) return
-
       try {
         const p = playerRef.current
         const res = await fetch(appPath("/api/match/queue"), {
@@ -177,7 +135,6 @@ export function Matchmaking() {
             vip: p.vip,
             bet: currentBet,
             rounds: totalRounds,
-            weeklyMode: weeklyModeRef.current,
           }),
         })
         const data = (await res.json()) as {
@@ -231,12 +188,10 @@ export function Matchmaking() {
       setPollingForMatch(false)
       void leaveMatchQueue(player.id)
     }
-    /** Только корзина (ставка/раунды) и vk id. Не weeklyMode / weeklyRules / setOpponent — любое обновление снимало бы игрока с очереди. */
-  }, [isBossWeek, player.id, currentBet, totalRounds])
+  }, [player.id, currentBet, totalRounds, setOpponent, setPvpMatchId])
 
   /** Статистика очереди: своя корзина + глобально */
   useEffect(() => {
-    if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
     let cancelled = false
     const load = async () => {
@@ -244,7 +199,6 @@ export function Matchmaking() {
         const q = new URLSearchParams({
           bet: String(currentBet),
           rounds: String(totalRounds),
-          weeklyMode,
         })
         const res = await fetch(appPath(`/api/match/live-count?${q.toString()}`), { cache: "no-store" })
         const data = (await res.json()) as {
@@ -273,11 +227,10 @@ export function Matchmaking() {
       cancelled = true
       clearInterval(t)
     }
-  }, [isBossWeek, player.id, currentBet, totalRounds, weeklyMode])
+  }, [player.id, currentBet, totalRounds])
 
   /** Таймер подбора: только если в вашей корзине < 2 живых; иначе ждём соперника (до отмены / ивента) */
   useEffect(() => {
-    if (isBossWeek) return
     if (!player.id.startsWith("vk_")) return
     if (opponent?.id?.startsWith("vk_")) return
     /** Пока не встали в очередь на сервере — ждём POST; иначе ложный «один» и ранний бот */
@@ -291,7 +244,7 @@ export function Matchmaking() {
     }
     setProgress(0)
 
-    /** В корзине мало людей; глобально ≥2 — кто-то ищет в другой ставке/раундах/режиме — не подменяем ботом */
+    /** В корзине мало людей; глобально ≥2 — кто-то ищет в другой ставке/раундах — не подменяем ботом */
     const aloneInBucket = bucketLive === null || bucketLive < 2
     if (!aloneInBucket) return
     if (globalLive !== null && globalLive >= 2) return
@@ -323,7 +276,6 @@ export function Matchmaking() {
       }
     }
   }, [
-    isBossWeek,
     player.id,
     bucketLive,
     globalLive,
@@ -337,9 +289,9 @@ export function Matchmaking() {
     setScreen,
   ])
 
-  /** Босс / гость: короткий таймер на арену (vk ищут живого отдельно) */
+  /** Гость: короткий таймер на арену (vk ищут живого отдельно) */
   useEffect(() => {
-    if (!isBossWeek && player.id.startsWith("vk_")) return
+    if (player.id.startsWith("vk_")) return
 
     const searchMs = useFastSearch ? 800 : 2500
     const timer = setTimeout(() => {
@@ -349,7 +301,7 @@ export function Matchmaking() {
       setScreen("arena")
     }, searchMs)
     return () => clearTimeout(timer)
-  }, [setScreen, useFastSearch, setPlayer, isBossWeek, player.id])
+  }, [setScreen, useFastSearch, setPlayer, player.id])
 
   useEffect(() => {
     const dotInterval = setInterval(() => {
@@ -358,19 +310,18 @@ export function Matchmaking() {
     return () => clearInterval(dotInterval)
   }, [])
 
-  const showBossGuestProgress = isBossWeek || !player.id.startsWith("vk_")
+  const showGuestProgress = !player.id.startsWith("vk_")
   useEffect(() => {
-    if (!showBossGuestProgress) return
+    if (!showGuestProgress) return
     const searchMs = useFastSearch ? 800 : 2500
     const step = 100 / (searchMs / 300)
     const progressInterval = setInterval(() => {
       setProgress((p) => (p >= 100 ? 100 : p + step * (0.5 + Math.random())))
     }, 300)
     return () => clearInterval(progressInterval)
-  }, [showBossGuestProgress, useFastSearch])
+  }, [showGuestProgress, useFastSearch])
 
   const alonePhase =
-    !isBossWeek &&
     player.id.startsWith("vk_") &&
     (bucketLive === null || bucketLive < 2) &&
     !opponent?.id?.startsWith("vk_")
@@ -394,9 +345,7 @@ export function Matchmaking() {
         </div>
         <div className="absolute -inset-4 bg-primary/6 rounded-full blur-2xl" />
       </div>
-      <h2 className="text-base font-bold text-foreground mb-2">
-        {isBossWeek ? `Ищем Босса${dots}` : `Ищем соперника${dots}`}
-      </h2>
+      <h2 className="text-base font-bold text-foreground mb-2">Ищем соперника{dots}</h2>
       {opponent && (
         <div className="flex items-center gap-3 mb-6 px-4 py-2 rounded-2xl bg-card/40 border border-border/30">
           {opponent.vip ? (
@@ -424,9 +373,7 @@ export function Matchmaking() {
               variant="destructive"
             />
           )}
-          <p className="text-base font-semibold text-foreground">
-            {isBossWeek ? `Найден: ${opponent.name} (сложный ИИ)` : `Найден: ${opponent.name}`}
-          </p>
+          <p className="text-base font-semibold text-foreground">Найден: {opponent.name}</p>
         </div>
       )}
       {!opponent && (
@@ -441,7 +388,7 @@ export function Matchmaking() {
 
       <button
         onClick={() => {
-          if (!isBossWeek && player.id.startsWith("vk_")) {
+          if (player.id.startsWith("vk_")) {
             void leaveMatchQueue(player.id)
           }
           setScreen("menu")
@@ -453,7 +400,7 @@ export function Matchmaking() {
       </button>
 
       {/* Статус поиска (живая очередь vk) */}
-      {!isBossWeek && player.id.startsWith("vk_") && (
+      {player.id.startsWith("vk_") && (
         <div className="fixed bottom-0 left-0 right-0 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3 bg-gradient-to-t from-background via-background/95 to-transparent border-t border-border/30">
           <div className="max-w-lg mx-auto space-y-2 text-center text-xs text-muted-foreground">
             {bucketLive === null && <p className="text-sky-200/80">Загрузка очереди…</p>}
@@ -474,7 +421,7 @@ export function Matchmaking() {
             )}
             {othersInDifferentBucket && (
               <p className="text-amber-100/90 font-medium leading-snug">
-                Другие игроки в поиске, но в другой корзине (ставка, раунды и режим недели должны совпадать). Бот не подставляем — измените настройки или договоритесь с другом.
+                Другие игроки в поиске, но в другой корзине (ставка и число раундов должны совпадать). Бот не подставляем — измените настройки или договоритесь с другом.
               </p>
             )}
           </div>

@@ -6,7 +6,7 @@
 import { randomUUID } from "crypto"
 import { isValidPlayerId } from "@/lib/player-store"
 import { getGameStateDb } from "@/lib/server-game-db"
-import { createPvpSession } from "@/lib/pvp-session-store"
+import { createPvpSession, PVP_RULESET_MODE } from "@/lib/pvp-session-store"
 
 export interface QueuePlayerPayload {
   userId: string
@@ -16,7 +16,6 @@ export interface QueuePlayerPayload {
   vip: boolean
   bet: number
   rounds: number
-  weeklyMode: string
 }
 
 export interface QueueOpponent {
@@ -50,8 +49,8 @@ interface StoredState {
 
 const QUEUE_TTL_MS = 120_000
 
-function bucketKey(bet: number, rounds: number, weeklyMode: string) {
-  return `${bet}_${rounds}_${weeklyMode}`
+function bucketKey(bet: number, rounds: number) {
+  return `${bet}_${rounds}`
 }
 
 function loadState(): StoredState {
@@ -115,7 +114,7 @@ export function joinQueue(payload: QueuePlayerPayload):
 
   return db.transaction(() => {
     const state = loadState()
-    const key = bucketKey(payload.bet, payload.rounds, payload.weeklyMode)
+    const key = bucketKey(payload.bet, payload.rounds)
     removeUserFromAllQueues(state, payload.userId)
 
     let waiting = state.buckets[key] ?? []
@@ -140,7 +139,7 @@ export function joinQueue(payload: QueuePlayerPayload):
         p2Id: payload.userId,
         totalRounds: payload.rounds,
         bet: payload.bet,
-        weeklyMode: payload.weeklyMode,
+        weeklyMode: PVP_RULESET_MODE,
       })
       return { ok: true as const, matched: true as const, matchId, opponent: partnerAsOpponent }
     }
@@ -189,11 +188,11 @@ export function leaveQueue(userId: string) {
 }
 
 /** Уникальные vk_* в конкретной корзине (ставка / раунды / режим недели) */
-export function getLiveVkPlayersInBucket(bet: number, rounds: number, weeklyMode: string): number {
+export function getLiveVkPlayersInBucket(bet: number, rounds: number): number {
   const db = getGameStateDb()
   return db.transaction(() => {
     const state = loadState()
-    const key = bucketKey(bet, rounds, weeklyMode)
+    const key = bucketKey(bet, rounds)
     const waiting = state.buckets[key] ?? []
     const now = Date.now()
     const ids = new Set<string>()

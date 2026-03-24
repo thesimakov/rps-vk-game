@@ -6,7 +6,11 @@ import { getRoundOutcome } from "@/lib/match-outcome"
 import type { RpsMove } from "@/lib/match-outcome"
 import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
 
+/** Один набор правил для живого PvP (без «режима недели») */
+export const PVP_RULESET_MODE = "classic" as const
+
 const MODE_MOVES: Record<string, RpsMove[]> = {
+  classic: ["rock", "scissors", "paper"],
   elements_tournament: ["fire", "water", "rock"],
   time_is_money: ["rock", "scissors", "paper"],
   blind_luck: ["rock", "scissors", "paper"],
