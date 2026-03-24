@@ -1,9 +1,11 @@
 "use client"
 
+import { appPath } from "@/lib/app-path"
 import { GameProvider, useGame } from "@/lib/game-context"
 import { useEffect, useState } from "react"
 import type { CSSProperties } from "react"
-import { showFriendsPicker } from "@/lib/vk-bridge"
+import { isVKEnvironment, showFriendsPicker } from "@/lib/vk-bridge"
+import { LogIn } from "lucide-react"
 import { MainMenu } from "@/components/main-menu"
 import { BetSelect } from "@/components/bet-select"
 import { Matchmaking } from "@/components/matchmaking"
@@ -26,13 +28,47 @@ import { GameLoader } from "@/components/game-loader"
 import { AdminScreen } from "@/components/admin-screen"
 import { PlayInviteIncoming } from "@/components/play-invite-incoming"
 
+/** В мини-приложении ВК не показываем экран «Войти / гость» — только автологин и «Повторить». */
+function VkMiniAppAuthWall() {
+  const { loginWithVK, loginErrorMessage } = useGame()
+  return (
+    <div className="relative flex flex-col min-h-screen items-center justify-center px-4 py-8 bg-transparent">
+      <div className="w-full max-w-sm flex flex-col items-center gap-8 text-center">
+        <div className="w-36 h-36 flex items-center justify-center">
+          <img src={appPath("/logo.webp")} alt="RPS Arena" className="w-full h-full object-contain" />
+        </div>
+        <p className="text-white/80 text-sm leading-relaxed">
+          Вход выполняется автоматически через ВКонтакте. Если меню не открылось, нажмите кнопку ниже.
+        </p>
+        {loginErrorMessage && (
+          <div className="w-full rounded-2xl bg-red-500/15 border border-red-500/60 px-4 py-3 text-xs text-red-100 font-medium">
+            {loginErrorMessage}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => void loginWithVK()}
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base transition-all active:scale-[0.98] shadow-lg shadow-primary/30"
+        >
+          <LogIn className="h-5 w-5" />
+          Повторить вход
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function GameScreen() {
   const { screen, vkUser } = useGame()
-  const isEntry = screen === "entry" || (screen === "menu" && !vkUser)
+  const inVkMiniApp = typeof window !== "undefined" && isVKEnvironment()
+  const needsAuthGate = screen === "entry" || (screen === "menu" && !vkUser)
+  const showVkGate = needsAuthGate && inVkMiniApp
+  const showBrowserEntry = needsAuthGate && !inVkMiniApp
 
   return (
     <>
-      {isEntry && <EntryScreen />}
+      {showVkGate && <VkMiniAppAuthWall />}
+      {showBrowserEntry && <EntryScreen />}
       {screen === "menu" && vkUser && <MainMenu />}
       {screen === "levels" && <LevelsScreen />}
       {screen === "bets" && <BetsScreen />}

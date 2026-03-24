@@ -1,7 +1,7 @@
 "use client"
 
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from "react"
-import { initVKBridge, getVKUser, getBridgeReady, type VKUser } from "@/lib/vk-bridge"
+import { initVKBridge, getVKUser, getBridgeReady, isVKEnvironment, type VKUser } from "@/lib/vk-bridge"
 import type { LiveOpsState } from "@/lib/liveops/types"
 import { appPath } from "@/lib/app-path"
 import { sendPresenceHeartbeat } from "@/lib/presence-client"
@@ -428,6 +428,10 @@ const SAVE_STORAGE_KEY = "rps_vk_save"
 const SAVE_VERSION = 2
 const BRIDGE_INIT_TIMEOUT_MS = 6000
 const AUTH_RESOLVE_TIMEOUT_MS = 7000
+/** В мини-приложении ВК даём больше времени на повторные VKWebAppGetUserInfo */
+const AUTH_RESOLVE_TIMEOUT_VK_MS = 22_000
+const VK_GET_USER_RETRIES = 4
+const VK_GET_USER_RETRY_DELAY_MS = 450
 
 const POST_JSON_TIMEOUT_MS = 18_000
 
@@ -950,10 +954,19 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [player.id, vkUser])
 
   const loginWithVKBridge = useCallback(async () => {
-    const user = await getVKUser()
-    if (!user) return
-    await hydrateVkPlayer(user)
-    setScreen("menu")
+    if (!getBridgeReady()) return
+    const attempts = isVKEnvironment() ? VK_GET_USER_RETRIES : 1
+    for (let i = 0; i < attempts; i++) {
+      if (i > 0) {
+        await new Promise((r) => setTimeout(r, VK_GET_USER_RETRY_DELAY_MS))
+      }
+      const user = await getVKUser()
+      if (user) {
+        await hydrateVkPlayer(user)
+        setScreen("menu")
+        return
+      }
+    }
   }, [hydrateVkPlayer])
 
   useEffect(() => {
@@ -962,10 +975,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       setAuthResolved(true)
       return
     }
-    if (!getBridgeReady()) {
-      setAuthResolved(true)
-      return
-    }
+
+    const vkEnv = typeof window !== "undefined" && isVKEnvironment()
+    const authTimeoutMs = vkEnv ? AUTH_RESOLVE_TIMEOUT_VK_MS : AUTH_RESOLVE_TIMEOUT_MS
 
     let active = true
     let settled = false
@@ -974,13 +986,31 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       settled = true
       setAuthTimedOut(true)
       setAuthResolved(true)
-    }, AUTH_RESOLVE_TIMEOUT_MS)
-    void loginWithVKBridge().finally(() => {
+    }, authTimeoutMs)
+
+    const finish = () => {
       if (!active || settled) return
       settled = true
       clearTimeout(authFallbackTimer)
       setAuthResolved(true)
-    })
+    }
+
+    void (async () => {
+      if (vkEnv && !getBridgeReady()) {
+        try {
+          await initVKBridge()
+        } catch {
+          /* ignore */
+        }
+      }
+      if (!getBridgeReady() && !vkEnv) {
+        return
+      }
+      await loginWithVKBridge()
+    })()
+      .catch(() => {})
+      .finally(finish)
+
     return () => {
       clearTimeout(authFallbackTimer)
       active = false
@@ -1001,6 +1031,13 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const loadingProgress = !hasLoadedSave ? 25 : !bridgeInitialized ? 50 : !authResolved ? 75 : 100
 
   const loginWithVK = useCallback(async () => {
+    if (typeof window !== "undefined" && isVKEnvironment() && !getBridgeReady()) {
+      try {
+        await initVKBridge()
+      } catch {
+        /* ignore */
+      }
+    }
     await loginWithVKBridge()
   }, [loginWithVKBridge])
 
