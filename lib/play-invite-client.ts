@@ -1,5 +1,5 @@
 import type { GameScreen, Player } from "@/lib/game-context"
-import { PVP_RULESET_MODE } from "@/lib/pvp-session-store"
+import { PVP_RULESET_MODE } from "@/lib/pvp-ruleset"
 import type { Dispatch, SetStateAction } from "react"
 
 /** Пресет с сервера — тот же для реферера и реферала после «Принять». */

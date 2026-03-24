@@ -6,7 +6,8 @@
 import { randomUUID } from "crypto"
 import { isValidPlayerId } from "@/lib/player-store"
 import { getGameStateDb } from "@/lib/server-game-db"
-import { createPvpSession, PVP_RULESET_MODE } from "@/lib/pvp-session-store"
+import { createPvpSession } from "@/lib/pvp-session-store"
+import { PVP_RULESET_MODE } from "@/lib/pvp-ruleset"
 
 export interface QueuePlayerPayload {
   userId: string

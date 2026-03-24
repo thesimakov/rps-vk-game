@@ -5,9 +5,9 @@ import { getGameStateDb } from "@/lib/server-game-db"
 import { getRoundOutcome } from "@/lib/match-outcome"
 import type { RpsMove } from "@/lib/match-outcome"
 import { isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
+import { PVP_RULESET_MODE } from "@/lib/pvp-ruleset"
 
-/** Один набор правил для живого PvP (без «режима недели») */
-export const PVP_RULESET_MODE = "classic" as const
+export { PVP_RULESET_MODE }
 
 const MODE_MOVES: Record<string, RpsMove[]> = {
   classic: ["rock", "scissors", "paper"],

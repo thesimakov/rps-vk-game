@@ -1,4 +1,4 @@
-import { PVP_RULESET_MODE } from "@/lib/pvp-session-store"
+import { PVP_RULESET_MODE } from "@/lib/pvp-ruleset"
 
 /** Общий режим ставки для пары после принятия приглашения (совпадает с сеткой bet-select: 25 = 3 раунда). */
 export type SharedMatchPreset = {
