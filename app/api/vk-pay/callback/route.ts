@@ -17,7 +17,7 @@ import { NextResponse } from "next/server"
 // - корректные ответы в формате, описанном в доке «Платежи виртуальной валютой».
 //
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 type VkCatalogItem = {
   itemId: string

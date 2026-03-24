@@ -3,7 +3,7 @@ import { isValidVkUserId } from "@/lib/referral-store"
 import { redeemPromoCode, type PromoReward } from "@/lib/promo-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 export async function POST(req: Request) {
   try {

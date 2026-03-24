@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { isValidVkUserId } from "@/lib/referral-store"
 
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 // Важно: отключаем бэкенд только при явном статическом экспорте (NEXT_OUTPUT_EXPORT === "export").
 // В обычном прод-сервере API должен работать, иначе реферальная статистика не будет обновляться.

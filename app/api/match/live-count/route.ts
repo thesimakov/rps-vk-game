@@ -3,7 +3,7 @@ import { getLiveVkPlayersInBucket, getLiveVkPlayersInMatchmaking } from "@/lib/m
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /**

@@ -5,7 +5,7 @@ const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 const MIN_WITHDRAW = 10
 const MAX_DAILY_WITHDRAW = 10_000
 
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 function getUtcDateKey(ts: number) {
   return new Date(ts).toISOString().slice(0, 10)

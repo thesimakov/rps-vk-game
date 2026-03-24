@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { isValidVkUserId } from "@/lib/referral-store"
 
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 

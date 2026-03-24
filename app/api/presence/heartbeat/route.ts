@@ -4,7 +4,7 @@ import { isValidPlayerId } from "@/lib/player-store"
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
 /** С `output: export` нельзя force-dynamic; runtime-guard ниже оставляет поведение API прежним. */
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 /** Клиент шлёт раз в ~40 с, пока игрок ВК в приложении (не экран входа) */

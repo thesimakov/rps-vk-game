@@ -3,7 +3,7 @@ import { jsonNoStore } from "@/lib/liveops/api-utils"
 import type { LiveOpsConfig } from "@/lib/liveops/types"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 function isAuthorized(_request: Request): boolean {
   return true

@@ -3,7 +3,7 @@ import { isValidPlayerId } from "@/lib/player-store"
 import { getWaiterView } from "@/lib/play-invite-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 export async function GET(req: Request) {

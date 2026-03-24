@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { loadAllPlayers } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = IS_STATIC_EXPORT ? "force-static" : "force-dynamic"
+export const dynamic = "force-dynamic"
 
 function isAuthorized(request: Request): boolean {
   // Упростили: доступ к списку игроков открываем без дополнительного секрета,
