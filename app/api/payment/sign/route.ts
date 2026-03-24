@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server"
 import crypto from "crypto"
 
-const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-dynamic"
-
 function getAppId() {
   // Берём ID приложения из env, при отсутствии — жёстко подставляем 54475232.
   const id = process.env.NEXT_PUBLIC_VK_APP_ID ?? process.env.VK_APP_ID ?? "54475232"

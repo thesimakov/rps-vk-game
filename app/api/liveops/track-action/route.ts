@@ -2,7 +2,7 @@ import { trackAction } from "@/lib/liveops/engine"
 import type { TrackActionPayload } from "@/lib/liveops/types"
 import { IS_STATIC_EXPORT, jsonNoStore, loadPlayerForLiveOps, mapError, persistPlayer } from "@/lib/liveops/api-utils"
 
-export const dynamic = "force-dynamic"
+
 
 const ALLOWED_MODES = new Set(["elements_tournament", "time_is_money", "blind_luck", "boss_week"])
 const ALLOWED_MOVES = new Set(["rock", "scissors", "paper", "water", "fire"])

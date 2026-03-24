@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { backupDb, deletePlayer, isValidPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-dynamic"
 
 // Доступ к удалению открываем так же, как и к списку игроков,
 // опираясь на логин/пароль на странице /admin-lemnity.

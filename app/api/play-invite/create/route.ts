@@ -3,7 +3,6 @@ import { isValidPlayerId } from "@/lib/player-store"
 import { createPlayInvite } from "@/lib/play-invite-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 export async function POST(req: Request) {

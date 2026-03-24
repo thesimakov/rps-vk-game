@@ -4,7 +4,6 @@ import { listIncomingInvites } from "@/lib/play-invite-store"
 import { getUserIdFromGetRequest } from "@/lib/query-user-id"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-dynamic"
 export const runtime = "nodejs"
 
 export async function GET(req: NextRequest) {

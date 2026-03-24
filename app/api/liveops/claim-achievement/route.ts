@@ -1,7 +1,7 @@
 import { claimAchievement } from "@/lib/liveops/engine"
 import { IS_STATIC_EXPORT, jsonNoStore, loadPlayerForLiveOps, mapError, persistPlayer } from "@/lib/liveops/api-utils"
 
-export const dynamic = "force-dynamic"
+
 
 export async function POST(req: Request) {
   if (IS_STATIC_EXPORT) {

@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { backupDb, blockPlayer, isValidPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
-export const dynamic = "force-dynamic"
 
 // Аналогично list/delete — доверяем защите логином/паролем на /admin-lemnity.
 function isAuthorized(_request: Request): boolean {
