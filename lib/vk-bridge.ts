@@ -379,6 +379,21 @@ export async function sendGameInviteToVkFriend(vkNumericUserId: number, message?
 }
 
 /**
+ * Запрос разрешения на push-уведомления от мини-приложения (VKWebAppAllowNotifications).
+ */
+export async function requestVkMiniAppNotifications(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  if (!bridgeReady) return false
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+    await vkBridge.default.send("VKWebAppAllowNotifications" as never, {} as never)
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
  * Публикует пост на стене пользователя (VKWebAppShowWallPostBox).
  * message — текст поста, attachments — вложение (например, ссылка на приложение).
  * Возвращает post_id при успехе или null.

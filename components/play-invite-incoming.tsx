@@ -5,8 +5,11 @@ import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { openBetSelectWithSharedPreset, normalizeSharedPreset } from "@/lib/play-invite-client"
 import { Users, X, Check } from "lucide-react"
+import { requestVkMiniAppNotifications } from "@/lib/vk-bridge"
 
-/** Баннер для реферера: приглашённый игрок (реферал) ждёт ответа по игре вместе. */
+const INVITE_POLL_MS = 2800
+
+/** Баннер входящего приглашения (реферал → реферер или друг → друг). */
 export function PlayInviteIncoming() {
   const { player, setCurrentBet, setTotalRounds, setPlayer, setScreen } = useGame()
   const [invite, setInvite] = useState<{
@@ -48,12 +51,21 @@ export function PlayInviteIncoming() {
       }
     }
     void tick()
-    const t = setInterval(tick, 5000)
+    const t = setInterval(tick, INVITE_POLL_MS)
     return () => {
       cancelled = true
       clearInterval(t)
     }
   }, [player.id])
+
+  useEffect(() => {
+    if (!invite) return
+    if (typeof window === "undefined") return
+    const key = `rps_vk_notif_ask_${invite.id}`
+    if (sessionStorage.getItem(key)) return
+    sessionStorage.setItem(key, "1")
+    void requestVkMiniAppNotifications()
+  }, [invite?.id])
 
   const respond = async (accept: boolean) => {
     if (!invite) return

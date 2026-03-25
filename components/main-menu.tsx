@@ -397,13 +397,38 @@ export function MainMenu() {
           <span>ИГРАТЬ ОНЛАЙН</span>
         </button>
 
-        <button
-          onClick={() => { setOfflineMode(true); setScreen("bet-select") }}
-          className="w-full flex items-center justify-center gap-2.5 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
-        >
-          <Shield className="h-5 w-5 text-emerald-400" />
-          <span>Оффлайн игра</span>
-        </button>
+        {player.id.startsWith("vk_") ? (
+          <div className="grid grid-cols-2 gap-3 w-full">
+            <button
+              onClick={() => {
+                setOfflineMode(true)
+                setScreen("bet-select")
+              }}
+              className="flex flex-col items-center justify-center gap-1 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
+            >
+              <Shield className="h-5 w-5 text-emerald-400" />
+              <span className="text-xs sm:text-sm text-center leading-tight">Оффлайн</span>
+            </button>
+            <button
+              onClick={() => setScreen("friends-ingame")}
+              className="flex flex-col items-center justify-center gap-1 bg-sky-700/75 hover:bg-sky-600/90 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/45"
+            >
+              <UserRound className="h-5 w-5 text-sky-200" />
+              <span className="text-xs sm:text-sm text-center leading-tight">С друзьями</span>
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              setOfflineMode(true)
+              setScreen("bet-select")
+            }}
+            className="w-full flex items-center justify-center gap-2.5 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
+          >
+            <Shield className="h-5 w-5 text-emerald-400" />
+            <span>Оффлайн игра</span>
+          </button>
+        )}
 
         <button
           onClick={() => setScreen("leaderboard")}
@@ -412,16 +437,6 @@ export function MainMenu() {
           <Trophy className="h-5 w-5 text-amber-400" />
           <span>Таблица лидеров</span>
         </button>
-
-        {player.id.startsWith("vk_") && (
-          <button
-            onClick={() => setScreen("friends-ingame")}
-            className="w-full flex items-center justify-center gap-2.5 bg-sky-700/70 hover:bg-sky-600/90 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/40"
-          >
-            <UserRound className="h-5 w-5 text-sky-200" />
-            <span>Друзья в игре</span>
-          </button>
-        )}
 
         {/* Ставки игроков — только на мобильной версии (на десктопе есть сайдбар) */}
         <button

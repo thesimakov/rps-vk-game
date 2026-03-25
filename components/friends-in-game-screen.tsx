@@ -1,12 +1,19 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useReducer, useState } from "react"
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
-import { ArrowLeft, Users, Loader2, Swords } from "lucide-react"
+import { ArrowLeft, Users, Loader2, Swords, Clock } from "lucide-react"
 import { showFriendsPicker, isVKEnvironment, sendGameInviteToVkFriend, type VKFriend } from "@/lib/vk-bridge"
 import { TOURNAMENT_INVITE_BET_OPTIONS } from "@/lib/play-invite-preset"
 import { formatAmount } from "@/lib/format-amount"
+import {
+  readPendingFriendInvite,
+  writePendingFriendInvite,
+  readFriendsInGameList,
+  writeFriendsInGameList,
+  type PendingFriendInviteSnapshot,
+} from "@/lib/friend-invite-pending"
 import {
   Dialog,
   DialogContent,
@@ -26,6 +33,17 @@ type FriendRow = {
   photo_200?: string
 }
 
+function isFriendRow(x: unknown): x is FriendRow {
+  if (!x || typeof x !== "object") return false
+  const o = x as Record<string, unknown>
+  return (
+    typeof o.playerId === "string" &&
+    typeof o.vkId === "number" &&
+    typeof o.name === "string" &&
+    typeof o.wins === "number"
+  )
+}
+
 function roundsLabel(r: 1 | 3 | 5): string {
   if (r === 1) return "1 ход"
   if (r === 3) return "3 хода"
@@ -34,6 +52,7 @@ function roundsLabel(r: 1 | 3 | 5): string {
 
 export function FriendsInGameScreen() {
   const { player, setScreen, toDisplayAmount, currencyLabel } = useGame()
+  const [, bumpPendingUi] = useReducer((n: number) => n + 1, 0)
   const [friends, setFriends] = useState<FriendRow[]>([])
   const [pickLoading, setPickLoading] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
@@ -49,6 +68,26 @@ export function FriendsInGameScreen() {
   )
 
   const canUse = player.id.startsWith("vk_")
+  const pendingSnap: PendingFriendInviteSnapshot | null = canUse ? readPendingFriendInvite(player.id) : null
+
+  useEffect(() => {
+    const fn = () => bumpPendingUi()
+    window.addEventListener("rps-pending-friend-invite", fn)
+    return () => window.removeEventListener("rps-pending-friend-invite", fn)
+  }, [])
+
+  useEffect(() => {
+    if (!canUse) return
+    const raw = readFriendsInGameList(player.id)
+    if (!raw) return
+    const rows = raw.filter(isFriendRow)
+    if (rows.length) setFriends(rows)
+  }, [canUse, player.id])
+
+  useEffect(() => {
+    if (!canUse || friends.length === 0) return
+    writeFriendsInGameList(player.id, friends)
+  }, [canUse, player.id, friends])
 
   const mergePhotos = useCallback((rows: FriendRow[], vkUsers: VKFriend[]) => {
     const photoById = new Map(vkUsers.map((u) => [u.id, u.photo_200]))
@@ -96,7 +135,7 @@ export function FriendsInGameScreen() {
       setFriends(merged)
       setBanner({
         kind: "ok",
-        text: `В игре: ${merged.length} из ${users.length} выбранных.`,
+        text: `В игре: ${merged.length} из ${users.length} выбранных. Можно пригласить в турнир в любой момент.`,
       })
     } finally {
       setPickLoading(false)
@@ -135,32 +174,44 @@ export function FriendsInGameScreen() {
           rounds,
         }),
       })
-      const data = (await res.json()) as { ok?: boolean; error?: string }
-      if (!data.ok) {
+      const data = (await res.json()) as { ok?: boolean; inviteId?: string; error?: string }
+      if (!data.ok || !data.inviteId) {
         const msg =
           data.error === "insufficient_balance"
             ? "Недостаточно монет на сервере для этой ставки (синхронизируйте прогресс или выберите меньше)."
             : data.error === "opponent_insufficient_balance"
               ? "У друга недостаточно монет на сервере для этой ставки — выберите меньше или попросите пополнить баланс."
               : data.error === "already_pending"
-              ? "Уже есть активное приглашение этому игроку."
-              : data.error === "player_not_found"
-                ? "Профиль друга не найден."
-                : "Не удалось отправить приглашение."
+                ? "Уже есть активное приглашение этому игроку."
+                : data.error === "player_not_found"
+                  ? "Профиль друга не найден."
+                  : "Не удалось отправить приглашение."
         setBanner({ kind: "err", text: msg })
         return
       }
+      const snapshot: PendingFriendInviteSnapshot = {
+        inviteId: data.inviteId,
+        fromUserId: player.id,
+        friend: {
+          playerId: target.playerId,
+          vkId: target.vkId,
+          name: target.name,
+          wins: target.wins,
+          photo_200: target.photo_200,
+        },
+      }
+      writePendingFriendInvite(snapshot)
       setInviteOpen(false)
       setInviteTarget(null)
       setBanner({
         kind: "ok",
-        text: `Приглашение отправлено: ${roundsLabel(rounds)}, ставка ${formatAmount(toDisplayAmount(bet))} ${currencyLabel}.`,
+        text: `Приглашение отправлено: ${roundsLabel(rounds)}, ставка ${formatAmount(toDisplayAmount(bet))} ${currencyLabel}. Как только друг примет — начнётся матч на двоих. Список друзей сохранён — можно приглашать снова.`,
       })
       if (isVKEnvironment()) {
         try {
           await sendGameInviteToVkFriend(
             target.vkId,
-            `Приглашение в турнир: ${roundsLabel(rounds)}, ставка ${bet} монет.`,
+            `Приглашение в турнир: ${roundsLabel(rounds)}, ставка ${bet} монет. Откройте игру, чтобы принять.`,
           )
         } catch {
           /* опциональное уведомление ВК */
@@ -184,19 +235,32 @@ export function FriendsInGameScreen() {
         </button>
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-sky-400" />
-          <h1 className="text-lg font-bold text-white">Друзья в игре</h1>
+          <h1 className="text-lg font-bold text-white">С друзьями</h1>
         </div>
       </div>
 
       <p className="text-sm text-white/80 mb-4 leading-relaxed">
-        Выберите друзей ВКонтакте — мы покажем, у кого уже есть профиль в RPS Arena. Отправьте внутриигровое приглашение
-        к турниру и укажите число ходов и ставку.
+        Выберите друзей из ВК — увидите, у кого уже есть профиль в RPS Arena. В любой момент отправляйте приглашение к
+        турниру на двоих (вы и друг). После принятия откроется бой на выбранное число ходов и ставку.
       </p>
 
       {!canUse && (
         <p className="text-sm text-amber-200/90 mb-4 rounded-xl border border-amber-400/40 bg-amber-500/10 px-3 py-2">
           Раздел доступен после входа через ВКонтакте.
         </p>
+      )}
+
+      {pendingSnap && (
+        <div className="mb-4 flex items-start gap-2 rounded-xl border border-sky-400/45 bg-sky-500/15 px-3 py-2.5 text-sm text-sky-100">
+          <Clock className="h-4 w-4 shrink-0 mt-0.5" />
+          <div>
+            <p className="font-semibold">Ждём ответа друга</p>
+            <p className="text-xs text-sky-200/85 mt-0.5">
+              {pendingSnap.friend.name}: как только примет приглашение в игре, начнётся матч. Можете вернуться в меню —
+              ожидание продолжится в фоне.
+            </p>
+          </div>
+        </div>
       )}
 
       {banner && (
@@ -218,12 +282,12 @@ export function FriendsInGameScreen() {
         onClick={() => void handlePickFriends()}
       >
         {pickLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-        {pickLoading ? "Загрузка…" : "Выбрать друзей ВК и проверить"}
+        {pickLoading ? "Загрузка…" : "Выбрать друзей ВК и обновить список"}
       </Button>
 
       {friends.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">Играют в RPS Arena</p>
+          <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">В игре (список сохраняется)</p>
           {friends.map((f) => (
             <div
               key={f.playerId}
@@ -245,7 +309,7 @@ export function FriendsInGameScreen() {
                 onClick={() => openInvite(f)}
                 className="flex items-center gap-1.5 shrink-0 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-3 py-2"
               >
-                <Swords className="h-3.5 w-3.5" /> Турнир
+                <Swords className="h-3.5 w-3.5" /> В турнир
               </button>
             </div>
           ))}
@@ -255,7 +319,7 @@ export function FriendsInGameScreen() {
       <Dialog open={inviteOpen} onOpenChange={(o) => !o && setInviteOpen(false)}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Приглашение к турниру</DialogTitle>
+            <DialogTitle>Приглашение к турниру (1 на 1)</DialogTitle>
           </DialogHeader>
           {inviteTarget && (
             <p className="text-sm text-muted-foreground">

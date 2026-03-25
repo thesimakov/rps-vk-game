@@ -28,6 +28,7 @@ import { EntryScreen } from "@/components/entry-screen"
 import { GameLoader } from "@/components/game-loader"
 import { AdminScreen } from "@/components/admin-screen"
 import { PlayInviteIncoming } from "@/components/play-invite-incoming"
+import { FriendInviteWaiterGlobal } from "@/components/friend-invite-waiter-global"
 
 /** В мини-приложении ВК не показываем экран «Войти / гость» — только автологин и «Повторить». */
 function VkMiniAppAuthWall() {
@@ -200,7 +201,12 @@ function GameLayout() {
 
         {showBottomNav && <BottomNav />}
       </div>
-      {vkUser != null && player.id.startsWith("vk_") && <PlayInviteIncoming />}
+      {vkUser != null && player.id.startsWith("vk_") && (
+        <>
+          <FriendInviteWaiterGlobal />
+          <PlayInviteIncoming />
+        </>
+      )}
     </div>
   )
 }
