@@ -6,6 +6,7 @@ import { useGame } from "@/lib/game-context"
 import { openBetSelectWithSharedPreset, normalizeSharedPreset } from "@/lib/play-invite-client"
 import { Users, X, Check } from "lucide-react"
 import { requestVkMiniAppNotifications } from "@/lib/vk-bridge"
+import { markVkNotificationsMenuPromptDismissed } from "@/components/vk-notifications-prompt"
 
 const INVITE_POLL_MS = 2800
 
@@ -64,7 +65,9 @@ export function PlayInviteIncoming() {
     const key = `rps_vk_notif_ask_${invite.id}`
     if (sessionStorage.getItem(key)) return
     sessionStorage.setItem(key, "1")
-    void requestVkMiniAppNotifications()
+    void requestVkMiniAppNotifications().then((allowed) => {
+      if (allowed) markVkNotificationsMenuPromptDismissed()
+    })
   }, [invite?.id])
 
   const respond = async (accept: boolean) => {

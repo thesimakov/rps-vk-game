@@ -5,7 +5,7 @@ import { useGame, BOT_OPPONENTS } from "@/lib/game-context"
 import type { Player } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { PlayerAvatar } from "@/components/player-avatar"
-import { ArrowLeft, Coins, Flame, Search, Shield, Swords, Trophy, Users } from "lucide-react"
+import { ArrowLeft, Coins, Flame, Search, Shield, Swords, Trophy, UserRound, Users } from "lucide-react"
 import { useEffect, useState } from "react"
 
 const STATUS_POLL_MS = 4000
@@ -57,6 +57,8 @@ export function BetSelect() {
   const [queueCount, setQueueCount] = useState<number | null>(null)
   const [bucketCounts, setBucketCounts] = useState<Record<string, number>>({})
   const [selectedBot, setSelectedBot] = useState<Player | null>(null)
+
+  const isVkPlayer = player.id.startsWith("vk_")
 
   useEffect(() => {
     if (offlineMode) return
@@ -142,30 +144,46 @@ export function BetSelect() {
         <div className="w-9" />
       </div>
 
-      {/* Онлайн / Оффлайн toggle */}
-      <div className="w-full max-w-lg grid grid-cols-2 gap-2 mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-1.5">
+      {/* Онлайн / Оффлайн / С друзьями (ВК — третий сегмент, как на главной) */}
+      <div
+        className={`w-full max-w-lg grid gap-1.5 sm:gap-2 mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-1.5 ${
+          isVkPlayer ? "grid-cols-3" : "grid-cols-2"
+        }`}
+      >
         <button
+          type="button"
           onClick={() => { setOfflineMode(false); setSelectedBot(null) }}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 rounded-xl font-bold transition-all ${
             !offlineMode
-              ? "bg-sky-500 text-white shadow-md shadow-sky-500/30"
-              : "text-muted-foreground hover:text-foreground hover:bg-card/60"
+              ? "bg-sky-500 text-white shadow-md shadow-sky-500/30 text-xs sm:text-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/60 text-xs sm:text-sm"
           }`}
         >
-          <Swords className="h-4 w-4" />
-          Онлайн
+          <Swords className="h-4 w-4 shrink-0" />
+          <span className="leading-tight text-center">Онлайн</span>
         </button>
         <button
+          type="button"
           onClick={() => setOfflineMode(true)}
-          className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+          className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 rounded-xl font-bold transition-all ${
             offlineMode
-              ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30"
-              : "text-muted-foreground hover:text-foreground hover:bg-card/60"
+              ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/30 text-xs sm:text-sm"
+              : "text-muted-foreground hover:text-foreground hover:bg-card/60 text-xs sm:text-sm"
           }`}
         >
-          <Shield className="h-4 w-4" />
-          Оффлайн
+          <Shield className="h-4 w-4 shrink-0" />
+          <span className="leading-tight text-center">Оффлайн</span>
         </button>
+        {isVkPlayer ? (
+          <button
+            type="button"
+            onClick={() => setScreen("friends-ingame")}
+            className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-muted-foreground hover:text-foreground hover:bg-sky-500/15 border border-transparent hover:border-sky-400/35"
+          >
+            <UserRound className="h-4 w-4 shrink-0 text-sky-400/90" />
+            <span className="leading-tight text-center">С друзьями</span>
+          </button>
+        ) : null}
       </div>
 
       {/* Balance */}

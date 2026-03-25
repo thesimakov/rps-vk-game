@@ -399,7 +399,11 @@ export async function requestVkMiniAppNotifications(): Promise<boolean> {
     if (typeof supportsFn === "function" && !supportsFn("VKWebAppAllowNotifications")) {
       return false
     }
-    await vkBridge.default.send("VKWebAppAllowNotifications" as never, {} as never)
+    const res = await vkBridge.default.send("VKWebAppAllowNotifications" as never, {} as never)
+    const data = res && typeof res === "object" ? (res as { result?: boolean }) : undefined
+    if (data && typeof data.result === "boolean") {
+      return data.result
+    }
     return true
   } catch {
     return false

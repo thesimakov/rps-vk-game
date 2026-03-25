@@ -6,6 +6,15 @@ import { isVKEnvironment, requestVkMiniAppNotifications } from "@/lib/vk-bridge"
 
 const MENU_DISMISS_KEY = "rps_vk_notif_menu_dismissed"
 
+/** Вызвать, когда разрешение на уведомления ВК получено (главный баннер больше не показывается). */
+export function markVkNotificationsMenuPromptDismissed() {
+  try {
+    if (typeof window !== "undefined") localStorage.setItem(MENU_DISMISS_KEY, "1")
+  } catch {
+    /* ignore */
+  }
+}
+
 type VkNotificationsPromptProps = {
   variant: "menu" | "profile"
   /** Показывать только для игрока ВК (например player.id.startsWith("vk_")). */
@@ -36,22 +45,23 @@ export function VkNotificationsPrompt({ variant, show }: VkNotificationsPromptPr
     setLoading(true)
     try {
       const ok = await requestVkMiniAppNotifications()
-      setHint(
-        ok
-          ? "Если появилось окно ВК — подтвердите уведомления от приложения и приглашения."
-          : "Не удалось открыть окно ВК. Включите уведомления вручную в настройках мини-приложения.",
-      )
+      if (ok) {
+        markVkNotificationsMenuPromptDismissed()
+        if (variant === "menu") {
+          setDismissed(true)
+          return
+        }
+        setHint("Уведомления разрешены.")
+      } else {
+        setHint("Не удалось открыть окно ВК. Включите уведомления вручную в настройках мини-приложения.")
+      }
     } finally {
       setLoading(false)
     }
   }
 
   const onDismissMenu = () => {
-    try {
-      localStorage.setItem(MENU_DISMISS_KEY, "1")
-    } catch {
-      /* ignore */
-    }
+    markVkNotificationsMenuPromptDismissed()
     setDismissed(true)
   }
 
