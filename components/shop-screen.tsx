@@ -870,35 +870,37 @@ export function ShopScreen() {
           return (
             <div
               key={item.id}
-              className="flex items-center gap-3 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-3.5"
+              className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-3.5"
             >
-              <div className={`w-10 h-10 rounded-xl bg-muted/30 flex items-center justify-center flex-shrink-0 ${item.color}`}>
-                {item.icon}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-base font-bold text-foreground">{item.name}</h3>
-                  {showPermanentOwnedBadge && (
-                    <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
-                      Куплено навсегда
-                    </span>
+              <div className="flex gap-3 min-w-0 flex-1">
+                <div className={`w-10 h-10 rounded-xl bg-muted/30 flex items-center justify-center flex-shrink-0 ${item.color}`}>
+                  {item.icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base font-bold text-foreground">{item.name}</h3>
+                    {showPermanentOwnedBadge && (
+                      <span className="inline-flex items-center rounded-full border border-emerald-400/40 bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-300">
+                        Куплено навсегда
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium leading-relaxed">{item.description}</p>
+                  {item.id === "lava-card" && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">В наличии: {lavaCardStock} из 3</p>
+                  )}
+                  {item.id === "timer-plus-10" && timerCooldownLeftMs > 0 && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Можно купить через {timerCooldownText}
+                    </p>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground font-medium leading-relaxed">{item.description}</p>
-                {item.id === "lava-card" && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5">В наличии: {lavaCardStock} из 3</p>
-                )}
-                {item.id === "timer-plus-10" && timerCooldownLeftMs > 0 && (
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
-                    Можно купить через {timerCooldownText}
-                  </p>
-                )}
               </div>
               <button
                 type="button"
                 onClick={() => handleBuy(itemId)}
                 disabled={!canBuy || !!buyingItemId || isSoon}
-                className={`flex items-center gap-1 px-3.5 py-2 rounded-xl text-base font-bold transition-all flex-shrink-0 ${
+                className={`flex items-center justify-center gap-1 px-3.5 py-2.5 rounded-xl text-sm sm:text-base font-bold transition-all w-full sm:w-auto sm:flex-shrink-0 ${
                   canBuy && !isSoon
                     ? "bg-primary text-primary-foreground cursor-pointer active:scale-95 shadow-md shadow-primary/20"
                     : "bg-muted/30 text-muted-foreground border border-border/30 cursor-not-allowed"

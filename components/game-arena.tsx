@@ -895,13 +895,13 @@ export function GameArena() {
       {showRoundOutcomeHint && (
         <div className="w-full max-w-lg mx-auto px-3 flex flex-col items-center justify-center text-center mt-2 mb-2 min-h-[2.5rem]">
           {drawMessage && (
-            <p className="text-sm sm:text-base text-amber-400 font-bold animate-in fade-in leading-snug">
+            <p className="w-full max-w-[9rem] sm:max-w-md mx-auto text-xs sm:text-base text-amber-400 font-bold animate-in fade-in leading-snug">
               Ничья! Ещё раунд...
             </p>
           )}
           {roundHintMessage && !drawMessage && (
             <p
-              className={`text-xs sm:text-base font-bold animate-in fade-in leading-snug ${
+              className={`w-full max-w-[9rem] sm:max-w-md mx-auto text-[11px] sm:text-base font-bold animate-in fade-in leading-snug ${
                 roundHintMessage.startsWith("Побед")
                   ? "text-emerald-400"
                   : roundHintMessage.startsWith("Поражен")

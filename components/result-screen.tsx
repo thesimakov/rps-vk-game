@@ -562,13 +562,16 @@ export function ResultScreen() {
           </div>
         </div>
 
-        <div className="result-center-in self-center flex flex-col items-center justify-center gap-2 px-1" style={{ animationDelay: "0.5s" }}>
+        <div
+          className="result-center-in self-center flex flex-col items-center justify-center gap-1.5 sm:gap-2 w-[min(100%,8.75rem)] sm:w-auto sm:min-w-0 shrink-0 px-0.5"
+          style={{ animationDelay: "0.5s" }}
+        >
           <OutcomeIcon
             playerMove={lastResult.playerMove}
             opponentMove={lastResult.opponentMove}
             outcome={lastResult.outcome}
           />
-          <p className="text-xs sm:text-sm text-white/80 text-center font-medium max-w-[160px] leading-tight">
+          <p className="text-[11px] sm:text-sm text-white/80 text-center font-medium w-full max-w-[8.75rem] sm:max-w-[160px] leading-snug">
             {getOutcomePhrase(lastResult.playerMove, lastResult.opponentMove, lastResult.outcome) ?? ""}
           </p>
         </div>

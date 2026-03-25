@@ -307,7 +307,7 @@ export function MainMenu() {
             <span className="text-base font-medium text-white/90 flex-shrink-0">{currencyLabel}</span>
           </div>
           {player.vip && (
-            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-600 text-[10px] font-bold uppercase flex-shrink-0">
+            <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/30 text-amber-600 text-[10px] font-bold uppercase flex-shrink-0">
               <Crown className="h-3 w-3" /> VIP
             </span>
           )}
