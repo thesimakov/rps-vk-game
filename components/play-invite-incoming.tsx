@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
-import { openBetSelectWithSharedPreset, normalizeSharedPreset } from "@/lib/play-invite-client"
+import { normalizeSharedPreset } from "@/lib/play-invite-client"
 import { Users, X, Check } from "lucide-react"
 import { requestVkMiniAppNotifications } from "@/lib/vk-bridge"
 import { markVkNotificationsMenuPromptDismissed } from "@/components/vk-notifications-prompt"
@@ -12,7 +12,8 @@ const INVITE_POLL_MS = 2800
 
 /** Баннер входящего приглашения (реферал → реферер или друг → друг). */
 export function PlayInviteIncoming() {
-  const { player, setCurrentBet, setTotalRounds, setPlayer, setScreen } = useGame()
+  const { player, setCurrentBet, setTotalRounds, setOpponent, setOfflineMode, setPvpMatchId, setPlayer, setScreen } =
+    useGame()
   const [invite, setInvite] = useState<{
     id: string
     fromUserId: string
@@ -81,12 +82,32 @@ export function PlayInviteIncoming() {
       })
       const data = (await res.json()) as { ok?: boolean; preset?: unknown }
       if (accept && data.ok && data.preset) {
-        openBetSelectWithSharedPreset(normalizeSharedPreset(data.preset), {
-          setCurrentBet,
-          setTotalRounds,
-          setPlayer,
-          setScreen,
+        const preset = normalizeSharedPreset(data.preset)
+
+        // На стороне приглашенного ставка и число раундов уже согласованы —
+        // просто стартуем арену 1×1, не возвращая на экран выбора ставки.
+        setOfflineMode(false)
+        setPvpMatchId(null)
+        setOpponent({
+          id: invite.fromUserId,
+          name: "Друг",
+          avatar: "D",
+          avatarUrl: "",
+          balance: 500,
+          wins: 0,
+          losses: 0,
+          weekWins: 0,
+          weekEarnings: preset.bet * 5,
+          vip: false,
         })
+        setCurrentBet(preset.bet)
+        setTotalRounds(preset.rounds)
+        setPlayer((p) => ({
+          ...p,
+          activeWeeklyMode: undefined,
+          bossWeekMatchChoice: undefined,
+        }))
+        setScreen("arena")
       }
     } catch {
       /* ignore */
