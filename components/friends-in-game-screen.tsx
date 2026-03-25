@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react"
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
-import { ArrowLeft, Users, Loader2, Swords, Clock, RefreshCw, Hourglass } from "lucide-react"
+import { ArrowLeft, Users, Loader2, Swords, Clock, RefreshCw } from "lucide-react"
 import { showFriendsPicker, isVKEnvironment, sendGameInviteToVkFriend, type VKFriend } from "@/lib/vk-bridge"
 import { TOURNAMENT_INVITE_BET_OPTIONS } from "@/lib/play-invite-preset"
 import { formatAmount } from "@/lib/format-amount"
@@ -15,13 +15,6 @@ import {
   type PendingFriendInviteSnapshot,
 } from "@/lib/friend-invite-pending"
 import {
-  PENDING_VK_APP_INVITES_KEY,
-  type PendingAppInviteEntry,
-  parsePendingAppPayload,
-  writePendingAppInvitesToLS,
-  syncPendingEntriesAfterPick,
-} from "@/lib/pending-vk-app-invites"
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -31,6 +24,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { PlayerAvatar } from "@/components/player-avatar"
+import {
+  readPendingAppInvites,
+  writePendingAppInvites,
+  mergePendingAppInvitesWithPickerUsers,
+  removePendingEntriesByVkIds,
+  LOWBALANCE_PENDING_KEY,
+  displayNameFromPendingEntry,
+} from "@/lib/vk-pending-app-invites"
 
 type FriendRow = {
   playerId: string
@@ -60,6 +61,7 @@ function roundsLabel(r: 1 | 3 | 5): string {
 export function FriendsInGameScreen() {
   const { player, setScreen, toDisplayAmount, currencyLabel } = useGame()
   const [, bumpPendingUi] = useReducer((n: number) => n + 1, 0)
+  const [pendingInvitesTick, bumpPendingInvites] = useReducer((n: number) => n + 1, 0)
   const [friends, setFriends] = useState<FriendRow[]>([])
   const [pickLoading, setPickLoading] = useState(false)
   const [refreshLoading, setRefreshLoading] = useState(false)
@@ -69,11 +71,6 @@ export function FriendsInGameScreen() {
   const [betChoice, setBetChoice] = useState<number>(25)
   const [sendLoading, setSendLoading] = useState(false)
   const [banner, setBanner] = useState<{ kind: "ok" | "err"; text: string } | null>(null)
-  const [pendingFromPicker, setPendingFromPicker] = useState<PendingAppInviteEntry[]>([])
-
-  const refreshPendingFromLS = useCallback(() => {
-    setPendingFromPicker(parsePendingAppPayload(localStorage.getItem(PENDING_VK_APP_INVITES_KEY))?.entries ?? [])
-  }, [])
 
   const betOptionsForRounds = useMemo(
     () => TOURNAMENT_INVITE_BET_OPTIONS.filter((o) => o.rounds === roundsChoice),
@@ -82,6 +79,13 @@ export function FriendsInGameScreen() {
 
   const canUse = player.id.startsWith("vk_")
   const pendingSnap: PendingFriendInviteSnapshot | null = canUse ? readPendingFriendInvite(player.id) : null
+
+  const waitingAppInvitees = useMemo(() => {
+    const raw = readPendingAppInvites()
+    if (!raw?.entries.length) return []
+    const inGameVk = new Set(friends.map((f) => f.vkId))
+    return raw.entries.filter((e) => !inGameVk.has(e.vkId))
+  }, [friends, pendingInvitesTick])
 
   useEffect(() => {
     const fn = () => bumpPendingUi()
@@ -131,52 +135,6 @@ export function FriendsInGameScreen() {
     }
   }, [canUse, player.id])
 
-  useEffect(() => {
-    if (!canUse) return
-    refreshPendingFromLS()
-  }, [canUse, player.id, refreshPendingFromLS])
-
-  useEffect(() => {
-    if (!canUse) return
-    const payload = parsePendingAppPayload(localStorage.getItem(PENDING_VK_APP_INVITES_KEY))
-    if (!payload?.entries.length) return
-    const inGame = new Set(friends.map((f) => f.vkId))
-    const next = payload.entries.filter((e) => !inGame.has(e.vkId))
-    if (next.length === payload.entries.length) return
-    writePendingAppInvitesToLS(next, payload.createdAt)
-    setPendingFromPicker(next)
-  }, [canUse, friends])
-
-  const invitedSlotRows = useMemo((): PendingAppInviteEntry[] => {
-    if (!Array.isArray(player.invitedFriends)) return []
-    const out: PendingAppInviteEntry[] = []
-    for (const x of player.invitedFriends) {
-      if (!x || typeof x.id !== "number" || !Number.isInteger(x.id) || x.id <= 0) continue
-      const name = `${x.first_name} ${x.last_name}`.trim() || `Друг ВК (${x.id})`
-      out.push({ vkId: x.id, name, photo_200: x.photo_200?.length ? x.photo_200 : undefined })
-    }
-    return out
-  }, [player.invitedFriends])
-
-  const waitingInviteRows = useMemo(() => {
-    const inGameVk = new Set(friends.map((f) => f.vkId))
-    const byVk = new Map<number, PendingAppInviteEntry>()
-    for (const e of invitedSlotRows) {
-      if (inGameVk.has(e.vkId)) continue
-      byVk.set(e.vkId, e)
-    }
-    for (const e of pendingFromPicker) {
-      if (inGameVk.has(e.vkId)) continue
-      const prev = byVk.get(e.vkId)
-      byVk.set(e.vkId, {
-        vkId: e.vkId,
-        name: e.name || prev?.name || `Друг ВК (${e.vkId})`,
-        photo_200: e.photo_200 ?? prev?.photo_200,
-      })
-    }
-    return Array.from(byVk.values())
-  }, [friends, invitedSlotRows, pendingFromPicker])
-
   // Авто-подтягиваем друзей, которые уже вошли в RPS Arena,
   // если мы ранее отправляли им приглашение в приложение (за монеты).
   useEffect(() => {
@@ -192,8 +150,8 @@ export function FriendsInGameScreen() {
       return vkIds.slice(0, 80)
     })()
 
-    const pendingPayload = parsePendingAppPayload(localStorage.getItem(PENDING_VK_APP_INVITES_KEY))
-    const idsFromPending = pendingPayload?.entries.map((e) => e.vkId) ?? []
+    const lowBalancePayload = readPendingAppInvites()
+    const idsFromPending = lowBalancePayload?.entries.map((e) => e.vkId) ?? []
 
     const idsToCheck = Array.from(new Set([...idsFromPending, ...idsFromInvitedSlots])).slice(0, 80)
     if (!idsToCheck.length) return
@@ -237,11 +195,21 @@ export function FriendsInGameScreen() {
           return Array.from(byId.values())
         })
 
-        if (pendingPayload?.entries.length && data.friends?.length) {
+        // Кого уже поймали в игре — убираем из списка «приглашённых в приложение».
+        const pendingNow = readPendingAppInvites()
+        if (pendingNow?.entries.length) {
           const foundVkIds = new Set(data.friends.map((f) => f.vkId))
-          const remaining = pendingPayload.entries.filter((e) => !foundVkIds.has(e.vkId))
-          writePendingAppInvitesToLS(remaining, pendingPayload.createdAt)
-          setPendingFromPicker(remaining)
+          const nextPayload = removePendingEntriesByVkIds(pendingNow, foundVkIds)
+          try {
+            if (!nextPayload || !nextPayload.entries.length) {
+              localStorage.removeItem(LOWBALANCE_PENDING_KEY)
+            } else {
+              writePendingAppInvites(nextPayload)
+            }
+          } catch {
+            /* ignore */
+          }
+          bumpPendingInvites()
         }
       } catch {
         /* ignore */
@@ -252,7 +220,7 @@ export function FriendsInGameScreen() {
     return () => {
       cancelled = true
     }
-  }, [canUse, player.id, player.invitedFriends, pendingFromPicker])
+  }, [canUse, player.id, player.invitedFriends, bumpPendingInvites])
 
   useEffect(() => {
     if (!canUse || friends.length === 0) return
@@ -308,9 +276,9 @@ export function FriendsInGameScreen() {
           }
         }
       }
-      const pend = parsePendingAppPayload(localStorage.getItem(PENDING_VK_APP_INVITES_KEY))
-      if (pend?.entries.length) {
-        for (const e of pend.entries) idSet.add(e.vkId)
+      const lowBal = readPendingAppInvites()
+      for (const id of (lowBal?.entries.map((e) => e.vkId) ?? []).slice(0, 80)) {
+        if (Number.isInteger(id) && id > 0) idSet.add(id)
       }
       const snap = readPendingFriendInvite(player.id)
       if (snap?.friend?.vkId && snap.friend.vkId > 0) idSet.add(snap.friend.vkId)
@@ -342,6 +310,19 @@ export function FriendsInGameScreen() {
               wins: typeof f.wins === "number" ? f.wins : 0,
             }))
           merged = mergeFriendRows(merged, newRows)
+          const foundVk = new Set(newRows.map((r) => r.vkId))
+          const pend = readPendingAppInvites()
+          const nextPend = removePendingEntriesByVkIds(pend, foundVk)
+          try {
+            if (!nextPend || !nextPend.entries.length) {
+              localStorage.removeItem(LOWBALANCE_PENDING_KEY)
+            } else {
+              writePendingAppInvites(nextPend)
+            }
+          } catch {
+            /* ignore */
+          }
+          bumpPendingInvites()
         }
       }
 
@@ -372,6 +353,13 @@ export function FriendsInGameScreen() {
       let vkInvitesAttempted = false
       if (isVKEnvironment()) {
         vkInvitesAttempted = true
+        try {
+          const mergedPayload = mergePendingAppInvitesWithPickerUsers(readPendingAppInvites(), users)
+          writePendingAppInvites(mergedPayload)
+          bumpPendingInvites()
+        } catch {
+          /* ignore */
+        }
         const inviteMsg = "Заходи в RPS Arena — камень, ножницы, бумага с друзьями и турниры."
         for (const u of users) {
           try {
@@ -392,14 +380,8 @@ export function FriendsInGameScreen() {
         ok?: boolean
         friends?: { playerId: string; vkId: number; name: string; wins: number }[]
       }
-      const inGameList = data.ok && Array.isArray(data.friends) ? data.friends : []
-
-      if (data.ok) {
-        syncPendingEntriesAfterPick(users, inGameList)
-        refreshPendingFromLS()
-      }
-
       if (!data.ok) {
+        setFriends([])
         setBanner({
           kind: "err",
           text: vkInvitesAttempted
@@ -408,22 +390,23 @@ export function FriendsInGameScreen() {
         })
         return
       }
-      if (!inGameList.length) {
+      if (!data.friends?.length) {
+        setFriends([])
         setBanner(
           vkInvitesAttempted
             ? {
                 kind: "ok",
-                text: "Приглашения в приложение отправлены выбранным друзьям. Они отображаются ниже со статусом «Ожидание», пока не зайдут в RPS Arena.",
+                text: "Приглашения в приложение отправлены выбранным друзьям. Пока ни у кого из них нет профиля в игре — как только зайдут, снова нажмите кнопку или откройте экран заново.",
               }
             : {
                 kind: "err",
-                text: "Среди выбранных никто ещё не заходил в игру. Список ожидания сохранён — как только зайдут, обновите список.",
+                text: "Среди выбранных никто ещё не заходил в игру. Откройте игру внутри ВКонтакте и попробуйте снова.",
               },
         )
         return
       }
       const mergedFromPicker = mergePhotos(
-        inGameList.map((f) => ({ ...f })),
+        data.friends.map((f) => ({ ...f })),
         users,
       )
       setFriends((prev) => {
@@ -431,7 +414,7 @@ export function FriendsInGameScreen() {
         writeFriendsInGameList(player.id, next)
         return next
       })
-      const inGame = inGameList.length
+      const inGame = mergedFromPicker.length
       const total = users.length
       setBanner({
         kind: "ok",
@@ -586,23 +569,27 @@ export function FriendsInGameScreen() {
           onClick={() => void handlePickFriends()}
         >
           {pickLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-          {pickLoading ? "Загрузка…" : "Выбрать друзей ВК и обновить список"}
+          {pickLoading ? "Загрузка…" : "Добавить друзей"}
         </Button>
         <button
           type="button"
           onClick={() => void handleRefreshList()}
           disabled={!canUse || pickLoading || refreshLoading}
-          className="shrink-0 h-11 w-11 rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center"
-          aria-label="Обновить список друзей"
-          title="Обновить список"
+          className="shrink-0 h-11 rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center gap-1.5 px-3"
+          aria-label="Обновить список"
         >
-          <RefreshCw className={`h-5 w-5 ${refreshLoading ? "animate-spin" : ""}`} />
+          <RefreshCw className={`h-4 w-4 shrink-0 ${refreshLoading ? "animate-spin" : ""}`} />
+          <span className="text-xs font-semibold whitespace-nowrap">Обновить список</span>
         </button>
       </div>
 
-      {friends.length > 0 && (
+      {(friends.length > 0 || waitingAppInvitees.length > 0) && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">В игре (список сохраняется)</p>
+          <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">Список игроков</p>
+          <p className="text-[11px] text-white/45 -mt-1 mb-1 leading-snug">
+            Приглашённым в приложение ВК пока отмечаем «Ожидание», пока они не зайдут в RPS Arena. Список сохраняется
+            на сервере.
+          </p>
           {friends.map((f) => (
             <div
               key={f.playerId}
@@ -617,7 +604,12 @@ export function FriendsInGameScreen() {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-white truncate">{f.name}</p>
-                <p className="text-xs text-white/55">{f.wins} побед</p>
+                <p className="text-xs text-white/55 flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <span>{f.wins} побед</span>
+                  <span className="rounded-md bg-emerald-500/20 text-emerald-200 px-1.5 py-0.5 text-[10px] font-bold">
+                    В игре
+                  </span>
+                </p>
               </div>
               <button
                 type="button"
@@ -628,33 +620,32 @@ export function FriendsInGameScreen() {
               </button>
             </div>
           ))}
-        </div>
-      )}
-
-      {waitingInviteRows.length > 0 && (
-        <div className={`flex flex-col gap-2 ${friends.length > 0 ? "mt-6" : ""}`}>
-          <p className="text-xs font-semibold text-white/60 uppercase tracking-wide">Приглашены в приложение</p>
-          {waitingInviteRows.map((e) => (
-            <div
-              key={e.vkId}
-              className="flex items-center gap-3 rounded-2xl border border-amber-400/35 bg-amber-500/10 px-3 py-3"
-            >
-              <div className="relative h-11 w-11 rounded-full overflow-hidden border border-white/20 shrink-0">
-                {e.photo_200 ? (
-                  <img src={e.photo_200} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <PlayerAvatar name={e.name} avatar={e.name.charAt(0)} size="sm" variant="muted" vip={false} />
-                )}
+          {waitingAppInvitees.map((e) => {
+            const label = displayNameFromPendingEntry(e)
+            return (
+              <div
+                key={e.vkId}
+                className="flex items-center gap-3 rounded-2xl border border-amber-400/30 bg-amber-500/10 px-3 py-3"
+              >
+                <div className="relative h-11 w-11 rounded-full overflow-hidden border border-amber-400/35 shrink-0">
+                  {e.photo_200 ? (
+                    <img src={e.photo_200} alt="" className="h-full w-full object-cover" />
+                  ) : (
+                    <PlayerAvatar name={label} avatar={label.charAt(0)} size="sm" variant="muted" vip={false} />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-white truncate">{label}</p>
+                  <p className="text-xs text-white/55 flex flex-wrap items-center gap-x-2 gap-y-1">
+                    <span>Приглашение в приложение отправлено</span>
+                    <span className="rounded-md bg-amber-500/25 text-amber-100 px-1.5 py-0.5 text-[10px] font-bold">
+                      Ожидание
+                    </span>
+                  </p>
+                </div>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-white truncate">{e.name}</p>
-                <p className="text-xs text-amber-200/90 flex items-center gap-1.5 mt-0.5">
-                  <Hourglass className="h-3.5 w-3.5 shrink-0 opacity-90" />
-                  Ожидание — ещё не заходили в игру
-                </p>
-              </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
