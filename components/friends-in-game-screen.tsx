@@ -207,6 +207,44 @@ export function FriendsInGameScreen() {
       const users = await showFriendsPicker()
       if (!users?.length) return
       const ids = users.map((u) => u.id)
+
+      // Приглашение в мини-приложение через ВК (как в магазине / подсказке с балансом).
+      // Раньше после выбора друзей не вызывался Bridge — друг не получал уведомление.
+      let vkInvitesAttempted = false
+      if (isVKEnvironment()) {
+        vkInvitesAttempted = true
+        try {
+          const existingRaw = localStorage.getItem(LOWBALANCE_PENDING_KEY)
+          let mergedIds = [...ids]
+          let createdAt = Date.now()
+          if (existingRaw) {
+            try {
+              const parsed = JSON.parse(existingRaw) as { ids?: unknown; createdAt?: unknown }
+              const prev = Array.isArray(parsed.ids)
+                ? parsed.ids.map((x) => (typeof x === "number" ? x : Number(x))).filter((n) => Number.isInteger(n) && n > 0)
+                : []
+              mergedIds = Array.from(new Set([...prev, ...ids])).slice(0, 80)
+              if (typeof parsed.createdAt === "number" && Number.isFinite(parsed.createdAt)) {
+                createdAt = parsed.createdAt
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+          localStorage.setItem(LOWBALANCE_PENDING_KEY, JSON.stringify({ ids: mergedIds, createdAt }))
+        } catch {
+          /* ignore */
+        }
+        const inviteMsg = "Заходи в RPS Arena — камень, ножницы, бумага с друзьями и турниры."
+        for (const u of users) {
+          try {
+            await sendGameInviteToVkFriend(u.id, inviteMsg)
+          } catch {
+            /* Bridge / пользователь закрыл окно */
+          }
+        }
+      }
+
       const res = await fetch(appPath("/api/friends-in-game/lookup"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,15 +257,27 @@ export function FriendsInGameScreen() {
       }
       if (!data.ok) {
         setFriends([])
-        setBanner({ kind: "err", text: "Не удалось проверить список. Попробуйте позже." })
+        setBanner({
+          kind: "err",
+          text: vkInvitesAttempted
+            ? "Список на сервере не обновился. Если открывалось окно ВК — приглашения могли уйти. Попробуйте позже."
+            : "Не удалось проверить список. Попробуйте позже.",
+        })
         return
       }
       if (!data.friends?.length) {
         setFriends([])
-        setBanner({
-          kind: "err",
-          text: "Среди выбранных никто ещё не заходил в игру. Попробуйте других или пригласите в приложение.",
-        })
+        setBanner(
+          vkInvitesAttempted
+            ? {
+                kind: "ok",
+                text: "Приглашения в приложение отправлены выбранным друзьям. Пока ни у кого из них нет профиля в игре — как только зайдут, снова нажмите кнопку или откройте экран заново.",
+              }
+            : {
+                kind: "err",
+                text: "Среди выбранных никто ещё не заходил в игру. Откройте игру внутри ВКонтакте и попробуйте снова.",
+              },
+        )
         return
       }
       const merged = mergePhotos(
@@ -235,9 +285,14 @@ export function FriendsInGameScreen() {
         users,
       )
       setFriends(merged)
+      const inGame = merged.length
+      const total = users.length
       setBanner({
         kind: "ok",
-        text: `В игре: ${merged.length} из ${users.length} выбранных. Можно пригласить в турнир в любой момент.`,
+        text:
+          vkInvitesAttempted && inGame < total
+            ? `В игре: ${inGame} из ${total}. Остальным отправлено приглашение в приложение ВК. Можно пригласить в турнир тех, кто уже в игре.`
+            : `В игре: ${inGame} из ${total} выбранных. Можно пригласить в турнир в любой момент.`,
       })
     } finally {
       setPickLoading(false)
