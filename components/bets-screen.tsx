@@ -20,7 +20,25 @@ import { Label } from "@/components/ui/label"
 const now = () => Date.now()
 
 export function BetsScreen() {
-  const { bets, player, createBet, removeBet, pendingBet, setScreen, setCurrentBet, setOpponent, setTotalRounds, clearPendingBet, updatePendingBetAmount, vkUser, lavaCardStock, purchaseLavaCard, toDisplayAmount, currencyLabel } = useGame()
+  const {
+    bets,
+    player,
+    createBet,
+    removeBet,
+    pendingBet,
+    setScreen,
+    setCurrentBet,
+    setOpponent,
+    setTotalRounds,
+    clearPendingBet,
+    updatePendingBetAmount,
+    vkUser,
+    lavaCardStock,
+    purchaseLavaCard,
+    toDisplayAmount,
+    currencyLabel,
+    remoteOpenBets,
+  } = useGame()
   const [createOpen, setCreateOpen] = useState(false)
   const [lavaModalOpen, setLavaModalOpen] = useState(false)
   const [amount, setAmount] = useState("")
@@ -40,9 +58,14 @@ export function BetsScreen() {
     () => bets.filter((b) => !b.expiresAt || b.expiresAt > now()),
     [bets, expiryTick]
   )
-  // Минимум 10 слотов: живые ставки первые, остальное — роботы; плюс один живой — минус один робот
+  const visibleRemote = useMemo(
+    () => remoteOpenBets.filter((b) => !b.expiresAt || b.expiresAt > now()),
+    [remoteOpenBets, expiryTick]
+  )
+  // Минимум 10 слотов: своя ставка и живые с сервера, затем роботы (+ filler)
   const displayBets = useMemo(() => {
-    const rest = visibleBets.filter((b) => !pendingBet || b.id !== pendingBet.id)
+    const remoteIds = new Set(visibleRemote.map((r) => r.id))
+    const rest = visibleBets.filter((b) => !pendingBet || b.id !== pendingBet.id).filter((b) => !remoteIds.has(b.id))
     const sortedBots = [...rest].sort(
       (a, b) => (b.vip ? 1 : 0) - (a.vip ? 1 : 0) || b.createdAt - a.createdAt
     )
@@ -61,11 +84,26 @@ export function BetsScreen() {
         vip: player.vip,
       })
     }
-    const botSlotsNeeded = Math.max(0, MIN_BETS_DISPLAY - liveBets.length)
+    const remoteSorted = [...visibleRemote].sort(
+      (a, b) => (b.vip ? 1 : 0) - (a.vip ? 1 : 0) || b.createdAt - a.createdAt
+    )
+    const head = [...liveBets, ...remoteSorted]
+    const botSlotsNeeded = Math.max(0, MIN_BETS_DISPLAY - head.length)
     const botBetsToShow = sortedBots.slice(0, botSlotsNeeded)
     const filler = getFillerBetEntries(botSlotsNeeded - botBetsToShow.length)
-    return [...liveBets, ...botBetsToShow, ...filler]
-  }, [visibleBets, pendingBet, player.id, player.name, player.avatar, player.avatarUrl, player.hideVkAvatar, player.wins, player.vip])
+    return [...head, ...botBetsToShow, ...filler]
+  }, [
+    visibleBets,
+    visibleRemote,
+    pendingBet,
+    player.id,
+    player.name,
+    player.avatar,
+    player.avatarUrl,
+    player.hideVkAvatar,
+    player.wins,
+    player.vip,
+  ])
 
   const handleCreateBet = () => {
     const num = parseInt(amount, 10)

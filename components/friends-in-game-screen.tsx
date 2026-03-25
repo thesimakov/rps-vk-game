@@ -561,26 +561,27 @@ export function FriendsInGameScreen() {
         </div>
       )}
 
-      <div className="flex gap-2 mb-6 w-full">
+      <div className="flex items-stretch gap-2 mb-6 w-full">
         <Button
           type="button"
-          className="flex-1 min-w-0 gap-2"
+          className="flex-1 min-w-0 h-11 rounded-full gap-2 px-4 text-sm font-semibold shadow-md shadow-sky-500/25"
           disabled={!canUse || pickLoading || refreshLoading}
           onClick={() => void handlePickFriends()}
         >
-          {pickLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+          {pickLoading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" /> : <Users className="h-4 w-4 shrink-0" />}
           {pickLoading ? "Загрузка…" : "Добавить друзей"}
         </Button>
-        <button
+        <Button
           type="button"
-          onClick={() => void handleRefreshList()}
+          variant="outline"
+          className="h-11 shrink-0 rounded-full gap-2 border-white/20 bg-white/5 px-4 text-sm font-semibold text-white hover:bg-white/12 hover:text-white"
           disabled={!canUse || pickLoading || refreshLoading}
-          className="shrink-0 h-11 rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center gap-1.5 px-3"
+          onClick={() => void handleRefreshList()}
           aria-label="Обновить список"
         >
           <RefreshCw className={`h-4 w-4 shrink-0 ${refreshLoading ? "animate-spin" : ""}`} />
-          <span className="text-xs font-semibold whitespace-nowrap">Обновить список</span>
-        </button>
+          <span className="whitespace-nowrap">Обновить список</span>
+        </Button>
       </div>
 
       {(friends.length > 0 || waitingAppInvitees.length > 0) && (

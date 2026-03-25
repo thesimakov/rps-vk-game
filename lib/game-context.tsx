@@ -287,6 +287,8 @@ interface GameState {
   /** Оффлайн-режим: играть с ботами, без матчмейкинга */
   offlineMode: boolean
   setOfflineMode: (v: boolean) => void
+  /** Открытые ставки других игроков ВК (с сервера), без роботов */
+  remoteOpenBets: BetEntry[]
 }
 
 const GameContext = createContext<GameState | null>(null)
@@ -703,15 +705,84 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const lastBotBetAddedRef = useRef(0)
   const screenRef = useRef<GameScreen>("entry")
 
-  // Динамика ставок: у роботов botExpiresAt ~15 сек, потом ставка исчезает и список подтягивается; периодически добавляется новая
+  // Динамика ставок: только у роботов (creatorId bot-*) выставляем botExpiresAt — иначе живые vk_* пропадали бы с доски.
   useEffect(() => {
     const now = Date.now()
     setBets((prev) =>
       prev.map((b) => {
         if (b.botExpiresAt != null || b.creatorId === player.id) return b
+        if (!b.creatorId.startsWith("bot-")) return b
         return { ...b, botExpiresAt: now + 10000 + Math.random() * 10000 }
       })
     )
+  }, [player.id])
+
+  const [remoteOpenBets, setRemoteOpenBets] = useState<BetEntry[]>([])
+
+  const deleteOpenBetOnServer = useCallback((betId: string) => {
+    if (!betId || !player.id.startsWith("vk_")) return
+    void fetch(appPath(`/api/match/open-bets?betId=${encodeURIComponent(betId)}`), { method: "DELETE" }).catch(
+      () => {},
+    )
+  }, [player.id])
+
+  useEffect(() => {
+    if (!player.id.startsWith("vk_")) {
+      setRemoteOpenBets([])
+      return
+    }
+    let cancelled = false
+    const tick = async () => {
+      try {
+        const res = await fetch(
+          appPath(`/api/match/open-bets?excludeUserId=${encodeURIComponent(player.id)}`),
+          { cache: "no-store" },
+        )
+        const data = (await res.json()) as {
+          ok?: boolean
+          bets?: Array<{
+            id: string
+            creatorId: string
+            creatorName: string
+            creatorAvatar: string
+            creatorAvatarUrl?: string
+            creatorWins: number
+            amount: number
+            createdAt: number
+            expiresAt?: number
+            totalRounds?: 1 | 3 | 5
+            vip?: boolean
+          }>
+        }
+        if (cancelled) return
+        if (!data.ok || !Array.isArray(data.bets)) {
+          setRemoteOpenBets([])
+          return
+        }
+        const mapped: BetEntry[] = data.bets.map((b) => ({
+          id: b.id,
+          creatorId: b.creatorId,
+          creatorName: b.creatorName,
+          creatorAvatar: b.creatorAvatar,
+          creatorAvatarUrl: b.creatorAvatarUrl,
+          creatorWins: b.creatorWins,
+          amount: b.amount,
+          createdAt: b.createdAt,
+          expiresAt: b.expiresAt,
+          totalRounds: b.totalRounds,
+          vip: b.vip,
+        }))
+        setRemoteOpenBets(mapped)
+      } catch {
+        if (!cancelled) setRemoteOpenBets([])
+      }
+    }
+    void tick()
+    const t = setInterval(tick, 6000)
+    return () => {
+      cancelled = true
+      clearInterval(t)
+    }
   }, [player.id])
 
   useEffect(() => {
@@ -1235,6 +1306,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         creatorId: player.id,
         creatorName: player.name,
         creatorAvatar: player.avatar,
+        creatorAvatarUrl: player.hideVkAvatar ? undefined : player.avatarUrl,
         creatorWins: player.wins,
         amount,
         createdAt: now,
@@ -1243,6 +1315,14 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         vip: player.vip,
       }
       setBets((prev) => [myBet, ...prev])
+      if (player.id.startsWith("vk_")) {
+        void fetch(appPath("/api/match/open-bets"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ bet: myBet }),
+        }).catch(() => {})
+      }
       const r = OPPONENTS[Math.floor(Math.random() * OPPONENTS.length)]
       const responseId = `resp-${Date.now()}`
       const hasLivePlayers = Math.random() < 0.7
@@ -1286,6 +1366,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           })
           setCurrentBet(amount)
           setBets((prev) => prev.filter((b) => b.id !== id))
+          deleteOpenBetOnServer(id)
           setPendingBet(null)
           setBetResponse(null)
           setTotalRounds(current.totalRounds ?? 1)
@@ -1295,12 +1376,30 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
       scheduleBotAutoAccept(BOT_AUTO_ACCEPT_AFTER_MS)
     },
-    [player.balance, player.id, player.name, player.avatar, player.wins, setScreen, setOpponent, setCurrentBet, setTotalRounds]
+    [
+      player.balance,
+      player.id,
+      player.name,
+      player.avatar,
+      player.avatarUrl,
+      player.hideVkAvatar,
+      player.wins,
+      player.vip,
+      deleteOpenBetOnServer,
+      setScreen,
+      setOpponent,
+      setCurrentBet,
+      setTotalRounds,
+    ]
   )
 
-  const removeBet = useCallback((betId: string) => {
-    setBets((prev) => prev.filter((b) => b.id !== betId))
-  }, [])
+  const removeBet = useCallback(
+    (betId: string) => {
+      setBets((prev) => prev.filter((b) => b.id !== betId))
+      deleteOpenBetOnServer(betId)
+    },
+    [deleteOpenBetOnServer],
+  )
 
   const MIN_BET_AMOUNT = 5
   const updatePendingBetAmount = useCallback(
@@ -1310,12 +1409,22 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       if (diff === 0) return true
       if (diff > 0 && player.balance < newAmount) return false
       setPendingBet((p) => (p ? { ...p, amount: newAmount } : null))
-      setBets((prev) =>
-        prev.map((b) => (b.id === pendingBet.id ? { ...b, amount: newAmount } : b))
-      )
+      setBets((prev) => {
+        const next = prev.map((b) => (b.id === pendingBet.id ? { ...b, amount: newAmount } : b))
+        const row = next.find((b) => b.id === pendingBet.id)
+        if (row && player.id.startsWith("vk_")) {
+          void fetch(appPath("/api/match/open-bets"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            cache: "no-store",
+            body: JSON.stringify({ bet: row }),
+          }).catch(() => {})
+        }
+        return next
+      })
       return true
     },
-    [pendingBet, player.balance]
+    [pendingBet, player.balance, player.id]
   )
 
   // Очистка таймера отклика и ожидающей ставки только при переходе на экраны,
@@ -1356,6 +1465,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       clearTimeout(botAutoAcceptTimeoutRef.current)
       botAutoAcceptTimeoutRef.current = null
     }
+    deleteOpenBetOnServer(betResponse.betId)
     setBets((prev) => prev.filter((b) => b.id !== betResponse.betId))
     const bot = OPPONENTS.find((o) => o.id === betResponse.responderId)
     setOpponent(
@@ -1379,7 +1489,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setPendingBet(null)
     setTotalRounds(bet?.totalRounds ?? 1)
     setScreen("arena")
-  }, [betResponse, bets, setScreen, setOpponent, setCurrentBet, setTotalRounds])
+  }, [betResponse, bets, deleteOpenBetOnServer, setScreen, setOpponent, setCurrentBet, setTotalRounds])
 
   const declineBetResponse = useCallback(() => {
     if (!betResponse) return
@@ -1397,11 +1507,12 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       botAutoAcceptTimeoutRef.current = null
     }
     if (pendingBet) {
+      deleteOpenBetOnServer(pendingBet.id)
       setBets((prev) => prev.filter((b) => b.id !== pendingBet.id))
     }
     setPendingBet(null)
     setBetResponse(null)
-  }, [pendingBet])
+  }, [pendingBet, deleteOpenBetOnServer])
 
   const LAVA_CARD_PRICE = 120_000
   const purchaseLavaCard = useCallback(() => {
@@ -1481,6 +1592,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         setPvpMatchId,
         offlineMode,
         setOfflineMode,
+        remoteOpenBets,
       }}
     >
       {children}

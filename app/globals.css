@@ -240,17 +240,29 @@
     transform: rotateY(180deg);
   }
 
-  /* VIP: неоновая рамка по кругу, компактное неоновое свечение */
+  /* VIP: неоновая рамка — яркое «дыхание», бегущий блик и широкое свечение */
   .vip-frame-outer {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    padding: 3px;
-    background: linear-gradient(135deg, #06b6d4 0%, #22d3ee 25%, #67e8f9 50%, #22d3ee 75%, #06b6d4 100%);
-    background-size: 200% 200%;
-    animation: vip-frame-neon 2s ease-in-out infinite;
-    box-shadow: 0 0 6px rgba(34, 211, 238, 0.45), 0 0 12px rgba(6, 182, 212, 0.2);
+    padding: 4px;
+    background: linear-gradient(
+      125deg,
+      #0891b2 0%,
+      #22d3ee 16%,
+      #67e8f9 32%,
+      #ecfeff 50%,
+      #a5f3fc 66%,
+      #22d3ee 84%,
+      #06b6d4 100%
+    );
+    background-size: 320% 320%;
+    animation: vip-frame-neon 2.4s ease-in-out infinite;
+    box-shadow:
+      0 0 4px rgba(34, 211, 238, 0.6),
+      0 0 10px rgba(6, 182, 212, 0.38),
+      0 0 16px rgba(103, 232, 249, 0.22);
   }
   .vip-frame-inner {
     border-radius: 50%;
@@ -262,12 +274,60 @@
   }
   @keyframes vip-frame-neon {
     0%, 100% {
-      background-position: 0% 50%;
-      box-shadow: 0 0 6px rgba(34, 211, 238, 0.45), 0 0 12px rgba(6, 182, 212, 0.2);
+      background-position: 10% 50%;
+      box-shadow:
+        0 0 3px rgba(34, 211, 238, 0.55),
+        0 0 9px rgba(6, 182, 212, 0.28),
+        0 0 14px rgba(103, 232, 249, 0.14);
+      filter: brightness(1);
+    }
+    38% {
+      background-position: 92% 42%;
+      box-shadow:
+        0 0 7px rgba(165, 243, 252, 0.95),
+        0 0 15px rgba(34, 211, 238, 0.55),
+        0 0 20px rgba(103, 232, 249, 0.32);
+      filter: brightness(1.14);
+    }
+    68% {
+      background-position: 100% 58%;
+      box-shadow:
+        0 0 8px rgba(236, 254, 255, 0.8),
+        0 0 18px rgba(34, 211, 238, 0.62),
+        0 0 24px rgba(6, 182, 212, 0.26);
+      filter: brightness(1.2);
+    }
+  }
+
+  /* Золотой бейдж с короной (VIP) — пульс и лёгкий «перелив» */
+  .vip-crown-badge {
+    background: linear-gradient(145deg, #fde047 0%, #f59e0b 38%, #fbbf24 72%, #fef08a 100%);
+    background-size: 200% 200%;
+    animation:
+      vip-crown-pulse 1.75s ease-in-out infinite,
+      vip-crown-shimmer 2.9s ease-in-out infinite;
+  }
+  @keyframes vip-crown-pulse {
+    0%, 100% {
+      box-shadow:
+        0 0 0 1px rgba(253, 230, 138, 0.55),
+        0 2px 6px rgba(217, 119, 6, 0.45);
+      transform: scale(1);
     }
     50% {
-      background-position: 100% 50%;
-      box-shadow: 0 0 10px rgba(103, 232, 249, 0.6), 0 0 18px rgba(34, 211, 238, 0.3);
+      box-shadow:
+        0 0 5px 1px rgba(253, 224, 71, 0.72),
+        0 0 10px rgba(245, 158, 11, 0.38),
+        0 2px 6px rgba(180, 83, 9, 0.52);
+      transform: scale(1.08);
+    }
+  }
+  @keyframes vip-crown-shimmer {
+    0%, 100% {
+      background-position: 0% 45%;
+    }
+    50% {
+      background-position: 100% 55%;
     }
   }
 

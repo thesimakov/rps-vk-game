@@ -42,6 +42,20 @@ export function getGameStateDb(): GameStateDb {
       json TEXT NOT NULL,
       updated_at INTEGER NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS open_match_bets (
+      id TEXT PRIMARY KEY NOT NULL,
+      creator_id TEXT NOT NULL,
+      creator_name TEXT NOT NULL,
+      creator_avatar TEXT NOT NULL,
+      creator_avatar_url TEXT,
+      creator_wins INTEGER NOT NULL,
+      amount INTEGER NOT NULL,
+      total_rounds INTEGER NOT NULL DEFAULT 1,
+      vip INTEGER NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      expires_at INTEGER
+    );
+    CREATE INDEX IF NOT EXISTS idx_open_match_bets_creator ON open_match_bets(creator_id);
     CREATE TABLE IF NOT EXISTS pvp_match_sessions (
       match_id TEXT PRIMARY KEY NOT NULL,
       p1_id TEXT NOT NULL,
