@@ -21,6 +21,7 @@ export type GameScreen =
   | "leaderboard"
   | "profile"
   | "referral"
+  | "friends-ingame"
   | "shop"
   | "bets"
   | "admin"

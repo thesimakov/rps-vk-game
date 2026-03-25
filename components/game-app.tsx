@@ -16,6 +16,7 @@ import { LeaderboardScreen } from "@/components/leaderboard-screen"
 import { ProfileScreen } from "@/components/profile-screen"
 import { LevelsScreen } from "@/components/levels-screen"
 import { ReferralScreen } from "@/components/referral-screen"
+import { FriendsInGameScreen } from "@/components/friends-in-game-screen"
 import { ShopScreen } from "@/components/shop-screen"
 import { BottomNav } from "@/components/bottom-nav"
 import { WeeklyRanking } from "@/components/weekly-ranking"
@@ -80,6 +81,7 @@ function GameScreen() {
       {screen === "leaderboard" && <LeaderboardScreen />}
       {screen === "profile" && <ProfileScreen />}
       {screen === "referral" && <ReferralScreen />}
+      {screen === "friends-ingame" && <FriendsInGameScreen />}
       {screen === "shop" && <ShopScreen />}
       {screen === "admin" && <AdminScreen />}
     </>

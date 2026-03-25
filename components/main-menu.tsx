@@ -4,7 +4,7 @@ import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useEffect, useMemo, useState } from "react"
-import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield } from "lucide-react"
+import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield, UserRound } from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { LEVELS, LEVEL_STEP_XP, MAX_LEVEL, getDailyBonusPercent, getLevelMeta } from "@/lib/level-system"
@@ -412,6 +412,16 @@ export function MainMenu() {
           <Trophy className="h-5 w-5 text-amber-400" />
           <span>Таблица лидеров</span>
         </button>
+
+        {player.id.startsWith("vk_") && (
+          <button
+            onClick={() => setScreen("friends-ingame")}
+            className="w-full flex items-center justify-center gap-2.5 bg-sky-700/70 hover:bg-sky-600/90 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/40"
+          >
+            <UserRound className="h-5 w-5 text-sky-200" />
+            <span>Друзья в игре</span>
+          </button>
+        )}
 
         {/* Ставки игроков — только на мобильной версии (на десктопе есть сайдбар) */}
         <button

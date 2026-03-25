@@ -19,9 +19,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "invalid" }, { status: 400 })
     }
     let presetJson: string | null = null
-    let preset: Awaited<ReturnType<typeof resolveSharedMatchPreset>> | null = null
     if (accept) {
-      preset = await resolveSharedMatchPreset()
+      const preset = await resolveSharedMatchPreset()
       presetJson = JSON.stringify(preset)
     }
     const r = respondPlayInvite(inviteId, userId, accept, presetJson)
@@ -29,7 +28,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: r.error }, { status: 400 })
     }
     return NextResponse.json(
-      { ok: true, ...(accept && preset ? { preset } : {}) },
+      { ok: true, ...(accept && r.preset ? { preset: r.preset } : {}) },
       { headers: { "Cache-Control": "no-store" } },
     )
   } catch {

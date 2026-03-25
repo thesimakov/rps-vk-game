@@ -15,7 +15,13 @@ export async function GET(req: NextRequest) {
     if (!isValidPlayerId(raw)) {
       return NextResponse.json({ ok: true, invites: [] }, { headers: { "Cache-Control": "no-store" } })
     }
-    const invites = listIncomingInvites(normalizeVkPlayerId(raw))
+    const rows = listIncomingInvites(normalizeVkPlayerId(raw))
+    const invites = rows.map((r) => ({
+      id: r.id,
+      fromUserId: r.fromUserId,
+      state: r.state,
+      preset: r.preset ? { bet: r.preset.bet, rounds: r.preset.rounds } : null,
+    }))
     return NextResponse.json({ ok: true, invites }, { headers: { "Cache-Control": "no-store" } })
   } catch {
     return NextResponse.json({ ok: false, error: "server" }, { status: 500 })

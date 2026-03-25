@@ -9,7 +9,11 @@ import { Users, X, Check } from "lucide-react"
 /** Баннер для реферера: приглашённый игрок (реферал) ждёт ответа по игре вместе. */
 export function PlayInviteIncoming() {
   const { player, setCurrentBet, setTotalRounds, setPlayer, setScreen } = useGame()
-  const [invite, setInvite] = useState<{ id: string; fromUserId: string } | null>(null)
+  const [invite, setInvite] = useState<{
+    id: string
+    fromUserId: string
+    preset: { bet: number; rounds: 1 | 3 | 5 } | null
+  } | null>(null)
 
   useEffect(() => {
     if (!player.id.startsWith("vk_")) return
@@ -22,11 +26,23 @@ export function PlayInviteIncoming() {
         )
         const data = (await res.json()) as {
           ok?: boolean
-          invites?: { id: string; fromUserId: string }[]
+          invites?: { id: string; fromUserId: string; preset?: { bet: number; rounds: 1 | 3 | 5 } | null }[]
         }
         if (cancelled) return
-        const first = data.ok && data.invites?.length ? data.invites[0] : null
-        setInvite(first ?? null)
+        const raw = data.ok && data.invites?.length ? data.invites[0] : null
+        const first = raw
+          ? {
+              id: raw.id,
+              fromUserId: raw.fromUserId,
+              preset:
+                raw.preset &&
+                typeof raw.preset.bet === "number" &&
+                (raw.preset.rounds === 1 || raw.preset.rounds === 3 || raw.preset.rounds === 5)
+                  ? { bet: raw.preset.bet, rounds: raw.preset.rounds }
+                  : null,
+            }
+          : null
+        setInvite(first)
       } catch {
         if (!cancelled) setInvite(null)
       }
@@ -77,7 +93,19 @@ export function PlayInviteIncoming() {
           </p>
         </div>
         <p className="text-xs text-sky-200/80">
-          Запрос от <span className="text-white font-mono text-[11px]">{shortFrom}</span>. Примите или отклоните приглашение.
+          Запрос от <span className="text-white font-mono text-[11px]">{shortFrom}</span>.
+          {invite.preset ? (
+            <>
+              {" "}
+              Условия:{" "}
+              <span className="text-sky-100 font-semibold">
+                {invite.preset.rounds === 1 ? "1 ход" : invite.preset.rounds === 3 ? "3 хода" : "5 ходов"}, ставка{" "}
+                {invite.preset.bet}
+              </span>
+              .
+            </>
+          ) : null}{" "}
+          Примите или отклоните приглашение.
         </p>
         <div className="flex gap-2">
           <button
