@@ -379,13 +379,26 @@ export async function sendGameInviteToVkFriend(vkNumericUserId: number, message?
 }
 
 /**
- * Запрос разрешения на push-уведомления от мини-приложения (VKWebAppAllowNotifications).
+ * Запрос разрешения на уведомления от приложения — в интерфейсе ВК это блок вроде
+ * «Уведомления от игр и приложений…, а также приглашения от друзей» (VKWebAppAllowNotifications).
+ * Доставка push зависит от клиента ВК и настроек пользователя.
  */
 export async function requestVkMiniAppNotifications(): Promise<boolean> {
   if (typeof window === "undefined") return false
-  if (!bridgeReady) return false
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
+    if (!bridgeReady) {
+      try {
+        await vkBridge.default.send("VKWebAppInit")
+        bridgeReady = true
+      } catch {
+        return false
+      }
+    }
+    const supportsFn = (vkBridge.default as { supports?: (m: string) => boolean }).supports
+    if (typeof supportsFn === "function" && !supportsFn("VKWebAppAllowNotifications")) {
+      return false
+    }
     await vkBridge.default.send("VKWebAppAllowNotifications" as never, {} as never)
     return true
   } catch {

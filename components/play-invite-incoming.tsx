@@ -119,6 +119,9 @@ export function PlayInviteIncoming() {
           ) : null}{" "}
           Примите или отклоните приглашение.
         </p>
+        <p className="text-[10px] text-sky-300/70 leading-snug">
+          В настройках ВК включите уведомления от приложения — так проще не пропускать новые приглашения.
+        </p>
         <div className="flex gap-2">
           <button
             type="button"
