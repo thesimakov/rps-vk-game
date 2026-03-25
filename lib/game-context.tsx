@@ -174,6 +174,8 @@ export interface BetEntry {
   createdAt: number
   /** Если задано — ставка скрывается после этого времени (режим «1 час») */
   expiresAt?: number
+  /** Количество ходов в матче: 1 (быстрая игра), 3 или 5 */
+  totalRounds?: 1 | 3 | 5
   /** ВИП-игрок — такие ставки всегда сверху */
   vip?: boolean
   /** Имитация жизни: ставка робота исчезает в этот момент (рандом ~15 сек от появления) */
@@ -187,6 +189,7 @@ export interface PendingBet {
   id: string
   amount: number
   createdAt: number
+  totalRounds: 1 | 3 | 5
 }
 
 /** Отклик на ставку — показать модалку принять/отклонить */
@@ -252,7 +255,7 @@ interface GameState {
   bets: BetEntry[]
   pendingBet: PendingBet | null
   betResponse: BetResponse | null
-  createBet: (amount: number, duration?: BetDuration) => void
+  createBet: (amount: number, duration?: BetDuration, totalRounds?: 1 | 3 | 5) => void
   removeBet: (betId: string) => void
   /** Изменить размер активной ставки (только если есть pendingBet) */
   updatePendingBetAmount: (newAmount: number) => boolean
@@ -386,6 +389,7 @@ function buildMockBetsFromBots(bots: Player[]): BetEntry[] {
     creatorWins: b.wins,
     amount: [25, 50, 100, 150, 200][i % 5],
     createdAt: MOCK_BETS_BASE_TIME - (i + 1) * 60000,
+    totalRounds: [25, 50].includes([25, 50, 100, 150, 200][i % 5] as number) ? 3 : 5,
     vip: b.vip,
   }))
 }
@@ -406,6 +410,7 @@ export function getFillerBetEntries(count: number): BetEntry[] {
   const base = Date.now()
   return Array.from({ length: count }, (_, i) => {
     const bot = OPPONENTS[i % OPPONENTS.length]
+    const amount = BET_AMOUNTS[i % BET_AMOUNTS.length]
     return {
       id: `filler-${i}-${bot.id}`,
       creatorId: bot.id,
@@ -413,8 +418,9 @@ export function getFillerBetEntries(count: number): BetEntry[] {
       creatorAvatar: bot.avatar,
       creatorAvatarUrl: bot.avatarUrl,
       creatorWins: bot.wins,
-      amount: BET_AMOUNTS[i % BET_AMOUNTS.length],
+      amount,
       createdAt: base - (i + 1) * 1000,
+      totalRounds: amount === 25 || amount === 50 ? 3 : 5,
       vip: bot.vip,
     }
   })
@@ -1209,7 +1215,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const BOT_AUTO_ACCEPT_AFTER_MS = 30 * 1000
 
   const createBet = useCallback(
-    (amount: number, duration: BetDuration = "once") => {
+    (amount: number, duration: BetDuration = "once", totalRounds: 1 | 3 | 5 = 1) => {
       if (player.balance < amount) return
       if (betResponseTimeoutRef.current) {
         clearTimeout(betResponseTimeoutRef.current)
@@ -1221,7 +1227,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }
       const now = Date.now()
       const id = `pending-${now}`
-      setPendingBet({ id, amount, createdAt: now })
+      setPendingBet({ id, amount, createdAt: now, totalRounds })
       const expiresAt = duration === "1h" ? now + 60 * 60 * 1000 : undefined
       const myBet: BetEntry = {
         id,
@@ -1232,6 +1238,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         amount,
         createdAt: now,
         expiresAt,
+        totalRounds,
         vip: player.vip,
       }
       setBets((prev) => [myBet, ...prev])
@@ -1280,7 +1287,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
           setBets((prev) => prev.filter((b) => b.id !== id))
           setPendingBet(null)
           setBetResponse(null)
-          setTotalRounds(1)
+          setTotalRounds(current.totalRounds ?? 1)
           setScreen("arena")
         }, delayMs)
       }
@@ -1343,6 +1350,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
 
   const acceptBetResponse = useCallback(() => {
     if (!betResponse) return
+    const bet = bets.find((b) => b.id === betResponse.betId)
     if (botAutoAcceptTimeoutRef.current) {
       clearTimeout(botAutoAcceptTimeoutRef.current)
       botAutoAcceptTimeoutRef.current = null
@@ -1368,9 +1376,9 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     setCurrentBet(betResponse.amount)
     setBetResponse(null)
     setPendingBet(null)
-    setTotalRounds(1)
+    setTotalRounds(bet?.totalRounds ?? 1)
     setScreen("arena")
-  }, [betResponse, setScreen, setOpponent, setCurrentBet, setTotalRounds])
+  }, [betResponse, bets, setScreen, setOpponent, setCurrentBet, setTotalRounds])
 
   const declineBetResponse = useCallback(() => {
     if (!betResponse) return

@@ -9,6 +9,7 @@ import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { sendMatchResult } from "@/lib/liveops/client"
 import { appPath } from "@/lib/app-path"
 import { getRoundOutcome as getOutcome } from "@/lib/match-outcome"
+import { joinVKGroup } from "@/lib/vk-bridge"
 
 const BASE_MOVES: { key: Move; label: string; icon: string; color: string }[] = [
   { key: "rock", label: "Камень", icon: "\uD83E\uDEA8", color: "border-secondary/50 shadow-secondary/10" },
@@ -110,6 +111,58 @@ type Phase = "choosing" | "locked" | "revealing" | "resolved"
 
 export function GameArena() {
   const { opponent, player, setPlayer, currentBet, setLastResult, setScreen, totalRounds, pvpMatchId } = useGame()
+  const WELCOME_GROUP_REWARD = 40
+  const WELCOME_MODAL_STORAGE_KEY = "rps_vk_game_welcome_modal_dismissed_v1"
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false)
+  const [groupSubLoading, setGroupSubLoading] = useState(false)
+
+  useEffect(() => {
+    if (player.groupSubscribedRewardClaimed) {
+      setShowWelcomeModal(false)
+      return
+    }
+    let t: ReturnType<typeof setTimeout> | undefined
+    try {
+      const dismissed = typeof window !== "undefined" ? window.sessionStorage.getItem(WELCOME_MODAL_STORAGE_KEY) : "0"
+      const shouldShow = !dismissed
+      // Подождём немного, чтобы лоадер точно успел завершиться и фон не мигал.
+      t = setTimeout(() => setShowWelcomeModal(shouldShow), 400)
+    } catch {
+      // если sessionStorage недоступен — всё равно показываем модалку один раз
+      t = setTimeout(() => setShowWelcomeModal(true), 400)
+    }
+
+    return () => {
+      if (t) clearTimeout(t)
+    }
+  }, [player.groupSubscribedRewardClaimed])
+
+  const dismissWelcomeModal = () => {
+    try {
+      if (typeof window !== "undefined") window.sessionStorage.setItem(WELCOME_MODAL_STORAGE_KEY, "1")
+    } catch {
+      // игнорируем
+    }
+    setShowWelcomeModal(false)
+  }
+
+  const handleGroupSubscribe = async () => {
+    if (groupSubLoading) return
+    if (player.groupSubscribedRewardClaimed) return
+    setGroupSubLoading(true)
+    try {
+      const ok = await joinVKGroup()
+      if (ok) {
+        setPlayer((p) => ({
+          ...p,
+          balance: p.balance + WELCOME_GROUP_REWARD,
+          groupSubscribedRewardClaimed: true,
+        }))
+      }
+    } finally {
+      setGroupSubLoading(false)
+    }
+  }
   /** Босс-неделя отключена в матчмейкинге; оставляем ветку для редкого opponent boss-npc */
   const isBossMode = opponent?.id === "boss-npc"
   const hasWaterCard = (player.waterCardUses ?? 0) > 0
@@ -634,6 +687,47 @@ export function GameArena() {
   const bankDisplay = formatAmount(bankAmount)
   /** Подсказка исхода раунда — под картами выбора, над аватаром игрока */
   const showRoundOutcomeHint = drawMessage || Boolean(roundHintMessage && !drawMessage)
+
+  if (showWelcomeModal) {
+    return (
+      <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg items-center justify-center">
+        <div
+          className="w-full max-w-md rounded-3xl bg-slate-900/95 border border-amber-400/40 shadow-2xl p-5"
+          role="dialog"
+          aria-modal="true"
+        >
+          <h2 className="text-lg font-black text-amber-300 mb-2">Привет!</h2>
+          <p className="text-sm text-white/85 leading-relaxed">
+            Добро пожаловать в игру Камень, ножницы, бумага!
+            <br />
+            Мы только запустили игру, и многие функции могут не работать, но мы постоянно обновляем и пополняем.
+            <br />
+            Если найден баг, сообщи нам в группу.
+          </p>
+
+          <div className="mt-4 flex flex-col gap-2">
+            {!player.groupSubscribedRewardClaimed && (
+              <button
+                type="button"
+                onClick={() => void handleGroupSubscribe()}
+                disabled={groupSubLoading}
+                className="w-full py-3 rounded-2xl bg-amber-400 hover:bg-amber-300 text-amber-950 font-bold active:scale-[0.98] disabled:opacity-60"
+              >
+                {groupSubLoading ? "Подписываем..." : `Подписаться на группу +${WELCOME_GROUP_REWARD} монет`}
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={dismissWelcomeModal}
+              className="w-full py-3 rounded-2xl bg-slate-800/70 hover:bg-slate-800 text-white font-bold active:scale-[0.98]"
+            >
+              Продолжить..
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">

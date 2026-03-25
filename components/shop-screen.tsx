@@ -638,7 +638,7 @@ export function ShopScreen() {
       </div>
 
       {/* Пополнение баланса через ВК */}
-      <div className="w-full max-w-lg mb-6 bg-primary/10 border border-primary/25 rounded-2xl p-4">
+      <div className="w-full max-w-lg mb-6 bg-primary/10 border border-primary/35 rounded-2xl p-4 shadow-sm shadow-primary/10">
         <div className="flex items-center gap-2 mb-3">
           <Wallet className="h-5 w-5 text-primary" />
           <span className="font-bold text-base text-foreground">Пополнить баланс</span>
@@ -665,14 +665,14 @@ export function ShopScreen() {
               key={pack.amount}
               onClick={() => handleTopUp(pack.amount)}
               disabled={topUpLoading !== null}
-              className="flex flex-col items-center gap-1.5 py-4 px-2 rounded-2xl bg-card/60 border border-primary/30 hover:border-primary/60 transition-all active:scale-[0.97] disabled:opacity-50"
+              className="relative flex flex-col items-center gap-1.5 py-5 px-3 rounded-2xl bg-card/60 border-2 border-primary/25 hover:border-primary/65 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
             >
               <Coins className="h-6 w-6 text-accent" />
               <span className="text-base font-extrabold text-foreground tabular-nums">
                 {topUpLoading === pack.amount ? "..." : formatAmount(pack.amount)}
               </span>
               <span className="text-[10px] text-muted-foreground font-medium">монет</span>
-              <span className="mt-0.5 px-2.5 py-0.5 rounded-full bg-primary/15 text-primary text-[11px] font-bold tabular-nums">
+              <span className="mt-0.5 px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-[11px] font-bold tabular-nums ring-1 ring-primary/30">
                 {pack.votes} {pack.votes === 1 ? "голос" : pack.votes < 5 ? "голоса" : "голосов"}
               </span>
             </button>
@@ -843,12 +843,20 @@ export function ShopScreen() {
 
       {/* Items */}
       <div className="w-full max-w-lg flex flex-col gap-2.5">
-        {SHOP_ITEMS.map((item) => {
+        {SHOP_ITEMS.filter((item) => item.id !== "fast-match").map((item) => {
           const itemId = item.id as ShopItemId
           const alreadyOwned = isOwned(itemId)
           const showPermanentOwnedBadge = (itemId === "frame-neon" || itemId === "frame-gold") && alreadyOwned
           const lavaOutOfStock = itemId === "lava-card" && lavaCardStock <= 0
           const canBuy = canBuyItem(itemId)
+              const isSoon =
+                itemId === "frame-gold" ||
+                itemId === "frame-neon" ||
+                itemId === "card-skin" ||
+                itemId === "victory-anim" ||
+                itemId === "tournament-entry" ||
+                itemId === "chest-premium" ||
+                itemId === "chest-basic"
           const effectivePrice = getItemPrice(item)
           const hasDiscount = effectivePrice < item.price
           return (
@@ -881,14 +889,22 @@ export function ShopScreen() {
               <button
                 type="button"
                 onClick={() => handleBuy(itemId)}
-                disabled={!canBuy || !!buyingItemId}
+                disabled={!canBuy || !!buyingItemId || isSoon}
                 className={`flex items-center gap-1 px-3.5 py-2 rounded-xl text-base font-bold transition-all flex-shrink-0 ${
-                  canBuy
+                  canBuy && !isSoon
                     ? "bg-primary text-primary-foreground cursor-pointer active:scale-95 shadow-md shadow-primary/20"
                     : "bg-muted/30 text-muted-foreground border border-border/30 cursor-not-allowed"
                 }`}
               >
-                {buyingItemId === item.id ? "Покупка..." : item.id === "lava-card" && lavaOutOfStock ? "Нет в наличии" : alreadyOwned ? "Куплено" : (
+                {isSoon
+                  ? "скоро!"
+                  : buyingItemId === item.id
+                    ? "Покупка..."
+                    : item.id === "lava-card" && lavaOutOfStock
+                      ? "Нет в наличии"
+                      : alreadyOwned
+                        ? "Куплено"
+                        : (
                   <>
                     <Coins className="h-3 w-3" />
                     {formatAmount(toDisplayAmount(effectivePrice))} {currencyLabel}

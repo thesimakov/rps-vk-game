@@ -25,6 +25,7 @@ export function BetsSidebar() {
   const [lavaModalOpen, setLavaModalOpen] = useState(false)
   const [amount, setAmount] = useState("")
   const [duration, setDuration] = useState<BetDuration>("once")
+  const [totalRoundsChoice, setTotalRoundsChoice] = useState<1 | 3 | 5>(1)
   const [inviteBet, setInviteBet] = useState<BetEntry | null>(null)
   const [noMoneyBet, setNoMoneyBet] = useState<BetEntry | null>(null)
   const [myBetModalOpen, setMyBetModalOpen] = useState(false)
@@ -56,6 +57,7 @@ export function BetsSidebar() {
         creatorWins: player.wins,
         amount: pendingBet.amount,
         createdAt: pendingBet.createdAt,
+        totalRounds: pendingBet.totalRounds,
         vip: player.vip,
       })
     }
@@ -68,7 +70,7 @@ export function BetsSidebar() {
   const handleCreateBet = () => {
     const num = parseInt(amount, 10)
     if (num > 0 && player.balance >= num) {
-      createBet(num, duration)
+      createBet(num, duration, totalRoundsChoice)
       setAmount("")
       setCreateOpen(false)
     }
@@ -90,7 +92,7 @@ export function BetsSidebar() {
       vip: !!bet.vip,
     })
     setCurrentBet(bet.amount)
-    setTotalRounds(1)
+    setTotalRounds(bet.totalRounds ?? 1)
     setInviteBet(null)
     setScreen("arena")
   }
@@ -396,6 +398,41 @@ export function BetsSidebar() {
                     className="rounded-full border-border"
                   />
                   <span className="text-sm text-foreground">В течение часа</span>
+                </label>
+              </div>
+            </div>
+            <div className="grid gap-2 pt-2">
+              <Label>Количество ходов</Label>
+              <div className="flex gap-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="total-rounds"
+                    checked={totalRoundsChoice === 1}
+                    onChange={() => setTotalRoundsChoice(1)}
+                    className="rounded-full border-border"
+                  />
+                  <span className="text-sm text-foreground">1 ход</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="total-rounds"
+                    checked={totalRoundsChoice === 3}
+                    onChange={() => setTotalRoundsChoice(3)}
+                    className="rounded-full border-border"
+                  />
+                  <span className="text-sm text-foreground">3 хода</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="total-rounds"
+                    checked={totalRoundsChoice === 5}
+                    onChange={() => setTotalRoundsChoice(5)}
+                    className="rounded-full border-border"
+                  />
+                  <span className="text-sm text-foreground">5 ходов</span>
                 </label>
               </div>
             </div>

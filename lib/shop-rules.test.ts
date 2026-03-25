@@ -46,23 +46,23 @@ describe("shop rules", () => {
     }
   })
 
-  it("allows fast-match without toggling frame ownership", () => {
+  it("blocks fast-match temporarily", () => {
     expect(
       canPurchaseItem({
         itemId: "fast-match",
         price: 1,
-        state: { ...baseState, avatarFrame: "neon" },
+        state: { ...baseState, avatarFrame: "neon", balance: 1_000 },
         lavaCardStock: 1,
       })
-    ).toBe(true)
+    ).toBe(false)
   })
 
-  it("respects balance check for any item", () => {
+  it("respects balance check for items", () => {
     expect(
       canPurchaseItem({
-        itemId: "fast-match",
-        price: 10,
-        state: { ...baseState, balance: 9 },
+        itemId: "water-card",
+        price: 500,
+        state: { ...baseState, balance: 499 },
         lavaCardStock: 1,
       })
     ).toBe(false)

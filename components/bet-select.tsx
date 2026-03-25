@@ -21,15 +21,21 @@ const BET_OPTIONS: { value: number; rounds: 1 | 3 | 5 }[] = [
 ]
 
 function getTierAccent(rounds: number) {
-  if (rounds === 1) return "border-primary/30 hover:border-primary/60"
-  if (rounds === 3) return "border-secondary/30 hover:border-secondary/60"
-  return "border-destructive/30 hover:border-destructive/60"
+  if (rounds === 1) return "border-primary/45 hover:border-primary/85"
+  if (rounds === 3) return "border-secondary/45 hover:border-secondary/85"
+  return "border-destructive/45 hover:border-destructive/85"
 }
 
 function getTierBadge(rounds: number) {
-  if (rounds === 1) return { label: "1 ход", cls: "bg-primary/15 text-primary" }
-  if (rounds === 3) return { label: "3 хода", cls: "bg-secondary/15 text-secondary" }
-  return { label: "5 ходов", cls: "bg-destructive/15 text-destructive" }
+  if (rounds === 1) return { label: "1 ход", cls: "bg-primary/25 text-primary" }
+  if (rounds === 3) return { label: "3 хода", cls: "bg-secondary/25 text-secondary" }
+  return { label: "5 ходов", cls: "bg-destructive/25 text-destructive" }
+}
+
+function getTierShadow(rounds: number) {
+  if (rounds === 1) return "shadow-sky-500/15"
+  if (rounds === 3) return "shadow-secondary/15"
+  return "shadow-destructive/15"
 }
 
 export function BetSelect() {
@@ -266,10 +272,10 @@ export function BetSelect() {
               key={value}
               onClick={() => handleSelectBet(value, rounds)}
               disabled={!canAfford}
-              className={`relative flex flex-col items-center justify-center gap-1 py-5 px-4 rounded-2xl border transition-all active:scale-[0.97] ${
+              className={`relative flex flex-col items-center justify-center gap-1 py-5 px-4 rounded-2xl border-2 transition-all active:scale-[0.97] ${
                 canAfford
-                  ? `bg-card/60 backdrop-blur-sm ${getTierAccent(rounds)} text-foreground cursor-pointer hover:bg-card/80`
-                  : "bg-muted/30 border-border/30 text-muted-foreground cursor-not-allowed opacity-40"
+                  ? `bg-card/70 backdrop-blur-sm ${getTierAccent(rounds)} ${getTierShadow(rounds)} text-foreground cursor-pointer hover:bg-card/85 hover:shadow-lg`
+                  : "bg-muted/25 border-border/30 text-muted-foreground cursor-not-allowed opacity-50"
               }`}
             >
               <div className="flex items-center gap-1.5">
@@ -278,7 +284,7 @@ export function BetSelect() {
                   {formatAmount(toDisplayAmount(value))} {currencyLabel}
                 </span>
               </div>
-              <span className={`mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${badge.cls}`}>
+              <span className={`mt-1 px-3 py-1 rounded-lg text-[11px] font-black tracking-wide ${badge.cls}`}>
                 {badge.label}
               </span>
               {!offlineMode && inQueue > 0 && (

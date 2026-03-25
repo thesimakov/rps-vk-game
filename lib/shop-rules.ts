@@ -31,6 +31,18 @@ export interface ShopEligibilityState {
 
 const TIMER_PLUS_10_COOLDOWN_MS = 24 * 60 * 60 * 1000
 
+// Временно отключаем часть товаров в магазине (UI и логика покупки).
+const TEMPORARILY_DISABLED_ITEM_IDS: readonly ShopItemId[] = [
+  "fast-match",
+  "frame-gold",
+  "frame-neon",
+  "card-skin",
+  "victory-anim",
+  "tournament-entry",
+  "chest-basic",
+  "chest-premium",
+] as const
+
 export function isItemOwned(itemId: ShopItemId, state: ShopEligibilityState) {
   return (
     (itemId === "vip" && !!state.vip) ||
@@ -51,6 +63,8 @@ export function canPurchaseItem(args: {
   nowMs?: number
 }) {
   const { itemId, price, state, lavaCardStock, nowMs = Date.now() } = args
+  // Временно отключаем часть товаров в витрине и логике покупки.
+  if (TEMPORARILY_DISABLED_ITEM_IDS.includes(itemId)) return false
   if (state.balance < price) return false
   if (itemId === "lava-card") return lavaCardStock > 0
   if (itemId === "water-card") return true
