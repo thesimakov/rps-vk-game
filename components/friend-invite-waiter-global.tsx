@@ -8,6 +8,8 @@ import {
   readPendingFriendInvite,
   clearPendingFriendInvite,
   type PendingFriendInviteSnapshot,
+  readFriendsInGameList,
+  writeFriendsInGameList,
 } from "@/lib/friend-invite-pending"
 
 const POLL_MS = 2800
@@ -47,13 +49,71 @@ export function FriendInviteWaiterGlobal() {
       }
     }
 
-    const runAccepted = (snap: PendingFriendInviteSnapshot, presetRaw: unknown) => {
+    const runAccepted = async (snap: PendingFriendInviteSnapshot, presetRaw: unknown) => {
       if (busyRef.current) return
       busyRef.current = true
       clearPendingFriendInvite()
+
+      // Инвайтер после принятия приглашения должен видеть друга в списке
+      // «С друзьями» (чтобы можно было сразу снова приглашать в турнир).
+      try {
+        const raw = readFriendsInGameList(player.id)
+        const current = Array.isArray(raw) ? raw : []
+        const exists = current.some(
+          (x) => x && typeof x === "object" && (x as { playerId?: unknown }).playerId === snap.friend.playerId,
+        )
+        if (!exists) {
+          current.push({
+            playerId: snap.friend.playerId,
+            vkId: snap.friend.vkId,
+            name: snap.friend.name,
+            wins: snap.friend.wins,
+            photo_200: snap.friend.photo_200,
+          })
+          writeFriendsInGameList(player.id, current)
+        }
+      } catch {
+        /* ignore */
+      }
+
       const preset = normalizeSharedPreset(presetRaw)
+
+      // Чтобы второй игрок делал ход по PvP (а не локально как бот),
+      // создаём серверную PvP-сессию и выставляем pvpMatchId = inviteId.
+      const p1Candidate = player.id
+      const p2Candidate = snap.friend.playerId
+      const toNumeric = (id: string) => {
+        const n = Number(id.replace(/^vk_/, ""))
+        return Number.isFinite(n) ? n : null
+      }
+      const n1 = toNumeric(p1Candidate)
+      const n2 = toNumeric(p2Candidate)
+      const [p1Id, p2Id] =
+        n1 != null && n2 != null
+          ? n1 <= n2
+            ? [p1Candidate, p2Candidate]
+            : [p2Candidate, p1Candidate]
+          : p1Candidate <= p2Candidate
+            ? [p1Candidate, p2Candidate]
+            : [p2Candidate, p1Candidate]
+
+      const matchId = snap.inviteId
+      await fetch(appPath("/api/match/create-pvp-session"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({
+          matchId,
+          p1Id,
+          p2Id,
+          totalRounds: preset.rounds,
+          bet: preset.bet,
+          weeklyMode: preset.weeklyMode,
+        }),
+      }).catch(() => {})
+
       setOfflineMode(false)
-      setPvpMatchId(null)
+      setPvpMatchId(matchId)
       setOpponent({
         id: snap.friend.playerId,
         name: snap.friend.name,
@@ -109,11 +169,11 @@ export function FriendInviteWaiterGlobal() {
           stopInterval()
           return
         }
-        if (data.ui === "accepted" && data.preset) {
+          if (data.ui === "accepted" && data.preset) {
           const snap = readPendingFriendInvite(player.id)
           if (!snap || snap.inviteId !== pending.inviteId) return
           stopInterval()
-          runAccepted(snap, data.preset)
+            await runAccepted(snap, data.preset)
         }
       } catch {
         /* сеть */

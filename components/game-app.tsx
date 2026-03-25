@@ -130,6 +130,17 @@ function GameLayout() {
         const reward = users.length * 10
         setPlayer((p) => ({ ...p, balance: p.balance + reward }))
         setHideLowBalanceHint(true)
+
+        // Запоминаем тех, кому отправили приглашение в приложение за монеты.
+        // На экране «С друзьями» позже подтянем только тех, кто уже вошёл в RPS Arena.
+        try {
+          const pendingKey = "rps_vk_lowbalance_invited_v1"
+          const payload = { ids: users.map((u) => u.id), createdAt: Date.now() }
+          localStorage.setItem(pendingKey, JSON.stringify(payload))
+        } catch {
+          /* ignore */
+        }
+
         if (isVKEnvironment()) {
           for (const u of users) {
             await sendGameInviteToVkFriend(u.id)

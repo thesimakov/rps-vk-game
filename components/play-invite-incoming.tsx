@@ -12,7 +12,16 @@ const INVITE_POLL_MS = 2800
 
 /** Баннер входящего приглашения (реферал → реферер или друг → друг). */
 export function PlayInviteIncoming() {
-  const { player, setCurrentBet, setTotalRounds, setOpponent, setOfflineMode, setPvpMatchId, setPlayer, setScreen } =
+  const {
+    player,
+    setCurrentBet,
+    setTotalRounds,
+    setOpponent,
+    setOfflineMode,
+    setPvpMatchId,
+    setPlayer,
+    setScreen,
+  } =
     useGame()
   const [invite, setInvite] = useState<{
     id: string
@@ -84,10 +93,44 @@ export function PlayInviteIncoming() {
       if (accept && data.ok && data.preset) {
         const preset = normalizeSharedPreset(data.preset)
 
+        const p1Candidate = player.id
+        const p2Candidate = invite.fromUserId
+        const toNumeric = (id: string) => {
+          const n = Number(id.replace(/^vk_/, ""))
+          return Number.isFinite(n) ? n : null
+        }
+        const n1 = toNumeric(p1Candidate)
+        const n2 = toNumeric(p2Candidate)
+        const [p1Id, p2Id] =
+          n1 != null && n2 != null
+            ? n1 <= n2
+              ? [p1Candidate, p2Candidate]
+              : [p2Candidate, p1Candidate]
+            : p1Candidate <= p2Candidate
+              ? [p1Candidate, p2Candidate]
+              : [p2Candidate, p1Candidate]
+
+        // Создаём серверную PvP-сессию, чтобы ходы второго игрока подтягивались,
+        // а не имитировались локальным ботом.
+        const matchId = invite.id
+        await fetch(appPath("/api/match/create-pvp-session"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({
+            matchId,
+            p1Id,
+            p2Id,
+            totalRounds: preset.rounds,
+            bet: preset.bet,
+            weeklyMode: preset.weeklyMode,
+          }),
+        }).catch(() => {})
+
         // На стороне приглашенного ставка и число раундов уже согласованы —
-        // просто стартуем арену 1×1, не возвращая на экран выбора ставки.
+        // стартуем арену 1×1 сразу.
         setOfflineMode(false)
-        setPvpMatchId(null)
+        setPvpMatchId(invite.id)
         setOpponent({
           id: invite.fromUserId,
           name: "Друг",

@@ -33,6 +33,9 @@ type FriendRow = {
   photo_200?: string
 }
 
+const LOWBALANCE_PENDING_KEY = "rps_vk_lowbalance_invited_v1"
+const LOWBALANCE_PENDING_TTL_MS = 7 * 24 * 60 * 60 * 1000
+
 function isFriendRow(x: unknown): x is FriendRow {
   if (!x || typeof x !== "object") return false
   const o = x as Record<string, unknown>
@@ -82,6 +85,86 @@ export function FriendsInGameScreen() {
     if (!raw) return
     const rows = raw.filter(isFriendRow)
     if (rows.length) setFriends(rows)
+  }, [canUse, player.id])
+
+  // Если пользователь ранее отправлял приглашения за монеты («Добавь друга, получи 10 монет»),
+  // то после того как эти друзья реально вошли в игру — подтянем их сюда автоматически.
+  useEffect(() => {
+    if (!canUse) return
+
+    let payload: { ids: number[]; createdAt: number } | null = null
+    try {
+      const raw = localStorage.getItem(LOWBALANCE_PENDING_KEY)
+      if (!raw) return
+      const parsed = JSON.parse(raw) as unknown
+      if (!parsed || typeof parsed !== "object") return
+      const o = parsed as { ids?: unknown; createdAt?: unknown }
+      const ids =
+        Array.isArray(o.ids) ? o.ids.map((x) => (typeof x === "number" ? x : Number(x))) : []
+      const createdAt = typeof o.createdAt === "number" ? o.createdAt : NaN
+      if (!Number.isFinite(createdAt)) return
+      if (Date.now() - createdAt > LOWBALANCE_PENDING_TTL_MS) return
+      const cleanIds = ids.filter((n): n is number => Number.isInteger(n) && n > 0).slice(0, 80)
+      if (!cleanIds.length) return
+      payload = { ids: cleanIds, createdAt }
+    } catch {
+      /* ignore */
+    }
+    if (!payload) return
+
+    let cancelled = false
+    const run = async () => {
+      try {
+        const res = await fetch(appPath("/api/friends-in-game/lookup"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ userId: player.id, friendVkIds: payload!.ids }),
+        })
+        const data = (await res.json()) as {
+          ok?: boolean
+          friends?: { playerId: string; vkId: number; name: string; wins: number }[]
+        }
+        if (cancelled) return
+        if (!data.ok || !data.friends?.length) return
+
+        const newRows: FriendRow[] = data.friends
+          .filter((f) => typeof f.playerId === "string" && typeof f.vkId === "number" && typeof f.name === "string")
+          .map((f) => ({
+            playerId: f.playerId,
+            vkId: f.vkId,
+            name: f.name,
+            wins: typeof f.wins === "number" ? f.wins : 0,
+          }))
+
+        if (!newRows.length) return
+
+        setFriends((prev) => {
+          const byId = new Map(prev.map((x) => [x.playerId, x]))
+          for (const r of newRows) {
+            const existing = byId.get(r.playerId)
+            byId.set(r.playerId, existing ? { ...existing, ...r, photo_200: existing.photo_200 } : r)
+          }
+          return Array.from(byId.values())
+        })
+
+        // Убираем тех, кто уже вошёл в игру, чтобы не опрашивать снова.
+        const foundVkIds = new Set(data.friends.map((f) => f.vkId))
+        const remaining = payload!.ids.filter((id) => !foundVkIds.has(id))
+        try {
+          if (!remaining.length) localStorage.removeItem(LOWBALANCE_PENDING_KEY)
+          else localStorage.setItem(LOWBALANCE_PENDING_KEY, JSON.stringify({ ids: remaining, createdAt: payload!.createdAt }))
+        } catch {
+          /* ignore */
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
   }, [canUse, player.id])
 
   useEffect(() => {
