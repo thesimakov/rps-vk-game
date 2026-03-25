@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import type { CSSProperties } from "react"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { isVKEnvironment, showFriendsPicker, type VKFriend } from "@/lib/vk-bridge"
+import { isVKEnvironment, showFriendsPicker, sendGameInviteToVkFriend, type VKFriend } from "@/lib/vk-bridge"
 import { ArrowLeft, Users, Crown, Plus, X, Coins, Sword } from "lucide-react"
 
 interface TableSeat {
@@ -110,6 +110,11 @@ export function FriendsTableScreen() {
       }
       return copy
     })
+    try {
+      await sendGameInviteToVkFriend(friend.id)
+    } catch {
+      /* сбой Bridge — место за столом уже заполнено */
+    }
   }
 
   const handleRemove = (index: number) => {

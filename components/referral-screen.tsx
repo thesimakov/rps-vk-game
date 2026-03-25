@@ -6,6 +6,7 @@ import { useGame } from "@/lib/game-context"
 import { ArrowLeft, Copy, Coins, Users, Link as LinkIcon, RefreshCw, HandCoins, Handshake } from "lucide-react"
 import { formatAmount } from "@/lib/format-amount"
 import { openBetSelectWithSharedPreset, normalizeSharedPreset } from "@/lib/play-invite-client"
+import { isVKEnvironment, parseVkNumericUserId, sendGameInviteToVkFriend } from "@/lib/vk-bridge"
 
 type ReferralStatItem = {
   id: string
@@ -177,6 +178,14 @@ export function ReferralScreen() {
             ? "Ожидаем окончание турнира у реферера…"
             : "Ждём ответа реферера…",
         )
+        const refVk = parseVkNumericUserId(myReferrerId)
+        if (refVk != null && isVKEnvironment()) {
+          try {
+            await sendGameInviteToVkFriend(refVk)
+          } catch {
+            /* ignore */
+          }
+        }
       } else if (data.error === "already_pending") {
         setPlayInviteHint("Запрос уже отправлен — дождитесь ответа.")
       } else {

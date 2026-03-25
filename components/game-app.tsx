@@ -4,7 +4,7 @@ import { appPath } from "@/lib/app-path"
 import { GameProvider, useGame } from "@/lib/game-context"
 import { useEffect, useState } from "react"
 import type { CSSProperties } from "react"
-import { isVKEnvironment, showFriendsPicker } from "@/lib/vk-bridge"
+import { isVKEnvironment, showFriendsPicker, sendGameInviteToVkFriend } from "@/lib/vk-bridge"
 import { LogIn } from "lucide-react"
 import { MainMenu } from "@/components/main-menu"
 import { BetSelect } from "@/components/bet-select"
@@ -127,6 +127,11 @@ function GameLayout() {
         const reward = users.length * 10
         setPlayer((p) => ({ ...p, balance: p.balance + reward }))
         setHideLowBalanceHint(true)
+        if (isVKEnvironment()) {
+          for (const u of users) {
+            await sendGameInviteToVkFriend(u.id)
+          }
+        }
       }
     } catch {
       // игнорируем ошибки VK Bridge

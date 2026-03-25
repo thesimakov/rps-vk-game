@@ -314,6 +314,70 @@ export async function showInviteBox(): Promise<boolean> {
   }
 }
 
+/** Числовой id ВК из идентификатора игрока вида vk_123456789 */
+export function parseVkNumericUserId(playerId: string): number | null {
+  const m = /^vk_(\d+)$/.exec(playerId.trim())
+  if (!m) return null
+  const n = Number(m[1])
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
+function resolveGameInviteRequestKey(): number {
+  const raw = process.env.NEXT_PUBLIC_VK_GAME_INVITE_REQUEST_KEY
+  if (raw == null || raw === "") return 1
+  const n = Number.parseInt(raw, 10)
+  return Number.isFinite(n) ? n : 1
+}
+
+/**
+ * Игровой запрос выбранному другу (VKWebAppShowRequestBox): уходит уведомление с текстом message.
+ * Тип запроса requestKey задаётся в настройках приложения ВК; см. NEXT_PUBLIC_VK_GAME_INVITE_REQUEST_KEY.
+ */
+export async function showGameInviteRequestBox(options: {
+  userId: number
+  message?: string
+  requestKey?: number
+}): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  const { userId, message = "Вас пригласили в игру.", requestKey = resolveGameInviteRequestKey() } = options
+  if (!Number.isFinite(userId) || userId <= 0) return false
+
+  if (!bridgeReady) {
+    try {
+      const vkBridge = await import("@vkontakte/vk-bridge")
+      await vkBridge.default.send("VKWebAppInit")
+      bridgeReady = true
+    } catch {
+      return false
+    }
+  }
+
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+    await vkBridge.default.send("VKWebAppShowRequestBox", {
+      uid: userId,
+      message,
+      // В типах vk-bridge ключ может быть строкой; на стороне ВК допустим числовой идентификатор типа запроса.
+      requestKey: String(requestKey),
+    })
+    return true
+  } catch (e) {
+    console.error("[VK] showGameInviteRequestBox error:", e)
+    return false
+  }
+}
+
+/** Сначала адресный игровой запрос другу, при ошибке — общее окно приглашения в приложение. */
+export async function sendGameInviteToVkFriend(vkNumericUserId: number, message?: string): Promise<void> {
+  const ok = await showGameInviteRequestBox({ userId: vkNumericUserId, message })
+  if (ok) return
+  try {
+    await showInviteBox()
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Публикует пост на стене пользователя (VKWebAppShowWallPostBox).
  * message — текст поста, attachments — вложение (например, ссылка на приложение).

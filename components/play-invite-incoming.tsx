@@ -73,10 +73,12 @@ export function PlayInviteIncoming() {
         <div className="flex items-start gap-2">
           <Users className="h-5 w-5 text-sky-400 shrink-0 mt-0.5" />
           <p className="text-sm font-semibold text-sky-100 leading-snug">
-            Вас ожидает приглашённый игрок <span className="text-white font-mono text-xs">{shortFrom}</span>
+            Вас пригласили в игру
           </p>
         </div>
-        <p className="text-xs text-sky-200/80">Запрос сыграть вместе: примите или отклоните.</p>
+        <p className="text-xs text-sky-200/80">
+          Запрос от <span className="text-white font-mono text-[11px]">{shortFrom}</span>. Примите или отклоните приглашение.
+        </p>
         <div className="flex gap-2">
           <button
             type="button"

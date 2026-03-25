@@ -4,7 +4,15 @@ import { useState, useEffect, useRef } from "react"
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { purchaseVKVoices, isVKEnvironment, showFriendsPicker, showInviteBox, joinVKGroup, VK_VOICE_PACKS } from "@/lib/vk-bridge"
+import {
+  purchaseVKVoices,
+  isVKEnvironment,
+  showFriendsPicker,
+  showInviteBox,
+  sendGameInviteToVkFriend,
+  joinVKGroup,
+  VK_VOICE_PACKS,
+} from "@/lib/vk-bridge"
 import { canPurchaseItem, isItemOwned, type ShopItemId } from "@/lib/shop-rules"
 import { getDiscountedPrice, getLevelFromXp, getShopDiscountPercent } from "@/lib/level-system"
 import { ArrowLeft, Crown, Zap, Sparkles, Box, Palette, Coins, Wallet, Flame, Droplets, UserPlus, Share2, X, Hourglass, Ticket } from "lucide-react"
@@ -391,11 +399,11 @@ export function ShopScreen() {
           return { ...p, invitedFriends: next }
         })
 
-        // После выбора друга сразу открываем стандартное окно приглашения ВК,
-        // чтобы ему пришло уведомление «Начать играть».
+        // Адресный игровой запрос (VKWebAppShowRequestBox) — другу уходит уведомление с текстом приглашения;
+        // при сбое — общее окно приглашения в приложение.
         try {
           if (isVKEnvironment()) {
-            await showInviteBox()
+            await sendGameInviteToVkFriend(friend.id)
           }
         } catch {
           // игнорируем сбой открытия инвайта, слоты всё равно обновлены
