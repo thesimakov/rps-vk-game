@@ -7,8 +7,39 @@ import { normalizeSharedPreset } from "@/lib/play-invite-client"
 import { Users, X, Check } from "lucide-react"
 import { requestVkMiniAppNotifications } from "@/lib/vk-bridge"
 import { markVkNotificationsMenuPromptDismissed } from "@/components/vk-notifications-prompt"
+import { PlayerAvatar } from "@/components/player-avatar"
+import type { Player } from "@/lib/game-context"
 
 const INVITE_POLL_MS = 2800
+
+type InviterProfile = {
+  name: string
+  avatar: string
+  avatarUrl: string
+  balance: number
+  wins: number
+  losses: number
+  weekWins: number
+  weekEarnings: number
+  vip: boolean
+}
+
+function parseInviterProfile(raw: unknown): InviterProfile | null {
+  if (!raw || typeof raw !== "object") return null
+  const o = raw as Record<string, unknown>
+  if (typeof o.name !== "string" || !o.name.trim()) return null
+  return {
+    name: o.name,
+    avatar: typeof o.avatar === "string" ? o.avatar : o.name.charAt(0) || "?",
+    avatarUrl: typeof o.avatarUrl === "string" ? o.avatarUrl : "",
+    balance: typeof o.balance === "number" && Number.isFinite(o.balance) ? o.balance : 0,
+    wins: typeof o.wins === "number" && Number.isFinite(o.wins) ? o.wins : 0,
+    losses: typeof o.losses === "number" && Number.isFinite(o.losses) ? o.losses : 0,
+    weekWins: typeof o.weekWins === "number" && Number.isFinite(o.weekWins) ? o.weekWins : 0,
+    weekEarnings: typeof o.weekEarnings === "number" && Number.isFinite(o.weekEarnings) ? o.weekEarnings : 0,
+    vip: Boolean(o.vip),
+  }
+}
 
 /** Баннер входящего приглашения (реферал → реферер или друг → друг). */
 export function PlayInviteIncoming() {
@@ -27,6 +58,7 @@ export function PlayInviteIncoming() {
     id: string
     fromUserId: string
     preset: { bet: number; rounds: 1 | 3 | 5 } | null
+    fromProfile: InviterProfile | null
   } | null>(null)
 
   useEffect(() => {
@@ -40,7 +72,12 @@ export function PlayInviteIncoming() {
         )
         const data = (await res.json()) as {
           ok?: boolean
-          invites?: { id: string; fromUserId: string; preset?: { bet: number; rounds: 1 | 3 | 5 } | null }[]
+          invites?: {
+            id: string
+            fromUserId: string
+            fromProfile?: unknown
+            preset?: { bet: number; rounds: 1 | 3 | 5; weeklyMode?: string } | null
+          }[]
         }
         if (cancelled) return
         const raw = data.ok && data.invites?.length ? data.invites[0] : null
@@ -48,6 +85,7 @@ export function PlayInviteIncoming() {
           ? {
               id: raw.id,
               fromUserId: raw.fromUserId,
+              fromProfile: parseInviterProfile(raw.fromProfile),
               preset:
                 raw.preset &&
                 typeof raw.preset.bet === "number" &&
@@ -131,18 +169,20 @@ export function PlayInviteIncoming() {
         // стартуем арену 1×1 сразу.
         setOfflineMode(false)
         setPvpMatchId(invite.id)
-        setOpponent({
+        const inv = invite.fromProfile
+        const opponentRow: Player = {
           id: invite.fromUserId,
-          name: "Друг",
-          avatar: "D",
-          avatarUrl: "",
-          balance: 500,
-          wins: 0,
-          losses: 0,
-          weekWins: 0,
-          weekEarnings: preset.bet * 5,
-          vip: false,
-        })
+          name: inv?.name ?? "Друг",
+          avatar: inv?.avatar ?? "Д",
+          avatarUrl: inv?.avatarUrl ?? "",
+          balance: inv?.balance ?? 500,
+          wins: inv?.wins ?? 0,
+          losses: inv?.losses ?? 0,
+          weekWins: inv?.weekWins ?? 0,
+          weekEarnings: inv?.weekEarnings ?? preset.bet * 5,
+          vip: inv?.vip ?? false,
+        }
+        setOpponent(opponentRow)
         setCurrentBet(preset.bet)
         setTotalRounds(preset.rounds)
         setPlayer((p) => ({
@@ -160,7 +200,9 @@ export function PlayInviteIncoming() {
 
   if (!invite) return null
 
-  const shortFrom = invite.fromUserId.length > 12 ? `${invite.fromUserId.slice(0, 10)}…` : invite.fromUserId
+  const shortFromId =
+    invite.fromUserId.length > 14 ? `${invite.fromUserId.slice(0, 12)}…` : invite.fromUserId
+  const displayName = invite.fromProfile?.name ?? shortFromId
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-2 pointer-events-none">
@@ -168,23 +210,60 @@ export function PlayInviteIncoming() {
         <div className="flex items-start gap-2">
           <Users className="h-5 w-5 text-sky-400 shrink-0 mt-0.5" />
           <p className="text-sm font-semibold text-sky-100 leading-snug">
-            Вас пригласили в игру
+            Вас пригласили в турнир
           </p>
         </div>
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 px-2.5 py-2">
+          <div className="relative h-11 w-11 rounded-full overflow-hidden border border-white/20 shrink-0">
+            {invite.fromProfile?.avatarUrl ? (
+              <img src={invite.fromProfile.avatarUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <PlayerAvatar
+                name={displayName}
+                avatar={invite.fromProfile?.avatar ?? displayName.charAt(0)}
+                size="sm"
+                variant="muted"
+                vip={invite.fromProfile?.vip ?? false}
+              />
+            )}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-bold text-white truncate">{displayName}</p>
+            <p className="text-[11px] text-sky-200/75">
+              {invite.fromProfile ? (
+                <>
+                  {invite.fromProfile.wins} побед
+                  {invite.preset ? (
+                    <>
+                      {" · "}
+                      турнир с вами
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                <>Игрок {shortFromId}</>
+              )}
+            </p>
+          </div>
+        </div>
         <p className="text-xs text-sky-200/80">
-          Запрос от <span className="text-white font-mono text-[11px]">{shortFrom}</span>.
+          {!invite.fromProfile ? (
+            <>
+              Идентификатор в системе:{" "}
+              <span className="text-white font-mono text-[11px]">{shortFromId}</span>.{" "}
+            </>
+          ) : null}
           {invite.preset ? (
             <>
-              {" "}
               Условия:{" "}
               <span className="text-sky-100 font-semibold">
                 {invite.preset.rounds === 1 ? "1 ход" : invite.preset.rounds === 3 ? "3 хода" : "5 ходов"}, ставка{" "}
-                {invite.preset.bet}
+                {invite.preset.bet} монет
               </span>
-              .
+              .{" "}
             </>
-          ) : null}{" "}
-          Примите или отклоните приглашение.
+          ) : null}
+          Примите — начнётся бой с этим игроком, или отклоните приглашение.
         </p>
         <p className="text-[10px] text-sky-300/70 leading-snug">
           В настройках ВК включите уведомления от приложения — так проще не пропускать новые приглашения.

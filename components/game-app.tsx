@@ -29,6 +29,7 @@ import { GameLoader } from "@/components/game-loader"
 import { AdminScreen } from "@/components/admin-screen"
 import { PlayInviteIncoming } from "@/components/play-invite-incoming"
 import { FriendInviteWaiterGlobal } from "@/components/friend-invite-waiter-global"
+import { mergePendingEntriesFromVkFriends } from "@/lib/pending-vk-app-invites"
 
 /** В мини-приложении ВК не показываем экран «Войти / гость» — только автологин и «Повторить». */
 function VkMiniAppAuthWall() {
@@ -131,12 +132,8 @@ function GameLayout() {
         setPlayer((p) => ({ ...p, balance: p.balance + reward }))
         setHideLowBalanceHint(true)
 
-        // Запоминаем тех, кому отправили приглашение в приложение за монеты.
-        // На экране «С друзьями» позже подтянем только тех, кто уже вошёл в RPS Arena.
         try {
-          const pendingKey = "rps_vk_lowbalance_invited_v1"
-          const payload = { ids: users.map((u) => u.id), createdAt: Date.now() }
-          localStorage.setItem(pendingKey, JSON.stringify(payload))
+          mergePendingEntriesFromVkFriends(users)
         } catch {
           /* ignore */
         }
