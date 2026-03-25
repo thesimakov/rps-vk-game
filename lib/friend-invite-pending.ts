@@ -1,5 +1,7 @@
 /** Снимок ожидающего приглашения друга (приглашающий): ждём accept в фоне. */
 
+import { appPath } from "./app-path"
+
 const PENDING_KEY = "rps_pending_friend_invite_v1"
 
 export type PendingFriendInviteSnapshot = {
@@ -57,4 +59,11 @@ export function readFriendsInGameList(playerId: string): unknown[] | null {
 
 export function writeFriendsInGameList(playerId: string, rows: unknown[]): void {
   sessionStorage.setItem(FRIENDS_LIST_PREFIX + playerId, JSON.stringify(rows))
+  if (typeof window === "undefined" || !playerId.startsWith("vk_")) return
+  void fetch(appPath("/api/friends-in-game/saved-list"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify({ userId: playerId, friends: rows }),
+  }).catch(() => {})
 }

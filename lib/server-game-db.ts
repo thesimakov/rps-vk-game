@@ -37,6 +37,11 @@ export function getGameStateDb(): GameStateDb {
       last_seen INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_presence_last_seen ON presence(last_seen);
+    CREATE TABLE IF NOT EXISTS friends_ingame_saved (
+      user_id TEXT PRIMARY KEY NOT NULL,
+      json TEXT NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS pvp_match_sessions (
       match_id TEXT PRIMARY KEY NOT NULL,
       p1_id TEXT NOT NULL,

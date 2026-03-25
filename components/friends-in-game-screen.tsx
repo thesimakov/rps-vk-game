@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useState } from "react"
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
-import { ArrowLeft, Users, Loader2, Swords, Clock } from "lucide-react"
+import { ArrowLeft, Users, Loader2, Swords, Clock, RefreshCw } from "lucide-react"
 import { showFriendsPicker, isVKEnvironment, sendGameInviteToVkFriend, type VKFriend } from "@/lib/vk-bridge"
 import { TOURNAMENT_INVITE_BET_OPTIONS } from "@/lib/play-invite-preset"
 import { formatAmount } from "@/lib/format-amount"
@@ -58,6 +58,7 @@ export function FriendsInGameScreen() {
   const [, bumpPendingUi] = useReducer((n: number) => n + 1, 0)
   const [friends, setFriends] = useState<FriendRow[]>([])
   const [pickLoading, setPickLoading] = useState(false)
+  const [refreshLoading, setRefreshLoading] = useState(false)
   const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteTarget, setInviteTarget] = useState<FriendRow | null>(null)
   const [roundsChoice, setRoundsChoice] = useState<1 | 3 | 5>(3)
@@ -81,10 +82,44 @@ export function FriendsInGameScreen() {
 
   useEffect(() => {
     if (!canUse) return
-    const raw = readFriendsInGameList(player.id)
-    if (!raw) return
-    const rows = raw.filter(isFriendRow)
-    if (rows.length) setFriends(rows)
+    let cancelled = false
+    const mergeFriends = (a: FriendRow[], b: FriendRow[]): FriendRow[] => {
+      const m = new Map<string, FriendRow>()
+      for (const r of a) m.set(r.playerId, r)
+      for (const r of b) {
+        const ex = m.get(r.playerId)
+        m.set(r.playerId, ex ? { ...ex, ...r, photo_200: r.photo_200 ?? ex.photo_200 } : r)
+      }
+      return Array.from(m.values())
+    }
+    const run = async () => {
+      let serverRows: FriendRow[] = []
+      try {
+        const res = await fetch(
+          appPath(`/api/friends-in-game/saved-list?userId=${encodeURIComponent(player.id)}`),
+          { cache: "no-store" },
+        )
+        const data = (await res.json()) as { ok?: boolean; friends?: unknown[] }
+        if (data.ok && Array.isArray(data.friends)) serverRows = data.friends.filter(isFriendRow)
+      } catch {
+        /* офлайн / статический экспорт */
+      }
+      if (cancelled) return
+      // Важно: читаем sessionStorage после await — иначе гонка с выбором друзей
+      // (пустой снимок перетирает несколько только что добавленных строк).
+      const localRows = (readFriendsInGameList(player.id) ?? []).filter(isFriendRow)
+      const merged = mergeFriends(serverRows, localRows)
+      if (merged.length) {
+        setFriends(merged)
+        writeFriendsInGameList(player.id, merged)
+      } else if (localRows.length) {
+        setFriends(localRows)
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
   }, [canUse, player.id])
 
   // Авто-подтягиваем друзей, которые уже вошли в RPS Arena,
@@ -199,6 +234,110 @@ export function FriendsInGameScreen() {
     }))
   }, [])
 
+  const mergeFriendRows = useCallback((a: FriendRow[], b: FriendRow[]): FriendRow[] => {
+    const m = new Map<string, FriendRow>()
+    for (const r of a) m.set(r.playerId, r)
+    for (const r of b) {
+      const ex = m.get(r.playerId)
+      m.set(r.playerId, ex ? { ...ex, ...r, photo_200: r.photo_200 ?? ex.photo_200 } : r)
+    }
+    return Array.from(m.values())
+  }, [])
+
+  const handleRefreshList = async () => {
+    if (!canUse || refreshLoading || pickLoading) return
+    setRefreshLoading(true)
+    setBanner(null)
+    try {
+      let serverRows: FriendRow[] = []
+      try {
+        const res = await fetch(
+          appPath(`/api/friends-in-game/saved-list?userId=${encodeURIComponent(player.id)}`),
+          { cache: "no-store" },
+        )
+        const d = (await res.json()) as { ok?: boolean; friends?: unknown[] }
+        if (d.ok && Array.isArray(d.friends)) serverRows = d.friends.filter(isFriendRow)
+      } catch {
+        /* ignore */
+      }
+
+      let merged = mergeFriendRows(serverRows, friends)
+
+      const idSet = new Set<number>()
+      for (const r of merged) {
+        if (Number.isInteger(r.vkId) && r.vkId > 0) idSet.add(r.vkId)
+      }
+      if (Array.isArray(player.invitedFriends)) {
+        for (const x of player.invitedFriends) {
+          if (x && typeof (x as { id?: unknown }).id === "number") {
+            const id = (x as { id: number }).id
+            if (Number.isInteger(id) && id > 0) idSet.add(id)
+          }
+        }
+      }
+      try {
+        const raw = localStorage.getItem(LOWBALANCE_PENDING_KEY)
+        if (raw) {
+          const parsed = JSON.parse(raw) as { ids?: unknown; createdAt?: unknown }
+          const ids = Array.isArray(parsed.ids)
+            ? parsed.ids.map((x) => (typeof x === "number" ? x : Number(x)))
+            : []
+          const createdAt = typeof parsed.createdAt === "number" ? parsed.createdAt : NaN
+          if (Number.isFinite(createdAt) && Date.now() - createdAt <= LOWBALANCE_PENDING_TTL_MS) {
+            for (const id of ids.filter((n): n is number => Number.isInteger(n) && n > 0).slice(0, 80)) {
+              idSet.add(id)
+            }
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+      const snap = readPendingFriendInvite(player.id)
+      if (snap?.friend?.vkId && snap.friend.vkId > 0) idSet.add(snap.friend.vkId)
+
+      const mergedIds = Array.from(idSet).slice(0, 80)
+      if (mergedIds.length) {
+        const res = await fetch(appPath("/api/friends-in-game/lookup"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          cache: "no-store",
+          body: JSON.stringify({ userId: player.id, friendVkIds: mergedIds }),
+        })
+        const data = (await res.json()) as {
+          ok?: boolean
+          friends?: { playerId: string; vkId: number; name: string; wins: number }[]
+        }
+        if (data.ok && data.friends?.length) {
+          const newRows: FriendRow[] = data.friends
+            .filter(
+              (f) =>
+                typeof f.playerId === "string" &&
+                typeof f.vkId === "number" &&
+                typeof f.name === "string",
+            )
+            .map((f) => ({
+              playerId: f.playerId,
+              vkId: f.vkId,
+              name: f.name,
+              wins: typeof f.wins === "number" ? f.wins : 0,
+            }))
+          merged = mergeFriendRows(merged, newRows)
+        }
+      }
+
+      setFriends(merged)
+      writeFriendsInGameList(player.id, merged)
+      setBanner({
+        kind: "ok",
+        text: "Список обновлён — подтянуты сохранённые друзья и те, кто уже заходил в игру.",
+      })
+    } catch {
+      setBanner({ kind: "err", text: "Не удалось обновить. Попробуйте позже." })
+    } finally {
+      setRefreshLoading(false)
+    }
+  }
+
   const handlePickFriends = async () => {
     if (!canUse) return
     setPickLoading(true)
@@ -280,12 +419,16 @@ export function FriendsInGameScreen() {
         )
         return
       }
-      const merged = mergePhotos(
+      const mergedFromPicker = mergePhotos(
         data.friends.map((f) => ({ ...f })),
         users,
       )
-      setFriends(merged)
-      const inGame = merged.length
+      setFriends((prev) => {
+        const next = mergeFriendRows(prev, mergedFromPicker)
+        writeFriendsInGameList(player.id, next)
+        return next
+      })
+      const inGame = mergedFromPicker.length
       const total = users.length
       setBanner({
         kind: "ok",
@@ -432,15 +575,27 @@ export function FriendsInGameScreen() {
         </div>
       )}
 
-      <Button
-        type="button"
-        className="w-full mb-6 gap-2"
-        disabled={!canUse || pickLoading}
-        onClick={() => void handlePickFriends()}
-      >
-        {pickLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
-        {pickLoading ? "Загрузка…" : "Выбрать друзей ВК и обновить список"}
-      </Button>
+      <div className="flex gap-2 mb-6 w-full">
+        <Button
+          type="button"
+          className="flex-1 min-w-0 gap-2"
+          disabled={!canUse || pickLoading || refreshLoading}
+          onClick={() => void handlePickFriends()}
+        >
+          {pickLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Users className="h-4 w-4" />}
+          {pickLoading ? "Загрузка…" : "Выбрать друзей ВК и обновить список"}
+        </Button>
+        <button
+          type="button"
+          onClick={() => void handleRefreshList()}
+          disabled={!canUse || pickLoading || refreshLoading}
+          className="shrink-0 h-11 w-11 rounded-xl border border-white/15 bg-white/5 text-white hover:bg-white/10 disabled:opacity-50 flex items-center justify-center"
+          aria-label="Обновить список друзей"
+          title="Обновить список"
+        >
+          <RefreshCw className={`h-5 w-5 ${refreshLoading ? "animate-spin" : ""}`} />
+        </button>
+      </div>
 
       {friends.length > 0 && (
         <div className="flex flex-col gap-2">
