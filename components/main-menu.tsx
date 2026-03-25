@@ -337,7 +337,7 @@ export function MainMenu() {
       <div className="w-full max-w-lg mb-5 rounded-2xl bg-indigo-500/20 border border-indigo-400/30 p-3 sm:p-4">
         <div className="flex items-center justify-between gap-2 mb-3">
           <p className="text-sm text-white/95 font-medium leading-tight">
-            Играйте, делайте ставки и становись лидером
+            Заходите каждый день, получай призы. Играйте, делайте ставки и становись лидером
           </p>
           {canClaimGift ? (
             <button
