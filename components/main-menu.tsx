@@ -4,7 +4,22 @@ import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
 import { useEffect, useMemo, useState } from "react"
-import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield, UserRound } from "lucide-react"
+import {
+  Trophy,
+  Swords,
+  User,
+  ShoppingBag,
+  Crown,
+  Coins,
+  Plus,
+  Gift,
+  Check,
+  ListOrdered,
+  Dice5,
+  Shield,
+  UserRound,
+  Info,
+} from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
@@ -386,6 +401,20 @@ export function MainMenu() {
               </div>
             )
           })}
+        </div>
+      </div>
+
+      <div className="w-full max-w-lg mb-4 rounded-2xl border border-sky-400/35 bg-slate-900/70 p-3.5 sm:p-4 shadow-[0_0_0_1px_rgba(56,189,248,0.08)]">
+        <div className="flex gap-2.5">
+          <div className="flex-shrink-0 mt-0.5">
+            <Info className="h-5 w-5 text-sky-400" aria-hidden />
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-sky-100">Внимание!</h3>
+            <p className="mt-1.5 text-xs sm:text-sm text-slate-200/90 leading-relaxed">
+              Наша игра новая, и возможны ошибки, не ругайте. Мы всё исправляем.
+            </p>
+          </div>
         </div>
       </div>
 

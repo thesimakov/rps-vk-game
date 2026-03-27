@@ -7,7 +7,6 @@ import React, {
   useCallback,
   useMemo,
   useEffect,
-  useLayoutEffect,
   useRef,
 } from "react"
 import { initVKBridge, getVKUser, getBridgeReady, isVKEnvironment, type VKUser } from "@/lib/vk-bridge"
@@ -260,9 +259,6 @@ interface GameState {
   isLoading: boolean
   loadingStage: string
   loadingProgress: number
-  /** Пользователь подтвердил предупреждение на экране загрузки арены — можно инициализировать VK Bridge. */
-  arenaLoaderNoticeAcknowledged: boolean
-  acknowledgeArenaLoaderNotice: () => void
   /** Сообщение об ошибке входа (бан/блок), отображается на экране входа */
   loginErrorMessage: string | null
   bets: BetEntry[]
@@ -304,8 +300,6 @@ interface GameState {
 }
 
 const GameContext = createContext<GameState | null>(null)
-
-const ARENA_LOADER_NOTICE_SESSION_KEY = "rps_arena_loader_notice_ack_v1"
 
 /** 50 ботов для матчей, ставок и рейтинга: русские имена + имена стран СНГ */
 const BOT_NAMES: { name: string; avatar: string; vip: boolean }[] = [
@@ -707,7 +701,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   const [pvpMatchId, setPvpMatchId] = useState<string | null>(null)
   const [offlineMode, setOfflineMode] = useState(false)
   const [hasLoadedSave, setHasLoadedSave] = useState(false)
-  const [arenaLoaderNoticeAcknowledged, setArenaLoaderNoticeAcknowledged] = useState(false)
   const leaderboardDataRef = useRef(
     STATIC_LEADERBOARD.map((e) => ({ ...e }))
   )
@@ -903,41 +896,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(interval)
   }, [hasLoadedSave, screen, player.id])
 
-  useLayoutEffect(() => {
-    try {
-      if (typeof window !== "undefined" && sessionStorage.getItem(ARENA_LOADER_NOTICE_SESSION_KEY) === "1") {
-        setArenaLoaderNoticeAcknowledged(true)
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [])
-
-  const acknowledgeArenaLoaderNotice = useCallback(() => {
-    try {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(ARENA_LOADER_NOTICE_SESSION_KEY, "1")
-      }
-    } catch {
-      /* ignore */
-    }
-    setArenaLoaderNoticeAcknowledged(true)
-  }, [])
-
-  // Во ВК часть WebView не отдаёт клик по оверлею — иначе мост никогда не стартует. Автопропуск через 10 с.
   useEffect(() => {
-    if (arenaLoaderNoticeAcknowledged) return
-    if (typeof window === "undefined") return
-    if (!isVKEnvironment()) return
-    const t = window.setTimeout(() => {
-      acknowledgeArenaLoaderNotice()
-    }, 10_000)
-    return () => window.clearTimeout(t)
-  }, [arenaLoaderNoticeAcknowledged, acknowledgeArenaLoaderNotice])
-
-  // Инициализация VK Bridge — только после «Хорошо» на экране загрузки арены (или если уже подтверждено в сессии).
-  useEffect(() => {
-    if (!arenaLoaderNoticeAcknowledged) return
     let active = true
     let settled = false
     const timeout = setTimeout(() => {
@@ -958,7 +917,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       active = false
       clearTimeout(timeout)
     }
-  }, [arenaLoaderNoticeAcknowledged])
+  }, [])
 
   const trackSpend = useCallback(
     (amount: number, reason: string) => {
@@ -1144,29 +1103,24 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
   }, [bridgeInitialized, vkUser, loginWithVKBridge])
 
-  const isLoading =
-    !hasLoadedSave || !arenaLoaderNoticeAcknowledged || !bridgeInitialized || !authResolved
+  const isLoading = !hasLoadedSave || !bridgeInitialized || !authResolved
   const loadingStage =
-    !arenaLoaderNoticeAcknowledged
-      ? ""
-      : bridgeTimedOut || authTimedOut
-        ? "VK недоступен, запускаем в безопасном режиме..."
-        : !hasLoadedSave
-          ? "Загрузка сохранений..."
-          : !bridgeInitialized
-            ? "Инициализация VK Bridge..."
-            : !authResolved
-              ? "Авторизация в VK..."
-              : "Запуск игры..."
+    bridgeTimedOut || authTimedOut
+      ? "VK недоступен, запускаем в безопасном режиме..."
+      : !hasLoadedSave
+        ? "Загрузка сохранений..."
+        : !bridgeInitialized
+          ? "Инициализация VK Bridge..."
+          : !authResolved
+            ? "Авторизация в VK..."
+            : "Запуск игры..."
   const loadingProgress = !hasLoadedSave
     ? 25
-    : !arenaLoaderNoticeAcknowledged
-      ? 0
-      : !bridgeInitialized
-        ? 50
-        : !authResolved
-          ? 75
-          : 100
+    : !bridgeInitialized
+      ? 50
+      : !authResolved
+        ? 75
+        : 100
 
   const loginWithVK = useCallback(async () => {
     if (typeof window !== "undefined" && isVKEnvironment() && !getBridgeReady()) {
@@ -1627,8 +1581,6 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
         isLoading,
         loadingStage,
         loadingProgress,
-        arenaLoaderNoticeAcknowledged,
-        acknowledgeArenaLoaderNotice,
         loginErrorMessage,
         bets,
         pendingBet,
