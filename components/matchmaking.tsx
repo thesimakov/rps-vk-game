@@ -386,9 +386,6 @@ export function Matchmaking() {
       {!opponent && (
         <p className="text-sm text-muted-foreground font-medium mb-6">Подбираем игрока...</p>
       )}
-      {player.id.startsWith("vk_") && !opponent?.id?.startsWith("vk_") && searchCountdownSec !== null && (
-        <p className="text-sm text-amber-200 font-medium mb-3">До подключения бота: {searchCountdownSec}с</p>
-      )}
       <div className="w-full max-w-xs h-2 bg-muted/30 rounded-full overflow-hidden">
         <div
           className="h-full bg-primary rounded-full transition-all duration-300"
