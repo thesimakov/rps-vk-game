@@ -60,5 +60,6 @@ jobs:
             pnpm install --frozen-lockfile
             pnpm rebuild better-sqlite3
             pnpm run build
-            pm2 restart rps-vk-game || pm2 start npm --name rps-vk-game -- start
+            # --cwd обязателен: иначе pm2 start без каталога берёт /root и падает с ENOENT package.json
+            pm2 restart rps-vk-game || pm2 start npm --name rps-vk-game --cwd /var/www/rps-vk-game -- start
             pm2 save
