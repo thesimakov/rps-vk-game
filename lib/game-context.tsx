@@ -449,7 +449,8 @@ const LEADERBOARD_UPDATE_MS = 30 * 1000
 /** Сохранение в localStorage: версия для совместимости при будущих обновлениях */
 const SAVE_STORAGE_KEY = "rps_vk_save"
 const SAVE_VERSION = 2
-const BRIDGE_INIT_TIMEOUT_MS = 6000
+/** Чуть больше таймаута внутри initVKBridge (импорт + VKWebAppInit), чтобы сначала отработал race там */
+const BRIDGE_INIT_TIMEOUT_MS = 10_000
 const AUTH_RESOLVE_TIMEOUT_MS = 7000
 /** В мини-приложении ВК даём больше времени на повторные VKWebAppGetUserInfo */
 const AUTH_RESOLVE_TIMEOUT_VK_MS = 22_000
@@ -922,6 +923,17 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
     }
     setArenaLoaderNoticeAcknowledged(true)
   }, [])
+
+  // Во ВК часть WebView не отдаёт клик по оверлею — иначе мост никогда не стартует. Автопропуск через 10 с.
+  useEffect(() => {
+    if (arenaLoaderNoticeAcknowledged) return
+    if (typeof window === "undefined") return
+    if (!isVKEnvironment()) return
+    const t = window.setTimeout(() => {
+      acknowledgeArenaLoaderNotice()
+    }, 10_000)
+    return () => window.clearTimeout(t)
+  }, [arenaLoaderNoticeAcknowledged, acknowledgeArenaLoaderNotice])
 
   // Инициализация VK Bridge — только после «Хорошо» на экране загрузки арены (или если уже подтверждено в сессии).
   useEffect(() => {

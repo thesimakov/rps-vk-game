@@ -25,6 +25,8 @@ let launchParamsLoaded = false
 let startParams = new URLSearchParams()
 
 const VK_GET_USER_TIMEOUT_MS = 10_000
+/** VKWebAppInit / импорт bridge не должны висеть бесконечно (в части WebView зависает send). */
+const VK_WEB_APP_INIT_TIMEOUT_MS = 8_000
 
 function ensureStartParams() {
   if (typeof window === "undefined" || launchParamsLoaded) return
@@ -49,8 +51,15 @@ export async function initVKBridge(): Promise<void> {
   if (typeof window === "undefined") return
   ensureStartParams()
   try {
-    const vkBridge = await import("@vkontakte/vk-bridge")
-    await vkBridge.default.send("VKWebAppInit")
+    await Promise.race([
+      (async () => {
+        const vkBridge = await import("@vkontakte/vk-bridge")
+        await vkBridge.default.send("VKWebAppInit")
+      })(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("VKWebAppInit timeout")), VK_WEB_APP_INIT_TIMEOUT_MS)
+      }),
+    ])
     bridgeReady = true
   } catch {
     bridgeReady = false
