@@ -241,8 +241,6 @@ export function Matchmaking() {
     if (opponent?.id?.startsWith("vk_")) return
     /** Пока не встали в очередь на сервере — ждём POST; иначе ложный «один» и ранний бот */
     if (!queuePostDone) return
-    /** Ждём poll — пара уже может быть создана (второй игрок уже в арене) */
-    if (pollingForMatch) return
 
     if (botTimeoutRef.current) {
       clearTimeout(botTimeoutRef.current)
