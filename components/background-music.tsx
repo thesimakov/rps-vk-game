@@ -26,6 +26,14 @@ export function BackgroundMusic() {
   const [volume, setVolume] = useState(DEFAULT_VOLUME)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
+  const tryPlay = useCallback(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (!enabled) return
+    if (!ready) return
+    audio.play().catch(() => {})
+  }, [enabled, ready])
+
   useEffect(() => {
     setEnabled(DEFAULT_ENABLED)
     try {
@@ -63,17 +71,13 @@ export function BackgroundMusic() {
   useEffect(() => {
     if (typeof window === "undefined") return
     const handler = () => {
-      const audio = audioRef.current
-      if (!audio) return
-      if (!enabled) return
-      if (!ready) return
-      audio.play().catch(() => {})
+      tryPlay()
     }
     window.addEventListener("rps_vk_login_success", handler)
     return () => {
       window.removeEventListener("rps_vk_login_success", handler)
     }
-  }, [enabled, ready])
+  }, [tryPlay])
 
   useEffect(() => {
     const audio = audioRef.current
@@ -89,8 +93,24 @@ export function BackgroundMusic() {
     if (!audio) return
     if (!enabled || !ready) return
     if (screen !== "arena") return
-    audio.play().catch(() => {})
-  }, [screen, enabled, ready])
+    tryPlay()
+  }, [screen, enabled, ready, tryPlay])
+
+  // Надёжный автозапуск: пробуем при готовности и повторяем после первого пользовательского жеста.
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    if (!enabled || !ready) return
+    tryPlay()
+    const resume = () => tryPlay()
+    window.addEventListener("pointerdown", resume, { once: true })
+    window.addEventListener("keydown", resume, { once: true })
+    window.addEventListener("touchstart", resume, { once: true })
+    return () => {
+      window.removeEventListener("pointerdown", resume)
+      window.removeEventListener("keydown", resume)
+      window.removeEventListener("touchstart", resume)
+    }
+  }, [enabled, ready, tryPlay])
 
   useEffect(() => {
     try {
