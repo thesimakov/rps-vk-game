@@ -77,6 +77,7 @@ export function Matchmaking() {
   } = useGame()
   const [dots, setDots] = useState("")
   const [progress, setProgress] = useState(0)
+  const [searchCountdownSec, setSearchCountdownSec] = useState<number | null>(null)
   const useFastSearch = (player.fastMatchBoosts ?? 0) > 0
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -248,6 +249,7 @@ export function Matchmaking() {
       botTimeoutRef.current = null
     }
     setProgress(0)
+    setSearchCountdownSec(null)
 
     /** В корзине мало людей — запускаем таймер до бота */
     const aloneInBucket = bucketLive === null || bucketLive < 2
@@ -255,11 +257,13 @@ export function Matchmaking() {
 
     const ms = useFastSearch ? ALONE_BOT_MS_FAST : ALONE_BOT_MS_NORMAL
     const deadline = Date.now() + ms
+    setSearchCountdownSec(Math.ceil(ms / 1000))
 
     const tick = setInterval(() => {
       const left = Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
       const elapsed = ms - left * 1000
       setProgress(Math.min(100, (elapsed / ms) * 100))
+      setSearchCountdownSec(left)
     }, 250)
 
     botTimeoutRef.current = setTimeout(() => {
@@ -274,6 +278,7 @@ export function Matchmaking() {
 
     return () => {
       clearInterval(tick)
+      setSearchCountdownSec(null)
       if (botTimeoutRef.current) {
         clearTimeout(botTimeoutRef.current)
         botTimeoutRef.current = null
@@ -382,6 +387,9 @@ export function Matchmaking() {
       )}
       {!opponent && (
         <p className="text-sm text-muted-foreground font-medium mb-6">Подбираем игрока...</p>
+      )}
+      {player.id.startsWith("vk_") && !opponent?.id?.startsWith("vk_") && searchCountdownSec !== null && (
+        <p className="text-sm text-amber-200 font-medium mb-3">До подключения бота: {searchCountdownSec}с</p>
       )}
       <div className="w-full max-w-xs h-2 bg-muted/30 rounded-full overflow-hidden">
         <div
