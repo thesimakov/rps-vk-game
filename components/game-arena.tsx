@@ -152,6 +152,7 @@ export function GameArena() {
 
   /** PvP: ждём ответ сервера — локальный таймер не должен обнуляться и давать «проигрыш по времени» */
   const [pvpAwaitingServer, setPvpAwaitingServer] = useState(false)
+  const pvpAwaitStartedAtRef = useRef<number | null>(null)
   /** Промпт уведомлений ВК — после первого кадра арены, чтобы не перекрывать начальную отрисовку */
   const [arenaReadyForVkNotifPrompt, setArenaReadyForVkNotifPrompt] = useState(false)
 
@@ -519,7 +520,6 @@ export function GameArena() {
   // Timer countdown
   useEffect(() => {
     if (phase !== "choosing") return
-    if (pvpAwaitingServer) return
 
     if (timeLeft <= 0) {
       // Не выбрал карту вовремя — сразу экран результата с «Кто-то уснул»
@@ -565,6 +565,7 @@ export function GameArena() {
     if (pvpMatchId && opponent?.id?.startsWith("vk_")) {
       resolvedRef.current = true
       setPvpAwaitingServer(true)
+      pvpAwaitStartedAtRef.current = Date.now()
       void (async () => {
         try {
           const res = await fetch(appPath("/api/match/pvp-move"), {
@@ -575,17 +576,26 @@ export function GameArena() {
           })
           const data = (await res.json()) as { ok?: boolean; draw?: boolean }
           if (!data.ok) {
+            console.warn("[pvp] submit move rejected", {
+              matchId: pvpMatchId,
+              userId: player.id,
+              move,
+            })
             resolvedRef.current = false
             setPvpAwaitingServer(false)
+            pvpAwaitStartedAtRef.current = null
             return
           }
           if (data.draw) {
             setPvpAwaitingServer(false)
+            pvpAwaitStartedAtRef.current = null
             resolvedRef.current = false
             resolveRound(move, move)
             return
           }
-          for (let i = 0; i < 200; i++) {
+          const maxWaitMs = 25_000
+          const startedAt = Date.now()
+          for (let i = 0; Date.now() - startedAt < maxWaitMs; i++) {
             await new Promise((r) => setTimeout(r, 350))
             const stRes = await fetch(
               appPath(
@@ -602,26 +612,65 @@ export function GameArena() {
             if (st.finished) {
               resolvedRef.current = false
               setPvpAwaitingServer(false)
+              pvpAwaitStartedAtRef.current = null
               return
             }
             if (st.ok && st.phase === "round_result" && st.opponentMove) {
               // handleSelectMove для PvP ставит resolvedRef=true, иначе resolveRound сразу выходит
               resolvedRef.current = false
+              setPvpAwaitingServer(false)
+              pvpAwaitStartedAtRef.current = null
               resolveRound(move, st.opponentMove)
               return
             }
+            if (!st.ok && i % 8 === 0) {
+              console.warn("[pvp] state poll not ready", {
+                matchId: pvpMatchId,
+                userId: player.id,
+                attempt: i,
+              })
+            }
           }
+          console.warn("[pvp] timed out waiting round result", {
+            matchId: pvpMatchId,
+            userId: player.id,
+            waitedMs: Date.now() - startedAt,
+          })
           resolvedRef.current = false
           setPvpAwaitingServer(false)
+          pvpAwaitStartedAtRef.current = null
         } catch {
+          console.warn("[pvp] move flow failed", {
+            matchId: pvpMatchId,
+            userId: player.id,
+            move,
+          })
           resolvedRef.current = false
           setPvpAwaitingServer(false)
+          pvpAwaitStartedAtRef.current = null
         }
       })()
       return
     }
     resolveRound(move)
   }
+
+  useEffect(() => {
+    if (!pvpAwaitingServer) return
+    const id = setInterval(() => {
+      const startedAt = pvpAwaitStartedAtRef.current
+      if (!startedAt) return
+      const elapsed = Date.now() - startedAt
+      if (elapsed >= 5000 && elapsed % 5000 < 500) {
+        console.debug("[pvp] awaiting server", {
+          matchId: pvpMatchId,
+          userId: player.id,
+          elapsedMs: elapsed,
+        })
+      }
+    }, 500)
+    return () => clearInterval(id)
+  }, [pvpAwaitingServer, pvpMatchId, player.id])
 
   const opponentData: Player = opponent ?? {
     id: "opponent",

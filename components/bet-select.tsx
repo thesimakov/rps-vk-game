@@ -58,8 +58,6 @@ export function BetSelect() {
   const [bucketCounts, setBucketCounts] = useState<Record<string, number>>({})
   const [selectedBot, setSelectedBot] = useState<Player | null>(null)
 
-  const isVkPlayer = player.id.startsWith("vk_")
-
   useEffect(() => {
     if (offlineMode) return
     let cancelled = false
@@ -145,11 +143,7 @@ export function BetSelect() {
       </div>
 
       {/* Онлайн / Оффлайн / С друзьями (ВК — третий сегмент, как на главной) */}
-      <div
-        className={`w-full max-w-lg grid gap-1.5 sm:gap-2 mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-1.5 ${
-          isVkPlayer ? "grid-cols-3" : "grid-cols-2"
-        }`}
-      >
+      <div className="w-full max-w-lg grid grid-cols-3 gap-1.5 sm:gap-2 mb-6 bg-card/40 backdrop-blur-sm border border-border/30 rounded-2xl p-1.5">
         <button
           type="button"
           onClick={() => { setOfflineMode(false); setSelectedBot(null) }}
@@ -174,16 +168,14 @@ export function BetSelect() {
           <Shield className="h-4 w-4 shrink-0" />
           <span className="leading-tight text-center">Оффлайн</span>
         </button>
-        {isVkPlayer ? (
-          <button
-            type="button"
-            onClick={() => setScreen("friends-ingame")}
-            className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-muted-foreground hover:text-foreground hover:bg-sky-500/15 border border-transparent hover:border-sky-400/35"
-          >
-            <UserRound className="h-4 w-4 shrink-0 text-sky-400/90" />
-            <span className="leading-tight text-center">С друзьями</span>
-          </button>
-        ) : null}
+        <button
+          type="button"
+          onClick={() => setScreen("friends-ingame")}
+          className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all text-muted-foreground hover:text-foreground hover:bg-sky-500/15 border border-transparent hover:border-sky-400/35"
+        >
+          <UserRound className="h-4 w-4 shrink-0 text-sky-400/90" />
+          <span className="leading-tight text-center">С друзьями</span>
+        </button>
       </div>
 
       {/* Balance */}
