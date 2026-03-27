@@ -607,6 +607,22 @@ function loadSavedState(): {
   }
 }
 
+function loadSavedVkPlayerById(vkId: string): Player | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.localStorage.getItem(SAVE_STORAGE_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw) as { version?: number; player?: Partial<Player> }
+    if (!data || (data.version != null && data.version > SAVE_VERSION)) return null
+    const saved = data.player
+    if (!saved || typeof saved.id !== "string" || saved.id !== vkId) return null
+    const merged: Player = { ...DEFAULT_PLAYER, ...saved, id: vkId }
+    return { ...merged, levelXp: deriveInitialLevelXp(merged) }
+  } catch {
+    return null
+  }
+}
+
 function saveState(player: Player, lavaCardStock: number) {
   if (typeof window === "undefined") return
   try {
@@ -959,8 +975,35 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       "/api/player/load",
       { userId: vkId }
     )
-    if (!res) return
+    if (!res) {
+      const fallbackPlayer = loadSavedVkPlayerById(vkId)
+      if (fallbackPlayer) {
+        setPlayer((p) => ({
+          ...p,
+          ...fallbackPlayer,
+          id: vkId,
+          name: user.first_name,
+          avatar: user.first_name.charAt(0).toUpperCase(),
+          avatarUrl: user.photo_200 || user.photo_100 || "",
+        }))
+      }
+      return
+    }
     if (!res.ok) {
+      if (res.error === "no_server") {
+        const fallbackPlayer = loadSavedVkPlayerById(vkId)
+        if (fallbackPlayer) {
+          setPlayer((p) => ({
+            ...p,
+            ...fallbackPlayer,
+            id: vkId,
+            name: user.first_name,
+            avatar: user.first_name.charAt(0).toUpperCase(),
+            avatarUrl: user.photo_200 || user.photo_100 || "",
+          }))
+        }
+        return
+      }
       if (res.error === "blocked") {
         setLoginErrorMessage("Ваш аккаунт удалён из игры. Обратитесь к поддержке, если считаете это ошибкой.")
       } else if (res.error === "banned") {
@@ -986,9 +1029,20 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
       }))
       return
     }
+    const fallbackPlayer = loadSavedVkPlayerById(vkId)
+    if (fallbackPlayer) {
+      setPlayer((p) => ({
+        ...p,
+        ...fallbackPlayer,
+        id: vkId,
+        name: user.first_name,
+        avatar: user.first_name.charAt(0).toUpperCase(),
+        avatarUrl: user.photo_200 || user.photo_100 || "",
+      }))
+    }
     void postJSON("/api/player/save", {
       player: toStoredPlayer({
-        ...DEFAULT_PLAYER,
+        ...(fallbackPlayer ?? DEFAULT_PLAYER),
         id: vkId,
         name: user.first_name,
         avatar: user.first_name.charAt(0).toUpperCase(),
