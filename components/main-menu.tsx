@@ -7,7 +7,6 @@ import { useEffect, useMemo, useState } from "react"
 import { Trophy, Swords, User, ShoppingBag, Crown, Coins, Plus, Gift, Check, ListOrdered, Dice5, Shield, UserRound } from "lucide-react"
 import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
-import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
 import { LEVELS, LEVEL_STEP_XP, MAX_LEVEL, getDailyBonusPercent, getLevelMeta } from "@/lib/level-system"
 
 const DAILY_REWARDS = [
@@ -249,8 +248,6 @@ export function MainMenu() {
           Все уровни и бонусы
         </button>
       </div>
-
-      <VkNotificationsPrompt variant="menu" show={player.id.startsWith("vk_")} />
 
       {/* Валюта: аватар слева, поле и кнопки управления (лото, пополнить) */}
       <div className="w-full max-w-lg flex items-center gap-3 mb-5">

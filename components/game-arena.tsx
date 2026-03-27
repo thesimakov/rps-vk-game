@@ -6,6 +6,7 @@ import { formatAmount } from "@/lib/format-amount"
 import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { Coins, Timer, Zap, Heart, ChevronUp, ChevronDown, ShieldAlert } from "lucide-react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
+import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
 import { sendMatchResult } from "@/lib/liveops/client"
 import { appPath } from "@/lib/app-path"
 import { getRoundOutcome as getOutcome } from "@/lib/match-outcome"
@@ -151,6 +152,8 @@ export function GameArena() {
 
   /** PvP: ждём ответ сервера — локальный таймер не должен обнуляться и давать «проигрыш по времени» */
   const [pvpAwaitingServer, setPvpAwaitingServer] = useState(false)
+  /** Промпт уведомлений ВК — после первого кадра арены, чтобы не перекрывать начальную отрисовку */
+  const [arenaReadyForVkNotifPrompt, setArenaReadyForVkNotifPrompt] = useState(false)
 
   // Ref to prevent double-resolution
   const resolvedRef = useRef(false)
@@ -191,7 +194,12 @@ export function GameArena() {
     roundsHistoryRef.current = []
     setRoundsHistory([])
     setStickers([])
-    return clearTimers
+    setArenaReadyForVkNotifPrompt(false)
+    const showPromptTimer = window.setTimeout(() => setArenaReadyForVkNotifPrompt(true), 500)
+    return () => {
+      clearTimers()
+      clearTimeout(showPromptTimer)
+    }
   }, [clearTimers])
 
   useEffect(() => {
@@ -637,6 +645,10 @@ export function GameArena() {
 
   return (
     <div className="flex flex-col min-h-screen relative px-4 py-4 arena-bg">
+      <VkNotificationsPrompt
+        variant="arena"
+        show={player.id.startsWith("vk_") && arenaReadyForVkNotifPrompt}
+      />
       {/* Верхняя панель как в макете: БАНК | БОНУСЫ | РАУНД + сердечки */}
       <div className="w-full max-w-lg mx-auto mb-5">
         <div className="flex items-start justify-between gap-4">

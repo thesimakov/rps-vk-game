@@ -1,15 +1,40 @@
 import { NextResponse } from "next/server"
-import { isValidPlayerId, loadPlayer, savePlayer, type StoredPlayer } from "@/lib/player-store"
+import {
+  isValidPlayerId,
+  loadPlayer,
+  normalizeVkPlayerId,
+  savePlayer,
+  type StoredPlayer,
+} from "@/lib/player-store"
 
 export const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
+
+/** Минимальный профиль, если клиент ещё не успел вызвать /api/player/save (он откладывается ~1.5 с). */
+function stubStoredPlayerForLiveOps(userId: string): StoredPlayer {
+  const id = normalizeVkPlayerId(userId) as StoredPlayer["id"]
+  return {
+    id,
+    name: "Игрок",
+    avatar: "И",
+    avatarUrl: "",
+    balance: 0,
+    wins: 0,
+    losses: 0,
+    weekWins: 0,
+    weekEarnings: 0,
+    vip: false,
+    vkVoicesBalance: 0,
+  }
+}
 
 export async function loadPlayerForLiveOps(userId: string): Promise<StoredPlayer> {
   if (!userId || !isValidPlayerId(userId)) {
     throw new Error("invalid_user")
   }
-  const player = await loadPlayer(userId)
-  if (!player) throw new Error("player_not_found")
-  return player
+  const id = normalizeVkPlayerId(userId) as StoredPlayer["id"]
+  const existing = await loadPlayer(id)
+  if (existing) return existing
+  return savePlayer(stubStoredPlayerForLiveOps(userId))
 }
 
 export async function persistPlayer(player: StoredPlayer) {

@@ -410,6 +410,47 @@ export async function requestVkMiniAppNotifications(): Promise<boolean> {
   }
 }
 
+function resolveVkGroupIdForBugReport(): number {
+  const raw = process.env.NEXT_PUBLIC_VK_GROUP_ID ?? "236519647"
+  const n = Number(raw)
+  return Number.isFinite(n) && n > 0 ? n : 236519647
+}
+
+/**
+ * Открывает способ сообщить об ошибке: `NEXT_PUBLIC_BUG_REPORT_URL` (https) или диалог с группой приложения в ВК.
+ * В мини-приложении использует VKWebAppOpenLink.
+ */
+export async function openVkBugReportFlow(): Promise<void> {
+  if (typeof window === "undefined") return
+  const custom = process.env.NEXT_PUBLIC_BUG_REPORT_URL?.trim()
+  const url =
+    custom && /^https?:\/\//i.test(custom)
+      ? custom
+      : `https://vk.com/im?sel=-${resolveVkGroupIdForBugReport()}`
+
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+    if (!bridgeReady) {
+      try {
+        await vkBridge.default.send("VKWebAppInit")
+        bridgeReady = true
+      } catch {
+        /* window.open ниже */
+      }
+    }
+    if (bridgeReady) {
+      const supportsFn = (vkBridge.default as { supports?: (m: string) => boolean }).supports
+      if (typeof supportsFn !== "function" || supportsFn("VKWebAppOpenLink")) {
+        await vkBridge.default.send("VKWebAppOpenLink" as never, { url } as never)
+        return
+      }
+    }
+  } catch {
+    /* window.open ниже */
+  }
+  window.open(url, "_blank", "noopener,noreferrer")
+}
+
 /**
  * Публикует пост на стене пользователя (VKWebAppShowWallPostBox).
  * message — текст поста, attachments — вложение (например, ссылка на приложение).
