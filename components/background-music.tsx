@@ -26,25 +26,13 @@ export function BackgroundMusic() {
   const [volume, setVolume] = useState(DEFAULT_VOLUME)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  const loadStoredEnabled = useCallback((): boolean | null => {
-    if (typeof window === "undefined") return null
-    try {
-      const stored = window.localStorage.getItem(STORAGE_KEY)
-      if (stored == null) return null
-      return stored === "1"
-    } catch {
-      return null
-    }
-  }, [])
-
   useEffect(() => {
-    const storedEnabled = loadStoredEnabled()
-    setEnabled(storedEnabled ?? DEFAULT_ENABLED)
+    setEnabled(DEFAULT_ENABLED)
     try {
       const v = window.localStorage.getItem(VOLUME_KEY)
       setVolume(v != null ? clamp01(Number(v)) : DEFAULT_VOLUME)
     } catch {}
-  }, [loadStoredEnabled])
+  }, [])
 
   useEffect(() => {
     const audio = new Audio(MUSIC_SRC)
