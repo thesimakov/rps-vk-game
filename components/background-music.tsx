@@ -2,12 +2,13 @@
 
 import { useState, useRef, useEffect, useCallback } from "react"
 import { Volume2, VolumeX } from "lucide-react"
+import { useGame } from "@/lib/game-context"
 
 const STORAGE_KEY = "rps_bg_music"
 const VOLUME_KEY = "rps_bg_music_volume"
 // Учитываем basePath (GitHub Pages /rps-vk-game)
 const BASE_PATH = (process.env.NEXT_PUBLIC_BASE_PATH ?? "").replace(/\/$/, "")
-const MUSIC_SRC = `${BASE_PATH}/bg-music.mp3`
+const MUSIC_SRC = `${BASE_PATH}/765675.mp3`
 
 const DEFAULT_ENABLED = true
 const DEFAULT_VOLUME = 0.5
@@ -18,6 +19,7 @@ function clamp01(v: number) {
 }
 
 export function BackgroundMusic() {
+  const { screen } = useGame()
   const [enabled, setEnabled] = useState(DEFAULT_ENABLED)
   const [playing, setPlaying] = useState(false)
   const [ready, setReady] = useState(false)
@@ -93,6 +95,14 @@ export function BackgroundMusic() {
       window.localStorage.setItem(VOLUME_KEY, String(volume))
     } catch {}
   }, [volume])
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (!enabled || !ready) return
+    if (screen !== "arena") return
+    audio.play().catch(() => {})
+  }, [screen, enabled, ready])
 
   useEffect(() => {
     try {
