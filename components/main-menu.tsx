@@ -209,7 +209,6 @@ export function MainMenu() {
     setShowLotto(false)
   }
 
-
   return (
     <div className="flex flex-col items-center min-h-screen w-full py-6">
       {/* Верх: крупный логотип, уровень, прогресс-бар */}
@@ -393,7 +392,10 @@ export function MainMenu() {
       {/* Кнопки: ИГРАТЬ, Оффлайн, Таблица лидеров, Магазин и Профиль */}
       <div className="w-full max-w-lg flex flex-col gap-3">
         <button
-          onClick={() => { setOfflineMode(false); setScreen("bet-select") }}
+          onClick={() => {
+            setOfflineMode(false)
+            setScreen("bet-select")
+          }}
           className="w-full flex items-center justify-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-black text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"
         >
           <Swords className="h-6 w-6" />
@@ -401,36 +403,47 @@ export function MainMenu() {
         </button>
 
         {player.id.startsWith("vk_") ? (
-          <div className="grid grid-cols-2 gap-3 w-full">
+          <div className="grid grid-cols-2 gap-3 w-full min-w-0">
             <button
               onClick={() => {
                 setOfflineMode(true)
                 setScreen("bet-select")
               }}
-              className="flex flex-col items-center justify-center gap-1 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
+              className="flex flex-col items-center justify-center gap-1 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50 min-w-0"
             >
-              <Shield className="h-5 w-5 text-emerald-400" />
+              <Shield className="h-5 w-5 text-emerald-400 shrink-0" />
               <span className="text-xs sm:text-sm text-center leading-tight">Оффлайн</span>
             </button>
             <button
+              type="button"
               onClick={() => setScreen("friends-ingame")}
-              className="flex flex-col items-center justify-center gap-1 bg-sky-700/75 hover:bg-sky-600/90 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/45"
+              className="flex flex-col items-center justify-center gap-1 bg-sky-700/75 hover:bg-sky-600/90 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/45 min-w-0"
             >
-              <UserRound className="h-5 w-5 text-sky-200" />
+              <UserRound className="h-5 w-5 text-sky-200 shrink-0" />
               <span className="text-xs sm:text-sm text-center leading-tight">С друзьями</span>
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => {
-              setOfflineMode(true)
-              setScreen("bet-select")
-            }}
-            className="w-full flex items-center justify-center gap-2.5 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50"
-          >
-            <Shield className="h-5 w-5 text-emerald-400" />
-            <span>Оффлайн игра</span>
-          </button>
+          <div className="grid grid-cols-2 gap-3 w-full min-w-0">
+            <button
+              onClick={() => {
+                setOfflineMode(true)
+                setScreen("bet-select")
+              }}
+              className="flex flex-col items-center justify-center gap-1 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50 min-w-0"
+            >
+              <Shield className="h-5 w-5 text-emerald-400 shrink-0" />
+              <span className="text-xs sm:text-sm text-center leading-tight">Оффлайн игра</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setScreen("friends-ingame")}
+              className="flex flex-col items-center justify-center gap-1 bg-sky-700/75 hover:bg-sky-600/90 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/45 min-w-0"
+            >
+              <UserRound className="h-5 w-5 text-sky-200 shrink-0" />
+              <span className="text-xs sm:text-sm text-center leading-tight">С друзьями</span>
+            </button>
+          </div>
         )}
 
         <button

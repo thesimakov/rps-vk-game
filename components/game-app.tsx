@@ -95,27 +95,65 @@ function GameScreen() {
 }
 
 function GameLayout() {
-  const { screen, vkUser, player, setPlayer, isLoading, loadingStage, loadingProgress } = useGame()
+  const {
+    screen,
+    vkUser,
+    player,
+    setPlayer,
+    isLoading,
+    loadingStage,
+    loadingProgress,
+    arenaLoaderNoticeAcknowledged,
+    acknowledgeArenaLoaderNotice,
+  } = useGame()
   const [hideLowBalanceHint, setHideLowBalanceHint] = useState(false)
   const [showLoader, setShowLoader] = useState(true)
 
   useEffect(() => {
+    if (!arenaLoaderNoticeAcknowledged) {
+      setShowLoader(true)
+      return
+    }
     if (isLoading) {
       setShowLoader(true)
       return
     }
     const t = setTimeout(() => setShowLoader(false), 320)
     return () => clearTimeout(t)
-  }, [isLoading])
+  }, [isLoading, arenaLoaderNoticeAcknowledged])
 
   if (showLoader) {
     return (
       <div className="relative min-h-screen">
         <ParticlesBg />
         <GameLoader
-          stage={isLoading ? loadingStage : "Запуск игры..."}
-          progress={isLoading ? loadingProgress : 100}
+          stage={arenaLoaderNoticeAcknowledged ? (isLoading ? loadingStage : "Запуск игры...") : ""}
+          progress={arenaLoaderNoticeAcknowledged ? (isLoading ? loadingProgress : 100) : 0}
         />
+        {!arenaLoaderNoticeAcknowledged && (
+          <div
+            className="fixed inset-0 z-[90] flex items-center justify-center p-4 bg-slate-950/55 backdrop-blur-[2px]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="arena-loader-notice-title"
+          >
+            <div className="w-full max-w-md rounded-3xl border border-sky-400/35 bg-gradient-to-br from-slate-900 via-slate-900 to-sky-950/40 p-5 shadow-[0_0_0_1px_rgba(56,189,248,0.12),0_20px_50px_rgba(0,0,0,0.45)]">
+              <h2 id="arena-loader-notice-title" className="text-base font-bold text-sky-100">
+                Внимание!
+              </h2>
+              <p className="mt-3 text-sm text-slate-200/90 leading-relaxed">
+                Наша игра новая, и возможны ошибки, не ругайте. Мы всё исправляем.
+              </p>
+              <button
+                type="button"
+                onClick={acknowledgeArenaLoaderNotice}
+                className="mt-5 w-full py-3 rounded-xl bg-sky-600 text-white text-sm font-bold hover:bg-sky-500 transition-colors"
+              >
+                Хорошо
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
