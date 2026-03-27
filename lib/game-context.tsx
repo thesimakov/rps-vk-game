@@ -14,6 +14,7 @@ import type { LiveOpsState } from "@/lib/liveops/types"
 import { appPath } from "@/lib/app-path"
 import { sendPresenceHeartbeat } from "@/lib/presence-client"
 import { clampLevelXp, getRankBoostExtra, MATCH_LOSS_XP, MATCH_WIN_XP } from "@/lib/level-system"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export type Move = "rock" | "scissors" | "paper" | "water" | "fire"
 export type WeeklyMode = "elements_tournament" | "time_is_money" | "blind_luck" | "boss_week"
@@ -696,6 +697,7 @@ function shuffleEarnings(entries: Omit<LeaderboardEntry, "rank">[]): Omit<Leader
 }
 
 export function GameProvider({ children }: { children: React.ReactNode }) {
+  const isMobile = useIsMobile()
   const [screen, setScreen] = useState<GameScreen>("entry")
   const [vkUser, setVkUser] = useState<VKUser | null>(null)
   const [bridgeInitialized, setBridgeInitialized] = useState(false)
@@ -1608,7 +1610,7 @@ export function GameProvider({ children }: { children: React.ReactNode }) {
   }, [player.balance, trackSpend])
 
   const toDisplayAmount = useCallback((amount: number) => amount, [])
-  const currencyLabel = "монет"
+  const currencyLabel = isMobile ? "M" : "монет"
 
   return (
     <GameContext.Provider

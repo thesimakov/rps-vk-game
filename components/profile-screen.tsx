@@ -169,57 +169,85 @@ export function ProfileScreen() {
       </div>
 
       {/* Balance + Bonuses + Rank */}
-      <div className="w-full max-w-lg grid grid-cols-3 gap-3 mb-4">
-        <div className="bg-gradient-to-br from-emerald-500/16 via-card/60 to-cyan-500/12 backdrop-blur-sm border border-emerald-300/30 rounded-3xl px-3.5 py-4 md:py-4.5 flex flex-col items-center justify-between min-h-[108px] shadow-[0_0_0_1px_rgba(16,185,129,0.14)]">
-          <Coins className="h-5 w-5 text-accent mb-1.5" />
-          <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">
-            Баланс
-          </span>
-          <span className="mt-1.5 text-lg md:text-xl font-extrabold text-accent tabular-nums">
+      <div className="w-full max-w-lg grid grid-cols-1 md:grid-cols-3 gap-2.5 md:gap-3 mb-3.5 md:mb-4">
+        <div className="bg-gradient-to-br from-emerald-500/16 via-card/60 to-cyan-500/12 backdrop-blur-sm border border-emerald-300/30 rounded-2xl md:rounded-3xl px-3.5 py-3 md:px-3.5 md:py-4.5 flex items-center justify-between md:flex-col md:items-center md:justify-between min-h-[74px] md:min-h-[108px] shadow-[0_0_0_1px_rgba(16,185,129,0.14)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-emerald-400/10 border border-emerald-300/25 flex items-center justify-center shrink-0">
+              <Coins className="h-4 w-4 text-accent md:mb-0" />
+            </span>
+            <span className="text-[10px] md:text-[11px] text-muted-foreground font-semibold uppercase tracking-wide truncate">
+              Баланс
+            </span>
+          </div>
+          <span className="text-[1.45rem] leading-none md:text-xl font-extrabold text-accent tabular-nums md:mt-1.5">
             {formatAmount(toDisplayAmount(player.balance))} {currencyLabel}
           </span>
         </div>
-        <div className="bg-gradient-to-br from-amber-500/16 via-card/60 to-orange-500/12 backdrop-blur-sm border border-amber-400/40 rounded-3xl px-3.5 py-4 md:py-4.5 flex flex-col items-center justify-between min-h-[108px] shadow-[0_0_0_1px_rgba(251,191,36,0.14)]">
-          <Coins className="h-5 w-5 text-amber-300 mb-1.5" />
-          <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">
-            бонусы
-          </span>
-          <span className="mt-1.5 text-lg md:text-xl font-extrabold text-amber-200 tabular-nums">
+        <div className="bg-gradient-to-br from-amber-500/16 via-card/60 to-orange-500/12 backdrop-blur-sm border border-amber-400/40 rounded-2xl md:rounded-3xl px-3.5 py-3 md:px-3.5 md:py-4.5 flex items-center justify-between md:flex-col md:items-center md:justify-between min-h-[74px] md:min-h-[108px] shadow-[0_0_0_1px_rgba(251,191,36,0.14)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-amber-400/10 border border-amber-300/25 flex items-center justify-center shrink-0">
+              <Coins className="h-4 w-4 text-amber-300 md:mb-0" />
+            </span>
+            <span className="text-[10px] md:text-[11px] text-muted-foreground font-semibold uppercase tracking-wide truncate">
+              бонусы
+            </span>
+          </div>
+          <span className="text-[1.45rem] leading-none md:text-xl font-extrabold text-amber-200 tabular-nums md:mt-1.5">
             {formatAmount(player.ratingPoints ?? 0)}
           </span>
         </div>
-        <div className="bg-gradient-to-br from-indigo-500/16 via-card/60 to-purple-500/12 backdrop-blur-sm border border-primary/25 rounded-3xl px-3.5 py-4 md:py-4.5 flex flex-col items-center justify-between min-h-[108px] shadow-[0_0_0_1px_rgba(129,140,248,0.14)]">
-          <Medal className="h-5 w-5 text-primary mb-1.5" />
-          <span className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wide">
-            рейтинг
-          </span>
-          <span className="mt-1.5 text-lg md:text-xl font-extrabold text-primary tabular-nums">
+        <div className="bg-gradient-to-br from-indigo-500/16 via-card/60 to-purple-500/12 backdrop-blur-sm border border-primary/25 rounded-2xl md:rounded-3xl px-3.5 py-3 md:px-3.5 md:py-4.5 flex items-center justify-between md:flex-col md:items-center md:justify-between min-h-[74px] md:min-h-[108px] shadow-[0_0_0_1px_rgba(129,140,248,0.14)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-blue-400/10 border border-blue-300/25 flex items-center justify-center shrink-0">
+              <Medal className="h-4 w-4 text-primary md:mb-0" />
+            </span>
+            <span className="text-[10px] md:text-[11px] text-muted-foreground font-semibold uppercase tracking-wide truncate">
+              рейтинг
+            </span>
+          </div>
+          <span className="text-[1.45rem] leading-none md:text-xl font-extrabold text-primary tabular-nums md:mt-1.5">
             #{playerRank}
           </span>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="w-full max-w-lg grid grid-cols-2 gap-3 mb-4">
-        <div className="bg-gradient-to-br from-cyan-500/12 via-card/55 to-sky-500/10 backdrop-blur-sm border border-cyan-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(34,211,238,0.10)]">
-          <Trophy className="h-5 w-5 text-primary mb-1" />
-          <span className="text-lg font-extrabold text-foreground tabular-nums">{player.wins}</span>
-          <span className="text-sm text-muted-foreground font-medium">Побед</span>
+      <div className="w-full max-w-lg grid grid-cols-1 md:grid-cols-2 gap-2.5 md:gap-3 mb-3.5 md:mb-4">
+        <div className="bg-gradient-to-br from-cyan-500/12 via-card/55 to-sky-500/10 backdrop-blur-sm border border-cyan-300/25 rounded-2xl md:rounded-3xl px-3.5 py-3 md:p-5 flex items-center justify-between md:flex-col md:items-center md:gap-1.5 min-h-[74px] md:min-h-[126px] shadow-[0_0_0_1px_rgba(34,211,238,0.10)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-cyan-400/10 border border-cyan-300/25 flex items-center justify-center shrink-0">
+              <Trophy className="h-4 w-4 text-primary md:mb-0" />
+            </span>
+            <span className="text-sm text-muted-foreground font-medium truncate">Побед</span>
+          </div>
+          <span className="text-2xl md:text-lg font-extrabold text-foreground tabular-nums leading-none">{player.wins}</span>
         </div>
-        <div className="bg-gradient-to-br from-rose-500/12 via-card/55 to-red-500/10 backdrop-blur-sm border border-rose-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(251,113,133,0.10)]">
-          <Skull className="h-5 w-5 text-destructive mb-1" />
-          <span className="text-lg font-extrabold text-foreground tabular-nums">{player.losses}</span>
-          <span className="text-sm text-muted-foreground font-medium">Поражений</span>
+        <div className="bg-gradient-to-br from-rose-500/12 via-card/55 to-red-500/10 backdrop-blur-sm border border-rose-300/25 rounded-2xl md:rounded-3xl px-3.5 py-3 md:p-5 flex items-center justify-between md:flex-col md:items-center md:gap-1.5 min-h-[74px] md:min-h-[126px] shadow-[0_0_0_1px_rgba(251,113,133,0.10)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-rose-400/10 border border-rose-300/25 flex items-center justify-center shrink-0">
+              <Skull className="h-4 w-4 text-destructive md:mb-0" />
+            </span>
+            <span className="text-sm text-muted-foreground font-medium truncate">Поражений</span>
+          </div>
+          <span className="text-2xl md:text-lg font-extrabold text-foreground tabular-nums leading-none">{player.losses}</span>
         </div>
-        <div className="bg-gradient-to-br from-emerald-500/12 via-card/55 to-lime-500/10 backdrop-blur-sm border border-emerald-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(52,211,153,0.10)]">
-          <Percent className="h-5 w-5 text-accent mb-1" />
-          <span className="text-lg font-extrabold text-foreground tabular-nums">{winRate}%</span>
-          <span className="text-sm text-muted-foreground font-medium">Винрейт</span>
+        <div className="bg-gradient-to-br from-emerald-500/12 via-card/55 to-lime-500/10 backdrop-blur-sm border border-emerald-300/25 rounded-2xl md:rounded-3xl px-3.5 py-3 md:p-5 flex items-center justify-between md:flex-col md:items-center md:gap-1.5 min-h-[74px] md:min-h-[126px] shadow-[0_0_0_1px_rgba(52,211,153,0.10)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-emerald-400/10 border border-emerald-300/25 flex items-center justify-center shrink-0">
+              <Percent className="h-4 w-4 text-accent md:mb-0" />
+            </span>
+            <span className="text-sm text-muted-foreground font-medium truncate">Винрейт</span>
+          </div>
+          <span className="text-2xl md:text-lg font-extrabold text-foreground tabular-nums leading-none">{winRate}%</span>
         </div>
-        <div className="bg-gradient-to-br from-violet-500/12 via-card/55 to-fuchsia-500/10 backdrop-blur-sm border border-violet-300/25 rounded-3xl p-5 flex flex-col items-center gap-1.5 min-h-[126px] shadow-[0_0_0_1px_rgba(167,139,250,0.10)]">
-          <Calendar className="h-5 w-5 text-secondary mb-1" />
-          <span className="text-lg font-extrabold text-foreground tabular-nums">{player.weekWins}</span>
-          <span className="text-sm text-muted-foreground font-medium">За неделю</span>
+        <div className="bg-gradient-to-br from-violet-500/12 via-card/55 to-fuchsia-500/10 backdrop-blur-sm border border-violet-300/25 rounded-2xl md:rounded-3xl px-3.5 py-3 md:p-5 flex items-center justify-between md:flex-col md:items-center md:gap-1.5 min-h-[74px] md:min-h-[126px] shadow-[0_0_0_1px_rgba(167,139,250,0.10)]">
+          <div className="flex items-center gap-2 md:flex-col md:gap-0 min-w-0">
+            <span className="h-7 w-7 rounded-full bg-violet-400/10 border border-violet-300/25 flex items-center justify-center shrink-0">
+              <Calendar className="h-4 w-4 text-secondary md:mb-0" />
+            </span>
+            <span className="text-sm text-muted-foreground font-medium truncate">За неделю</span>
+          </div>
+          <span className="text-2xl md:text-lg font-extrabold text-foreground tabular-nums leading-none">{player.weekWins}</span>
         </div>
       </div>
 

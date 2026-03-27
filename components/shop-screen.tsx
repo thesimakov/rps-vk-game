@@ -667,20 +667,24 @@ export function ShopScreen() {
             Для пополнения откройте приложение в ВКонтакте.
           </p>
         )}
-        <div className="grid grid-cols-3 gap-2.5">
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
           {VK_VOICE_PACKS.map((pack) => (
             <button
               key={pack.amount}
               onClick={() => handleTopUp(pack.amount)}
               disabled={topUpLoading !== null}
-              className="relative flex flex-col items-center gap-1.5 py-5 px-3 rounded-2xl bg-card/60 border-2 border-primary/25 hover:border-primary/65 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              className="relative flex items-center justify-between gap-3 py-3 px-3.5 rounded-2xl bg-card/60 border-2 border-primary/25 hover:border-primary/65 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-lg hover:shadow-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 sm:flex-col sm:justify-center sm:gap-1.5 sm:py-5 sm:px-3"
             >
-              <Coins className="h-6 w-6 text-accent" />
-              <span className="text-base font-extrabold text-foreground tabular-nums">
-                {topUpLoading === pack.amount ? "..." : formatAmount(pack.amount)}
-              </span>
-              <span className="text-[10px] text-muted-foreground font-medium">монет</span>
-              <span className="mt-0.5 px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-[11px] font-bold tabular-nums ring-1 ring-primary/30">
+              <div className="flex items-center gap-2.5 min-w-0 sm:flex-col sm:gap-1.5">
+                <Coins className="h-6 w-6 text-accent shrink-0" />
+                <div className="text-left sm:text-center">
+                  <span className="block text-base font-extrabold text-foreground tabular-nums leading-tight">
+                    {topUpLoading === pack.amount ? "..." : formatAmount(pack.amount)}
+                  </span>
+                  <span className="block text-[10px] text-muted-foreground font-medium">монет</span>
+                </div>
+              </div>
+              <span className="px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-[11px] font-bold tabular-nums ring-1 ring-primary/30 sm:mt-0.5">
                 {pack.votes} {pack.votes === 1 ? "голос" : pack.votes < 5 ? "голоса" : "голосов"}
               </span>
             </button>
