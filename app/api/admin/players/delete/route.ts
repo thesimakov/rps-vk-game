@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { backupDb, deletePlayer, isValidPlayerId } from "@/lib/player-store"
+import { backupDb, deletePlayer, isValidPlayerId, normalizeVkPlayerId } from "@/lib/player-store"
 
 const IS_STATIC_EXPORT = process.env.NEXT_OUTPUT_EXPORT === "export"
 
@@ -26,8 +26,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: "invalid_player" }, { status: 400 })
     }
 
+    const canonicalId = normalizeVkPlayerId(id)
+
     await backupDb()
-    const deleted = await deletePlayer(id)
+    const deleted = await deletePlayer(canonicalId)
     if (!deleted) {
       return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 })
     }

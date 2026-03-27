@@ -130,6 +130,15 @@ async function writeDb(db: PlayerDb) {
   await fs.rename(tmp, getDbPath())
 }
 
+/** Последовательная запись: параллельные save/delete из API не перетирают друг друга. */
+let mutationChain: Promise<unknown> = Promise.resolve()
+
+function runSerialized<T>(fn: () => Promise<T>): Promise<T> {
+  const next = mutationChain.then(fn)
+  mutationChain = next.then(() => undefined).catch(() => undefined)
+  return next
+}
+
 function normalizeIdForValidation(id: string): string {
   const trimmed = id.trim().replace(/^\uFEFF/, "")
   try {
@@ -154,6 +163,18 @@ export function normalizeVkPlayerId(id: string): string {
   return t.replace(/^vk_/i, "vk_")
 }
 
+/** Реальный ключ в `players` по id (учёт vk_/VK_ и рассинхрона ключа с полем id). */
+function resolvePlayerDbKey(db: PlayerDb, id: string): string | null {
+  const canon = normalizeVkPlayerId(id)
+  if (db.players[canon]) return canon
+  const raw = normalizeIdForValidation(id)
+  if (db.players[raw]) return raw
+  for (const [key, p] of Object.entries(db.players)) {
+    if (normalizeVkPlayerId(String(p.id)) === canon) return key
+  }
+  return null
+}
+
 export async function loadPlayer(userId: PlayerId): Promise<StoredPlayer | null> {
   const db = await readDb()
   const existing = db.players[userId]
@@ -161,15 +182,22 @@ export async function loadPlayer(userId: PlayerId): Promise<StoredPlayer | null>
 }
 
 export async function savePlayer(player: StoredPlayer): Promise<StoredPlayer> {
-  const db = await readDb()
-  const safeId = player.id
-  db.players[safeId] = {
-    ...db.players[safeId],
-    ...player,
-    id: safeId,
-  }
-  await writeDb(db)
-  return db.players[safeId]
+  return runSerialized(async () => {
+    const db = await readDb()
+    const safeId = normalizeVkPlayerId(String(player.id)) as StoredPlayer["id"]
+    const existingKey = resolvePlayerDbKey(db, String(player.id))
+    const base = existingKey ? db.players[existingKey] : undefined
+    db.players[safeId] = {
+      ...base,
+      ...player,
+      id: safeId,
+    }
+    if (existingKey && existingKey !== safeId) {
+      delete db.players[existingKey]
+    }
+    await writeDb(db)
+    return db.players[safeId]
+  })
 }
 
 /** Загрузить всех игроков как массив (для админки). */
@@ -184,18 +212,27 @@ async function setPlayerStatus(
   status: StoredPlayer["status"],
   options?: { banUntil?: number; notes?: string }
 ): Promise<StoredPlayer | null> {
-  const db = await readDb()
-  const existing = db.players[id]
-  if (!existing) return null
-  const updated: StoredPlayer = {
-    ...existing,
-    status,
-    banUntil: options?.banUntil,
-    notes: options?.notes ?? existing.notes,
-  }
-  db.players[id] = updated
-  await writeDb(db)
-  return updated
+  return runSerialized(async () => {
+    const db = await readDb()
+    const key = resolvePlayerDbKey(db, String(id))
+    if (!key) return null
+    const existing = db.players[key]
+    const updated: StoredPlayer = {
+      ...existing,
+      status,
+      banUntil: options?.banUntil,
+      notes: options?.notes ?? existing.notes,
+    }
+    const canonId = normalizeVkPlayerId(String(updated.id)) as StoredPlayer["id"]
+    updated.id = canonId
+    db.players[key] = updated
+    if (key !== canonId) {
+      db.players[canonId] = updated
+      delete db.players[key]
+    }
+    await writeDb(db)
+    return updated
+  })
 }
 
 /** Заблокировать игрока навсегда (удаление из игры). */
@@ -218,13 +255,14 @@ export async function unblockPlayer(id: PlayerId, note?: string) {
 
 /** Полностью удалить игрока из базы (без возможности восстановления, кроме как из бэкапа). */
 export async function deletePlayer(id: PlayerId): Promise<boolean> {
-  const db = await readDb()
-  if (!db.players[id]) {
-    return false
-  }
-  delete db.players[id]
-  await writeDb(db)
-  return true
+  return runSerialized(async () => {
+    const db = await readDb()
+    const key = resolvePlayerDbKey(db, String(id))
+    if (!key) return false
+    delete db.players[key]
+    await writeDb(db)
+    return true
+  })
 }
 
 function getBackupDir(): string {

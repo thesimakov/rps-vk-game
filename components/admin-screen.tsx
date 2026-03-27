@@ -16,7 +16,7 @@ interface ListResponse {
 
 const ADMIN_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN
 
-async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T | null> {
+async function fetchJSON<T extends object>(url: string, options?: RequestInit): Promise<T | null> {
   try {
     const res = await fetch(appPath(url), {
       ...options,
@@ -27,8 +27,11 @@ async function fetchJSON<T>(url: string, options?: RequestInit): Promise<T | nul
       },
       cache: "no-store",
     })
-    if (!res.ok) return null
-    return (await res.json()) as T
+    const data = (await res.json().catch(() => ({}))) as T
+    if (!res.ok) {
+      return { ...data, ok: false } as T
+    }
+    return data
   } catch {
     return null
   }
@@ -99,7 +102,12 @@ export function AdminScreen() {
     })
     setIsBusyId(null)
     if (!res || !res.ok) {
-      setError("Не удалось удалить игрока.")
+      const code = res && "error" in res ? String((res as { error?: string }).error ?? "") : ""
+      setError(
+        code === "not_found"
+          ? "Игрок не найден в базе. Нажмите «Обновить» и попробуйте снова."
+          : "Не удалось удалить игрока.",
+      )
       return
     }
     setPlayers((prev) => prev.filter((p) => p.id !== id))
