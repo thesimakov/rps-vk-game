@@ -11,8 +11,8 @@ import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 const POLL_MS = 1000
 const LIVE_COUNT_POLL_MS = 3000
 /** Если в вашей корзине (ставка+раунды) меньше 2 игроков — через столько времени подбираем соперника (на сервере/клиенте без раскрытия типа) */
-const ALONE_BOT_MS_NORMAL = 40_000
-const ALONE_BOT_MS_FAST = 40_000
+const ALONE_BOT_MS_NORMAL = 20_000
+const ALONE_BOT_MS_FAST = 20_000
 /** Глобально столько vk в поиске — усиливаем FIFO и подпись «приоритет» */
 export const PRIORITY_LIVE_MATCHMAKING = 5
 
@@ -425,7 +425,7 @@ export function Matchmaking() {
             )}
             {othersInDifferentBucket && (
               <p className="text-amber-100/90 font-medium leading-snug">
-                Другие игроки в поиске, но в другой корзине (ставка и число раундов должны совпадать). Если пара не найдётся за 40 секунд, подключим бота.
+                Другие игроки в поиске, но на другой ставке. Ты можешь отменить или подождать еще немного
               </p>
             )}
           </div>
