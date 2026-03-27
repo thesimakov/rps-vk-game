@@ -6,8 +6,6 @@ import { ArrowLeft, Coins, Crown, Trophy, Skull, Percent, Calendar, Medal, Penci
 import { useState } from "react"
 import { PlayerAvatar, VipBadgeOnFrame } from "@/components/player-avatar"
 import { LiveOpsDashboard } from "@/components/liveops-dashboard"
-import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
-
 const HIDE_AVATAR_PRICE = 100
 const BLOCK_BASE =
   "w-full max-w-lg rounded-3xl border backdrop-blur-sm p-5 md:p-6 shadow-[0_0_0_1px_rgba(148,163,184,0.14),0_0_26px_rgba(15,23,42,0.20)]"
@@ -17,7 +15,7 @@ const BLOCK_PROFILE_CLASS =
   `${BLOCK_BASE} border-violet-300/30 bg-gradient-to-br from-violet-500/14 via-card/55 to-indigo-500/10`
 
 export function ProfileScreen() {
-  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, toDisplayAmount, currencyLabel, vkUser } =
+  const { setScreen, player, setPlayer, playerRank, logoutWithVK, trackSpend, toDisplayAmount, currencyLabel } =
     useGame()
   const [isEditingName, setIsEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(player.name)
@@ -169,8 +167,6 @@ export function ProfileScreen() {
           </div>
         )}
       </div>
-
-      <VkNotificationsPrompt variant="profile" show={!!vkUser && player.id.startsWith("vk_")} />
 
       {/* Balance + Bonuses + Rank */}
       <div className="w-full max-w-lg grid grid-cols-3 gap-3 mb-4">

@@ -62,10 +62,9 @@ export function VkNotificationsPrompt({ variant, show }: VkNotificationsPromptPr
   const [loading, setLoading] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
   const [showNewGameNotice, setShowNewGameNotice] = useState(false)
-  const [hideProfileAfterEnable, setHideProfileAfterEnable] = useState(false)
 
   useEffect(() => {
-    if (variant !== "menu" && variant !== "arena") return
+    if (variant !== "menu" && variant !== "arena" && variant !== "profile") return
     try {
       if (typeof window !== "undefined" && localStorage.getItem(MENU_DISMISS_KEY) === "1") {
         setDismissed(true)
@@ -81,8 +80,7 @@ export function VkNotificationsPrompt({ variant, show }: VkNotificationsPromptPr
     return <NewGameNoticeModal onClose={() => setShowNewGameNotice(false)} />
   }
 
-  if ((variant === "menu" || variant === "arena") && dismissed) return null
-  if (variant === "profile" && hideProfileAfterEnable) return null
+  if ((variant === "menu" || variant === "arena" || variant === "profile") && dismissed) return null
 
   const onEnable = async () => {
     setHint(null)
@@ -91,11 +89,8 @@ export function VkNotificationsPrompt({ variant, show }: VkNotificationsPromptPr
       const ok = await requestVkMiniAppNotifications()
       if (ok) {
         markVkNotificationsMenuPromptDismissed()
-        if (variant === "menu" || variant === "arena") {
+        if (variant === "menu" || variant === "arena" || variant === "profile") {
           setDismissed(true)
-        }
-        if (variant === "profile") {
-          setHideProfileAfterEnable(true)
         }
         setShowNewGameNotice(true)
         return
