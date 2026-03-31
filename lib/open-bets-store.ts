@@ -32,6 +32,29 @@ export type OpenBetApi = {
   vip?: boolean
 }
 
+let openBetsColumnsReady = false
+
+function ensureOpenBetsColumns() {
+  if (openBetsColumnsReady) return
+  const db = getGameStateDb()
+  const cols = db.prepare("PRAGMA table_info(open_match_bets)").all() as { name: string }[]
+  const colNames = new Set(cols.map((c) => c.name))
+  const migrations: string[] = []
+  if (!colNames.has("creator_avatar_url")) migrations.push("ALTER TABLE open_match_bets ADD COLUMN creator_avatar_url TEXT")
+  if (!colNames.has("total_rounds")) migrations.push("ALTER TABLE open_match_bets ADD COLUMN total_rounds INTEGER NOT NULL DEFAULT 1")
+  if (!colNames.has("vip")) migrations.push("ALTER TABLE open_match_bets ADD COLUMN vip INTEGER NOT NULL DEFAULT 0")
+  if (!colNames.has("expires_at")) migrations.push("ALTER TABLE open_match_bets ADD COLUMN expires_at INTEGER")
+  if (migrations.length) {
+    try {
+      for (const sql of migrations) db.exec(sql)
+    } catch {
+      // Если БД временно занята, попробуем на следующем запросе.
+      return
+    }
+  }
+  openBetsColumnsReady = true
+}
+
 function rowToApi(r: OpenBetRow): OpenBetApi {
   return {
     id: r.id,
@@ -49,11 +72,13 @@ function rowToApi(r: OpenBetRow): OpenBetApi {
 }
 
 export function pruneExpiredOpenBets(now: number = Date.now()) {
+  ensureOpenBetsColumns()
   const db = getGameStateDb()
   db.prepare("DELETE FROM open_match_bets WHERE expires_at IS NOT NULL AND expires_at <= ?").run(now)
 }
 
 export function listOpenBets(now: number = Date.now()): OpenBetApi[] {
+  ensureOpenBetsColumns()
   pruneExpiredOpenBets(now)
   const db = getGameStateDb()
   const rows = db
@@ -69,6 +94,7 @@ export function listOpenBets(now: number = Date.now()): OpenBetApi[] {
 }
 
 export function upsertOpenBet(b: OpenBetApi) {
+  ensureOpenBetsColumns()
   const db = getGameStateDb()
   db.prepare(
     `INSERT OR REPLACE INTO open_match_bets (
@@ -91,6 +117,7 @@ export function upsertOpenBet(b: OpenBetApi) {
 }
 
 export function deleteOpenBet(betId: string): boolean {
+  ensureOpenBetsColumns()
   const db = getGameStateDb()
   const r = db.prepare("DELETE FROM open_match_bets WHERE id = ?").run(betId)
   return r.changes > 0

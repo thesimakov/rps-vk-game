@@ -16,10 +16,15 @@ let presenceColumnMigrated = false
 function ensurePresenceLastScreenColumn() {
   if (presenceColumnMigrated) return
   const db = getGameStateDb()
-  try {
-    db.exec("ALTER TABLE presence ADD COLUMN last_screen TEXT")
-  } catch {
-    /* колонка уже есть */
+  const cols = db.prepare("PRAGMA table_info(presence)").all() as { name: string }[]
+  const hasLastScreen = cols.some((c) => c.name === "last_screen")
+  if (!hasLastScreen) {
+    try {
+      db.exec("ALTER TABLE presence ADD COLUMN last_screen TEXT")
+    } catch {
+      // Не помечаем миграцию завершённой, чтобы повторить попытку при следующем запросе.
+      return
+    }
   }
   presenceColumnMigrated = true
 }
