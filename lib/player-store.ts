@@ -93,19 +93,32 @@ export interface StoredPlayer {
   }>
 }
 
-const DB_PATH =
+const PRIMARY_DB_PATH =
   process.env.PLAYERS_DB_PATH ||
   (process.env.NODE_ENV === "development"
     ? path.join(process.cwd(), "data", "players.json")
     : "/var/rps-data/players.json")
+const FALLBACK_DB_PATH = path.join(process.cwd(), "data", "players.json")
+let resolvedDbPath: string | null = null
 
 function getDbPath(): string {
-  return DB_PATH
+  return resolvedDbPath ?? PRIMARY_DB_PATH
 }
 
 async function ensureDir() {
-  const dir = path.dirname(getDbPath())
-  await fs.mkdir(dir, { recursive: true })
+  const preferredPath = getDbPath()
+  try {
+    await fs.mkdir(path.dirname(preferredPath), { recursive: true })
+    resolvedDbPath = preferredPath
+  } catch (err) {
+    if (preferredPath !== FALLBACK_DB_PATH) {
+      await fs.mkdir(path.dirname(FALLBACK_DB_PATH), { recursive: true })
+      resolvedDbPath = FALLBACK_DB_PATH
+      console.error("[player-store] preferred path unavailable, switched to fallback", err)
+      return
+    }
+    throw err
+  }
 }
 
 interface PlayerDb {
