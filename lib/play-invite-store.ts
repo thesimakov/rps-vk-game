@@ -37,14 +37,19 @@ function ensurePlayInvitesTable() {
     CREATE INDEX IF NOT EXISTS idx_play_invites_to ON play_invites(to_user_id, state);
     CREATE INDEX IF NOT EXISTS idx_play_invites_from ON play_invites(from_user_id, state);
   `)
-  if (!presetColumnReady) {
+  if (presetColumnReady) return
+  const cols = db.prepare("PRAGMA table_info(play_invites)").all() as { name: string }[]
+  const hasPresetColumn = cols.some((c) => c.name === "match_preset")
+  if (!hasPresetColumn) {
     try {
       db.exec("ALTER TABLE play_invites ADD COLUMN match_preset TEXT")
     } catch {
-      /* уже есть */
+      // Важно: не выставляем готовность, если ALTER не прошёл.
+      // Иначе последующие SELECT/INSERT c match_preset будут падать с 500.
+      return
     }
-    presetColumnReady = true
   }
+  presetColumnReady = true
 }
 
 function pruneExpired() {
