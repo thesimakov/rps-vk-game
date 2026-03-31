@@ -7,7 +7,8 @@
  * - проверяет, что каждый URL отвечает 200
  */
 
-const baseUrl = process.argv[2] || "http://127.0.0.1:3000"
+const cliArgs = process.argv.slice(2).filter((a) => a && a !== "--")
+const baseUrl = cliArgs[0] || "http://127.0.0.1:3000"
 
 function collectNextAssetUrls(html, base) {
   const urls = new Set()
