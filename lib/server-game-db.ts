@@ -15,36 +15,9 @@ function getFallbackGameStateDbPath(): string {
   return path.join(process.cwd(), "data", "game-state.sqlite")
 }
 
-export function getGameStateDbPath(): string {
-  if (resolvedGameStateDbPath) return resolvedGameStateDbPath
-  if (process.env.GAME_STATE_DB_PATH) return process.env.GAME_STATE_DB_PATH
-  const playersPath = process.env.PLAYERS_DB_PATH
-  if (playersPath) return path.join(path.dirname(playersPath), "game-state.sqlite")
-  return process.env.NODE_ENV === "development"
-    ? path.join(process.cwd(), "data", "game-state.sqlite")
-    : "/var/rps-data/game-state.sqlite"
-}
-
-/** Singleton; не вызывать из Edge / static export (только Node API routes). */
-export function getGameStateDb(): GameStateDb {
-  if (db) return db
-  const preferredPath = getGameStateDbPath()
-  const fallbackPath = getFallbackGameStateDbPath()
-  let instance: GameStateDb
-  try {
-    fs.mkdirSync(path.dirname(preferredPath), { recursive: true })
-    instance = new Database(preferredPath)
-    resolvedGameStateDbPath = preferredPath
-  } catch (err) {
-    if (preferredPath !== fallbackPath) {
-      fs.mkdirSync(path.dirname(fallbackPath), { recursive: true })
-      instance = new Database(fallbackPath)
-      resolvedGameStateDbPath = fallbackPath
-      console.error("[game-state-db] preferred path unavailable, switched to fallback", err)
-    } else {
-      throw err
-    }
-  }
+function initGameStateDb(dbPath: string): GameStateDb {
+  fs.mkdirSync(path.dirname(dbPath), { recursive: true })
+  const instance = new Database(dbPath)
   instance.pragma("journal_mode = WAL")
   instance.pragma("busy_timeout = 5000")
   instance.exec(`
@@ -111,6 +84,37 @@ export function getGameStateDb(): GameStateDb {
     instance.prepare("INSERT INTO match_queue_state (id, data) VALUES (1, ?)").run(
       JSON.stringify({ buckets: {}, pending: {} }),
     )
+  }
+  return instance
+}
+
+export function getGameStateDbPath(): string {
+  if (resolvedGameStateDbPath) return resolvedGameStateDbPath
+  if (process.env.GAME_STATE_DB_PATH) return process.env.GAME_STATE_DB_PATH
+  const playersPath = process.env.PLAYERS_DB_PATH
+  if (playersPath) return path.join(path.dirname(playersPath), "game-state.sqlite")
+  return process.env.NODE_ENV === "development"
+    ? path.join(process.cwd(), "data", "game-state.sqlite")
+    : "/var/rps-data/game-state.sqlite"
+}
+
+/** Singleton; не вызывать из Edge / static export (только Node API routes). */
+export function getGameStateDb(): GameStateDb {
+  if (db) return db
+  const preferredPath = getGameStateDbPath()
+  const fallbackPath = getFallbackGameStateDbPath()
+  let instance: GameStateDb
+  try {
+    instance = initGameStateDb(preferredPath)
+    resolvedGameStateDbPath = preferredPath
+  } catch (err) {
+    if (preferredPath !== fallbackPath) {
+      instance = initGameStateDb(fallbackPath)
+      resolvedGameStateDbPath = fallbackPath
+      console.error("[game-state-db] preferred path unavailable, switched to fallback", err)
+    } else {
+      throw err
+    }
   }
   db = instance
   return db

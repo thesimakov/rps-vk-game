@@ -121,6 +121,12 @@ async function ensureDir() {
   }
 }
 
+function isFsPermissionError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false
+  const code = (err as { code?: unknown }).code
+  return code === "EACCES" || code === "EPERM" || code === "EROFS"
+}
+
 interface PlayerDb {
   players: Record<string, StoredPlayer>
 }
@@ -131,16 +137,40 @@ async function readDb(): Promise<PlayerDb> {
     const raw = await fs.readFile(getDbPath(), "utf8")
     const parsed = JSON.parse(raw) as Partial<PlayerDb>
     return { players: parsed.players ?? {} }
-  } catch {
+  } catch (err) {
+    if (resolvedDbPath !== FALLBACK_DB_PATH && isFsPermissionError(err)) {
+      resolvedDbPath = FALLBACK_DB_PATH
+      await ensureDir()
+      try {
+        const raw = await fs.readFile(getDbPath(), "utf8")
+        const parsed = JSON.parse(raw) as Partial<PlayerDb>
+        return { players: parsed.players ?? {} }
+      } catch {
+        return { players: {} }
+      }
+    }
     return { players: {} }
   }
 }
 
 async function writeDb(db: PlayerDb) {
   await ensureDir()
-  const tmp = `${getDbPath()}.tmp`
-  await fs.writeFile(tmp, JSON.stringify(db, null, 2), "utf8")
-  await fs.rename(tmp, getDbPath())
+  const tryWrite = async () => {
+    const tmp = `${getDbPath()}.tmp`
+    await fs.writeFile(tmp, JSON.stringify(db, null, 2), "utf8")
+    await fs.rename(tmp, getDbPath())
+  }
+  try {
+    await tryWrite()
+  } catch (err) {
+    if (resolvedDbPath !== FALLBACK_DB_PATH && isFsPermissionError(err)) {
+      resolvedDbPath = FALLBACK_DB_PATH
+      await ensureDir()
+      await tryWrite()
+      return
+    }
+    throw err
+  }
 }
 
 /** Последовательная запись: параллельные save/delete из API не перетирают друг друга. */
