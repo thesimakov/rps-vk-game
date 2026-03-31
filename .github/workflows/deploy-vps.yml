@@ -63,3 +63,5 @@ jobs:
             # --cwd обязателен: иначе pm2 start без каталога берёт /root и падает с ENOENT package.json
             pm2 restart rps-vk-game || pm2 start npm --name rps-vk-game --cwd /var/www/rps-vk-game -- start
             pm2 save
+            # Автосинхрон: проверяем, что HTML не ссылается на отсутствующие css/js чанки.
+            pnpm run verify:assets -- http://127.0.0.1:3000
