@@ -3,7 +3,7 @@
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Trophy,
   Swords,
@@ -24,6 +24,16 @@ import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
 import { LEVELS, LEVEL_STEP_XP, MAX_LEVEL, getDailyBonusPercent, getLevelMeta } from "@/lib/level-system"
+import { tickPlayStartAndShouldShowInterstitial } from "@/lib/play-start-ad-gate"
+import { tryShowVkInterstitialAd } from "@/lib/vk-bridge"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 const DAILY_REWARDS = [
   { day: 1, amount: 100, icon: "coin" as const },
@@ -102,6 +112,37 @@ export function MainMenu() {
   const [showLotto, setShowLotto] = useState(false)
   const [tempSelection, setTempSelection] = useState<number[]>([])
   const [showWelcomeGiftModal, setShowWelcomeGiftModal] = useState(false)
+  const [webAdUrl, setWebAdUrl] = useState<string | null>(null)
+  const webAdResolveRef = useRef<(() => void) | null>(null)
+
+  const closeWebAdModal = useCallback(() => {
+    setWebAdUrl(null)
+    const done = webAdResolveRef.current
+    webAdResolveRef.current = null
+    done?.()
+  }, [])
+
+  /** Реклама каждый 3-й запуск: ВК — interstitial; иначе опционально веб-модалка по NEXT_PUBLIC_PLAY_AD_WEB_URL */
+  const maybeShowPlayEntryAd = useCallback(async () => {
+    if (!tickPlayStartAndShouldShowInterstitial()) return
+    const vkShown = await tryShowVkInterstitialAd()
+    if (vkShown) return
+    const url = process.env.NEXT_PUBLIC_PLAY_AD_WEB_URL?.trim()
+    if (!url) return
+    await new Promise<void>((resolve) => {
+      webAdResolveRef.current = resolve
+      setWebAdUrl(url)
+    })
+  }, [])
+
+  const goToPlay = useCallback(
+    async (opts: { offline: boolean; screen: "bet-select" | "friends-ingame" }) => {
+      await maybeShowPlayEntryAd()
+      setOfflineMode(opts.offline)
+      setScreen(opts.screen)
+    },
+    [maybeShowPlayEntryAd, setOfflineMode, setScreen],
+  )
 
   const levelXp = player.levelXp ?? 0
   const levelData = getLevelMeta(levelXp)
@@ -421,10 +462,8 @@ export function MainMenu() {
       {/* Кнопки: ИГРАТЬ, Оффлайн, Таблица лидеров, Магазин и Профиль */}
       <div className="w-full max-w-lg flex flex-col gap-3">
         <button
-          onClick={() => {
-            setOfflineMode(false)
-            setScreen("bet-select")
-          }}
+          type="button"
+          onClick={() => void goToPlay({ offline: false, screen: "bet-select" })}
           className="w-full flex items-center justify-center gap-3 bg-sky-500 hover:bg-sky-600 text-white font-black text-lg py-4 rounded-2xl transition-all active:scale-[0.98] shadow-lg shadow-sky-500/30"
         >
           <Swords className="h-6 w-6" />
@@ -434,10 +473,8 @@ export function MainMenu() {
         {player.id.startsWith("vk_") ? (
           <div className="grid grid-cols-2 gap-3 w-full min-w-0">
             <button
-              onClick={() => {
-                setOfflineMode(true)
-                setScreen("bet-select")
-              }}
+              type="button"
+              onClick={() => void goToPlay({ offline: true, screen: "bet-select" })}
               className="flex flex-col items-center justify-center gap-1 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50 min-w-0"
             >
               <Shield className="h-5 w-5 text-emerald-400 shrink-0" />
@@ -445,7 +482,7 @@ export function MainMenu() {
             </button>
             <button
               type="button"
-              onClick={() => setScreen("friends-ingame")}
+              onClick={() => void goToPlay({ offline: false, screen: "friends-ingame" })}
               className="flex flex-col items-center justify-center gap-1 bg-sky-700/75 hover:bg-sky-600/90 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/45 min-w-0"
             >
               <UserRound className="h-5 w-5 text-sky-200 shrink-0" />
@@ -455,10 +492,8 @@ export function MainMenu() {
         ) : (
           <div className="grid grid-cols-2 gap-3 w-full min-w-0">
             <button
-              onClick={() => {
-                setOfflineMode(true)
-                setScreen("bet-select")
-              }}
+              type="button"
+              onClick={() => void goToPlay({ offline: true, screen: "bet-select" })}
               className="flex flex-col items-center justify-center gap-1 bg-slate-600/80 hover:bg-slate-600 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-slate-500/50 min-w-0"
             >
               <Shield className="h-5 w-5 text-emerald-400 shrink-0" />
@@ -466,7 +501,7 @@ export function MainMenu() {
             </button>
             <button
               type="button"
-              onClick={() => setScreen("friends-ingame")}
+              onClick={() => void goToPlay({ offline: false, screen: "friends-ingame" })}
               className="flex flex-col items-center justify-center gap-1 bg-sky-700/75 hover:bg-sky-600/90 text-white font-semibold py-3.5 px-2 rounded-2xl transition-all active:scale-[0.98] border border-sky-400/45 min-w-0"
             >
               <UserRound className="h-5 w-5 text-sky-200 shrink-0" />
@@ -674,6 +709,41 @@ export function MainMenu() {
           </div>
         </div>
       )}
+
+      <Dialog
+        open={webAdUrl != null}
+        onOpenChange={(open) => {
+          if (!open) closeWebAdModal()
+        }}
+      >
+        <DialogContent className="sm:max-w-lg" showCloseButton>
+          <DialogHeader>
+            <DialogTitle>Реклама</DialogTitle>
+            <DialogDescription>
+              Короткая пауза перед игрой. Нажмите «Продолжить», когда будете готовы.
+            </DialogDescription>
+          </DialogHeader>
+          {webAdUrl ? (
+            <div className="w-full overflow-hidden rounded-xl border border-border/60 bg-muted/20 aspect-video">
+              <iframe
+                title="Реклама"
+                src={webAdUrl}
+                className="h-full w-full border-0"
+                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+              />
+            </div>
+          ) : null}
+          <DialogFooter className="gap-2 sm:gap-0">
+            <button
+              type="button"
+              onClick={closeWebAdModal}
+              className="w-full rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-600 sm:w-auto"
+            >
+              Продолжить
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

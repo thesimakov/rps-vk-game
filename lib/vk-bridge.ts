@@ -479,3 +479,34 @@ export async function showWallPostBox(message: string, attachments?: string): Pr
     return null
   }
 }
+
+const INTERSTITIAL_FORMAT = "interstitial" as const
+
+/**
+ * Полноэкранная нативная реклама ВК (interstitial), если есть инвентарь.
+ * В кабинете мини-приложения должна быть подключена монетизация / нативная реклама.
+ */
+export async function tryShowVkInterstitialAd(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  if (!bridgeReady) return false
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+    const supportsFn = (vkBridge.default as { supports?: (method: string) => boolean }).supports
+    if (typeof supportsFn === "function") {
+      if (!supportsFn("VKWebAppCheckNativeAds") || !supportsFn("VKWebAppShowNativeAds")) {
+        return false
+      }
+    }
+    const check = await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
+      ad_format: INTERSTITIAL_FORMAT,
+    } as never)
+    const ok = check && typeof check === "object" && (check as { result?: boolean }).result === true
+    if (!ok) return false
+    await vkBridge.default.send("VKWebAppShowNativeAds" as never, {
+      ad_format: INTERSTITIAL_FORMAT,
+    } as never)
+    return true
+  } catch {
+    return false
+  }
+}
