@@ -3,7 +3,7 @@
 import { appPath } from "@/lib/app-path"
 import { useGame } from "@/lib/game-context"
 import { formatAmount } from "@/lib/format-amount"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import {
   Trophy,
   Swords,
@@ -24,16 +24,7 @@ import { VipBadgeOnFrame } from "@/components/player-avatar"
 import { PlayerAvatar } from "@/components/player-avatar"
 import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
 import { LEVELS, LEVEL_STEP_XP, MAX_LEVEL, getDailyBonusPercent, getLevelMeta } from "@/lib/level-system"
-import { tickPlayStartAndShouldShowInterstitial } from "@/lib/play-start-ad-gate"
-import { tryShowVkInterstitialAd } from "@/lib/vk-bridge"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { usePlayEntryAdGate } from "@/components/play-entry-ad-provider"
 
 const DAILY_REWARDS = [
   { day: 1, amount: 100, icon: "coin" as const },
@@ -108,40 +99,21 @@ function getNextLottoDrawTimestamp(from: number = Date.now()): number {
 
 export function MainMenu() {
   const { setScreen, player, setPlayer, toDisplayAmount, currencyLabel, setOfflineMode, vkUser } = useGame()
+  const { runGateBeforeBetSelect } = usePlayEntryAdGate()
   const [now, setNow] = useState(() => Date.now())
   const [showLotto, setShowLotto] = useState(false)
   const [tempSelection, setTempSelection] = useState<number[]>([])
   const [showWelcomeGiftModal, setShowWelcomeGiftModal] = useState(false)
-  const [webAdUrl, setWebAdUrl] = useState<string | null>(null)
-  const webAdResolveRef = useRef<(() => void) | null>(null)
-
-  const closeWebAdModal = useCallback(() => {
-    setWebAdUrl(null)
-    const done = webAdResolveRef.current
-    webAdResolveRef.current = null
-    done?.()
-  }, [])
-
-  /** Реклама каждый 3-й запуск: ВК — interstitial; иначе опционально веб-модалка по NEXT_PUBLIC_PLAY_AD_WEB_URL */
-  const maybeShowPlayEntryAd = useCallback(async () => {
-    if (!tickPlayStartAndShouldShowInterstitial()) return
-    const vkShown = await tryShowVkInterstitialAd()
-    if (vkShown) return
-    const url = process.env.NEXT_PUBLIC_PLAY_AD_WEB_URL?.trim()
-    if (!url) return
-    await new Promise<void>((resolve) => {
-      webAdResolveRef.current = resolve
-      setWebAdUrl(url)
-    })
-  }, [])
 
   const goToPlay = useCallback(
     async (opts: { offline: boolean; screen: "bet-select" | "friends-ingame" }) => {
-      await maybeShowPlayEntryAd()
+      if (opts.screen === "bet-select") {
+        await runGateBeforeBetSelect()
+      }
       setOfflineMode(opts.offline)
       setScreen(opts.screen)
     },
-    [maybeShowPlayEntryAd, setOfflineMode, setScreen],
+    [runGateBeforeBetSelect, setOfflineMode, setScreen],
   )
 
   const levelXp = player.levelXp ?? 0
@@ -709,41 +681,6 @@ export function MainMenu() {
           </div>
         </div>
       )}
-
-      <Dialog
-        open={webAdUrl != null}
-        onOpenChange={(open) => {
-          if (!open) closeWebAdModal()
-        }}
-      >
-        <DialogContent className="sm:max-w-lg" showCloseButton>
-          <DialogHeader>
-            <DialogTitle>Реклама</DialogTitle>
-            <DialogDescription>
-              Короткая пауза перед игрой. Нажмите «Продолжить», когда будете готовы.
-            </DialogDescription>
-          </DialogHeader>
-          {webAdUrl ? (
-            <div className="w-full overflow-hidden rounded-xl border border-border/60 bg-muted/20 aspect-video">
-              <iframe
-                title="Реклама"
-                src={webAdUrl}
-                className="h-full w-full border-0"
-                sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-              />
-            </div>
-          ) : null}
-          <DialogFooter className="gap-2 sm:gap-0">
-            <button
-              type="button"
-              onClick={closeWebAdModal}
-              className="w-full rounded-xl bg-sky-500 px-4 py-2.5 text-sm font-bold text-white hover:bg-sky-600 sm:w-auto"
-            >
-              Продолжить
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

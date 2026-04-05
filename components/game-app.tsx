@@ -29,6 +29,7 @@ import { GameLoader } from "@/components/game-loader"
 import { AdminScreen } from "@/components/admin-screen"
 import { PlayInviteIncoming } from "@/components/play-invite-incoming"
 import { FriendInviteWaiterGlobal } from "@/components/friend-invite-waiter-global"
+import { PlayEntryAdProvider } from "@/components/play-entry-ad-provider"
 import {
   mergePendingAppInvitesWithPickerUsers,
   writePendingAppInvites,
@@ -247,7 +248,9 @@ export function GameApp() {
   return (
     <GameProvider>
       <div style={styleVars}>
-        <GameLayout />
+        <PlayEntryAdProvider>
+          <GameLayout />
+        </PlayEntryAdProvider>
       </div>
     </GameProvider>
   )

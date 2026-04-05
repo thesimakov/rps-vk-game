@@ -3,6 +3,7 @@
 import { useGame, type GameScreen } from "@/lib/game-context"
 import { Home, Swords, Trophy, User, ShoppingBag } from "lucide-react"
 import { BackgroundMusic } from "@/components/background-music"
+import { usePlayEntryAdGate } from "@/components/play-entry-ad-provider"
 
 interface NavItem {
   screen: GameScreen
@@ -20,6 +21,7 @@ const NAV_ITEMS: NavItem[] = [
 
 export function BottomNav() {
   const { screen, setScreen } = useGame()
+  const { runGateBeforeBetSelect } = usePlayEntryAdGate()
 
   if (["arena", "matchmaking", "result"].includes(screen)) return null
 
@@ -42,7 +44,15 @@ export function BottomNav() {
             return (
               <button
                 key={item.screen}
-                onClick={() => setScreen(item.screen)}
+                type="button"
+                onClick={() => {
+                  void (async () => {
+                    if (screen !== "bet-select") {
+                      await runGateBeforeBetSelect()
+                    }
+                    setScreen("bet-select")
+                  })()
+                }}
                 className="flex flex-col items-center gap-0.5 -mt-5"
                 aria-label={item.label}
                 aria-current={isActive ? "page" : undefined}

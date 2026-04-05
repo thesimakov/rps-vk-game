@@ -1,4 +1,4 @@
-/** Счётчик нажатий «играть» с главного меню (persist). */
+/** Счётчик переходов к экрану выбора ставки (persist). */
 
 export const PLAY_START_COUNT_STORAGE_KEY = "rps_play_start_count_v1"
 
