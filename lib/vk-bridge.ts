@@ -28,6 +28,24 @@ const VK_GET_USER_TIMEOUT_MS = 10_000
 /** VKWebAppInit / импорт bridge не должны висеть бесконечно (в части WebView зависает send). */
 const VK_WEB_APP_INIT_TIMEOUT_MS = 8_000
 
+/** «Реклама между экранами» (interstitial). https://dev.vk.com/ru/mini-apps/monetization/ad/implementation */
+const NATIVE_INTERSTITIAL_AD_FORMAT = "interstitial" as const
+
+/** Дока ВК: вызовите Check заранее, чтобы к моменту показа материалы были предзагружены. */
+function preloadVkInterstitialAdsInBackground(): void {
+  void (async () => {
+    if (!bridgeReady) return
+    try {
+      const vkBridge = await import("@vkontakte/vk-bridge")
+      await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
+        ad_format: NATIVE_INTERSTITIAL_AD_FORMAT,
+      } as never)
+    } catch {
+      /* ignore */
+    }
+  })()
+}
+
 function ensureStartParams() {
   if (typeof window === "undefined" || launchParamsLoaded) return
   launchParamsLoaded = true
@@ -61,6 +79,7 @@ export async function initVKBridge(): Promise<void> {
       }),
     ])
     bridgeReady = true
+    preloadVkInterstitialAdsInBackground()
   } catch {
     bridgeReady = false
   }
@@ -480,32 +499,42 @@ export async function showWallPostBox(message: string, attachments?: string): Pr
   }
 }
 
-const INTERSTITIAL_FORMAT = "interstitial" as const
-
 /**
- * Полноэкранная нативная реклама ВК (interstitial), если есть инвентарь.
- * В кабинете мини-приложения должна быть подключена монетизация / нативная реклама.
+ * Полноэкранная нативная реклама ВК (interstitial).
+ * По доке ВК: Check можно вызывать заранее; Show обязателен для показа.
+ * Предзагрузка через Check необязательна — Show сам запросит материалы, если их ещё нет.
+ * @see https://dev.vk.com/ru/mini-apps/monetization/ad/implementation
  */
 export async function tryShowVkInterstitialAd(): Promise<boolean> {
   if (typeof window === "undefined") return false
-  if (!bridgeReady) return false
   try {
     const vkBridge = await import("@vkontakte/vk-bridge")
-    const supportsFn = (vkBridge.default as { supports?: (method: string) => boolean }).supports
-    if (typeof supportsFn === "function") {
-      if (!supportsFn("VKWebAppCheckNativeAds") || !supportsFn("VKWebAppShowNativeAds")) {
+
+    if (!bridgeReady) {
+      if (!isVKEnvironment()) return false
+      try {
+        await vkBridge.default.send("VKWebAppInit")
+        bridgeReady = true
+        preloadVkInterstitialAdsInBackground()
+      } catch {
         return false
       }
     }
-    const check = await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
-      ad_format: INTERSTITIAL_FORMAT,
+
+    try {
+      await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
+        ad_format: NATIVE_INTERSTITIAL_AD_FORMAT,
+      } as never)
+    } catch {
+      /* не блокируем показ: иногда сеть/клиент; Show всё равно пробует */
+    }
+
+    const showRes = await vkBridge.default.send("VKWebAppShowNativeAds" as never, {
+      ad_format: NATIVE_INTERSTITIAL_AD_FORMAT,
     } as never)
-    const ok = check && typeof check === "object" && (check as { result?: boolean }).result === true
-    if (!ok) return false
-    await vkBridge.default.send("VKWebAppShowNativeAds" as never, {
-      ad_format: INTERSTITIAL_FORMAT,
-    } as never)
-    return true
+    return Boolean(
+      showRes && typeof showRes === "object" && (showRes as { result?: boolean }).result === true,
+    )
   } catch {
     return false
   }
