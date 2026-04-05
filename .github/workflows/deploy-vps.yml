@@ -61,7 +61,21 @@ jobs:
             pnpm rebuild better-sqlite3
             pnpm run build
             # --cwd обязателен: иначе pm2 start без каталога берёт /root и падает с ENOENT package.json
-            pm2 restart rps-vk-game || pm2 start npm --name rps-vk-game --cwd /var/www/rps-vk-game -- start
+            pm2 delete rps-vk-game || true
+            pm2 start pnpm --name rps-vk-game --cwd /var/www/rps-vk-game -- start
             pm2 save
+            # Next.js поднимается не мгновенно — иначе verify:assets ловит ECONNREFUSED
+            for i in $(seq 1 60); do
+              if curl -sf http://127.0.0.1:3000/api/presence/online-count >/dev/null; then
+                echo "App is listening on :3000"
+                break
+              fi
+              if [ "$i" -eq 60 ]; then
+                echo "Timeout: nothing on :3000 after 60s"
+                pm2 logs rps-vk-game --lines 80 --nostream || true
+                exit 1
+              fi
+              sleep 1
+            done
             # Автосинхрон: проверяем, что HTML не ссылается на отсутствующие css/js чанки.
             pnpm run verify:assets -- http://127.0.0.1:3000
