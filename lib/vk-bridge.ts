@@ -611,8 +611,22 @@ function resolveVkBannerLocation(): VkBannerLocation {
   return v === "top" ? "top" : "bottom"
 }
 
+/** Как в zeroplus-vk: вертикальный баннер у края экрана (overlay). Иначе — классическая полоса. */
+function resolveVkBannerStyle(): "side" | "classic" {
+  const v = process.env.NEXT_PUBLIC_VK_BANNER_STYLE?.trim().toLowerCase()
+  return v === "classic" ? "classic" : "side"
+}
+
+function resolveVkBannerSideAlign(): "left" | "right" {
+  const v = process.env.NEXT_PUBLIC_VK_BANNER_SIDE_ALIGN?.trim().toLowerCase()
+  return v === "left" ? "left" : "right"
+}
+
 /**
- * Баннерная реклама ВК (полоса сверху или снизу экрана).
+ * Баннер ВК:
+ * - `side` (по умолчанию): как в zeroplus-vk — `orientation: vertical`, `layout_type: overlay`, выравнивание слева/справа.
+ * - `classic`: горизонтальная полоса сверху/снизу (`NEXT_PUBLIC_VK_BANNER_LOCATION`).
+ * Перед показом вызывается `VKWebAppCheckBannerAd` (рекомендует ВК).
  * @see https://dev.vk.com/ru/mini-apps/monetization/ad/implementation
  */
 export async function tryShowVkBannerAd(): Promise<boolean> {
@@ -632,12 +646,48 @@ export async function tryShowVkBannerAd(): Promise<boolean> {
       }
     }
 
-    const banner_location = resolveVkBannerLocation()
-    const res = await vkBridge.default.send("VKWebAppShowBannerAd" as never, {
-      banner_location,
-      layout_type: "resize",
-      can_close: true,
-    } as never)
+    const style = resolveVkBannerStyle()
+
+    const res = await new Promise<unknown>((resolve, reject) => {
+      const run = () => {
+        void (async () => {
+          try {
+            await vkBridge.default.send("VKWebAppCheckBannerAd" as never, {} as never)
+          } catch {
+            /* как в zeroplus-vk: не блокируем Show */
+          }
+          try {
+            if (style === "side") {
+              const r = await vkBridge.default.send("VKWebAppShowBannerAd" as never, {
+                banner_location: "bottom",
+                banner_align: resolveVkBannerSideAlign(),
+                layout_type: "overlay",
+                orientation: "vertical",
+                height_type: "regular",
+                can_close: true,
+              } as never)
+              resolve(r)
+            } else {
+              const banner_location = resolveVkBannerLocation()
+              const r = await vkBridge.default.send("VKWebAppShowBannerAd" as never, {
+                banner_location,
+                layout_type: "resize",
+                can_close: true,
+              } as never)
+              resolve(r)
+            }
+          } catch (e) {
+            reject(e)
+          }
+        })()
+      }
+      if (typeof window !== "undefined" && typeof window.requestAnimationFrame === "function") {
+        window.requestAnimationFrame(run)
+      } else {
+        setTimeout(run, 0)
+      }
+    })
+
     return Boolean(res && typeof res === "object" && (res as { result?: boolean }).result === true)
   } catch {
     return false

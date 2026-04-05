@@ -19,6 +19,7 @@ const SCREENS_WITH_VK_BANNER: GameScreen[] = [
 
 /**
  * Показ/скрытие VKWebAppShowBannerAd при смене экрана (мини-приложение ВК).
+ * По умолчанию стиль `side` — вертикальный баннер у края, как в zeroplus-vk (`lib/vk-bridge.ts`).
  */
 export function VkBannerAdController() {
   const { screen, vkUser } = useGame()
