@@ -30,6 +30,7 @@ import { AdminScreen } from "@/components/admin-screen"
 import { PlayInviteIncoming } from "@/components/play-invite-incoming"
 import { FriendInviteWaiterGlobal } from "@/components/friend-invite-waiter-global"
 import { PlayEntryAdProvider } from "@/components/play-entry-ad-provider"
+import { VkBannerAdController } from "@/components/vk-banner-ad-controller"
 import {
   mergePendingAppInvitesWithPickerUsers,
   writePendingAppInvites,
@@ -160,6 +161,7 @@ function GameLayout() {
   return (
     <div className="relative min-h-screen">
       <ParticlesBg />
+      <VkBannerAdController />
       <BetResponseDialog />
 
       {showLowBalanceHint && (

@@ -30,6 +30,8 @@ const VK_WEB_APP_INIT_TIMEOUT_MS = 8_000
 
 /** «Реклама между экранами» (interstitial). https://dev.vk.com/ru/mini-apps/monetization/ad/implementation */
 const NATIVE_INTERSTITIAL_AD_FORMAT = "interstitial" as const
+/** Реклама за вознаграждение (reward). */
+const NATIVE_REWARD_AD_FORMAT = "reward" as const
 
 /** Дока ВК: вызовите Check заранее, чтобы к моменту показа материалы были предзагружены. */
 function preloadVkInterstitialAdsInBackground(): void {
@@ -39,6 +41,20 @@ function preloadVkInterstitialAdsInBackground(): void {
       const vkBridge = await import("@vkontakte/vk-bridge")
       await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
         ad_format: NATIVE_INTERSTITIAL_AD_FORMAT,
+      } as never)
+    } catch {
+      /* ignore */
+    }
+  })()
+}
+
+function preloadVkRewardAdsInBackground(): void {
+  void (async () => {
+    if (!bridgeReady) return
+    try {
+      const vkBridge = await import("@vkontakte/vk-bridge")
+      await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
+        ad_format: NATIVE_REWARD_AD_FORMAT,
       } as never)
     } catch {
       /* ignore */
@@ -80,6 +96,7 @@ export async function initVKBridge(): Promise<void> {
     ])
     bridgeReady = true
     preloadVkInterstitialAdsInBackground()
+    preloadVkRewardAdsInBackground()
   } catch {
     bridgeReady = false
   }
@@ -516,6 +533,7 @@ export async function tryShowVkInterstitialAd(): Promise<boolean> {
         await vkBridge.default.send("VKWebAppInit")
         bridgeReady = true
         preloadVkInterstitialAdsInBackground()
+        preloadVkRewardAdsInBackground()
       } catch {
         return false
       }
@@ -537,5 +555,102 @@ export async function tryShowVkInterstitialAd(): Promise<boolean> {
     )
   } catch {
     return false
+  }
+}
+
+/** Монет за просмотр рекламы с вознаграждением (начисляем после успешного Show). */
+export function getVkRewardAdCoinAmount(): number {
+  const raw = process.env.NEXT_PUBLIC_VK_REWARD_AD_COINS
+  const n = raw != null && raw !== "" ? parseInt(raw, 10) : 50
+  return Number.isFinite(n) && n > 0 ? Math.min(n, 1_000_000) : 50
+}
+
+/**
+ * Реклама за вознаграждение: по требованиям ВК сначала Check (готовность), затем Show после согласия пользователя.
+ * @see https://dev.vk.com/ru/mini-apps/monetization/ad/implementation
+ */
+export async function tryShowVkRewardedAd(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+
+    if (!bridgeReady) {
+      if (!isVKEnvironment()) return false
+      try {
+        await vkBridge.default.send("VKWebAppInit")
+        bridgeReady = true
+        preloadVkInterstitialAdsInBackground()
+        preloadVkRewardAdsInBackground()
+      } catch {
+        return false
+      }
+    }
+
+    const check = await vkBridge.default.send("VKWebAppCheckNativeAds" as never, {
+      ad_format: NATIVE_REWARD_AD_FORMAT,
+    } as never)
+    if (!check || typeof check !== "object" || (check as { result?: boolean }).result !== true) {
+      return false
+    }
+
+    const showRes = await vkBridge.default.send("VKWebAppShowNativeAds" as never, {
+      ad_format: NATIVE_REWARD_AD_FORMAT,
+    } as never)
+    return Boolean(
+      showRes && typeof showRes === "object" && (showRes as { result?: boolean }).result === true,
+    )
+  } catch {
+    return false
+  }
+}
+
+type VkBannerLocation = "top" | "bottom"
+
+function resolveVkBannerLocation(): VkBannerLocation {
+  const v = process.env.NEXT_PUBLIC_VK_BANNER_LOCATION?.trim().toLowerCase()
+  return v === "top" ? "top" : "bottom"
+}
+
+/**
+ * Баннерная реклама ВК (полоса сверху или снизу экрана).
+ * @see https://dev.vk.com/ru/mini-apps/monetization/ad/implementation
+ */
+export async function tryShowVkBannerAd(): Promise<boolean> {
+  if (typeof window === "undefined") return false
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+
+    if (!bridgeReady) {
+      if (!isVKEnvironment()) return false
+      try {
+        await vkBridge.default.send("VKWebAppInit")
+        bridgeReady = true
+        preloadVkInterstitialAdsInBackground()
+        preloadVkRewardAdsInBackground()
+      } catch {
+        return false
+      }
+    }
+
+    const banner_location = resolveVkBannerLocation()
+    const res = await vkBridge.default.send("VKWebAppShowBannerAd" as never, {
+      banner_location,
+      layout_type: "resize",
+      can_close: true,
+    } as never)
+    return Boolean(res && typeof res === "object" && (res as { result?: boolean }).result === true)
+  } catch {
+    return false
+  }
+}
+
+export async function tryHideVkBannerAd(): Promise<void> {
+  if (typeof window === "undefined") return
+  if (!bridgeReady) return
+  try {
+    const vkBridge = await import("@vkontakte/vk-bridge")
+    await vkBridge.default.send("VKWebAppHideBannerAd" as never, {} as never)
+  } catch {
+    /* ignore */
   }
 }

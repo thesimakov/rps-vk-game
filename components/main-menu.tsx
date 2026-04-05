@@ -25,6 +25,7 @@ import { PlayerAvatar } from "@/components/player-avatar"
 import { VkNotificationsPrompt } from "@/components/vk-notifications-prompt"
 import { LEVELS, LEVEL_STEP_XP, MAX_LEVEL, getDailyBonusPercent, getLevelMeta } from "@/lib/level-system"
 import { usePlayEntryAdGate } from "@/components/play-entry-ad-provider"
+import { VkRewardAdMenuButton } from "@/components/vk-reward-ad-menu-button"
 
 const DAILY_REWARDS = [
   { day: 1, amount: 100, icon: "coin" as const },
@@ -416,6 +417,8 @@ export function MainMenu() {
           })}
         </div>
       </div>
+
+      <VkRewardAdMenuButton />
 
       <div className="w-full max-w-lg mb-4 rounded-2xl border border-sky-400/35 bg-slate-900/70 p-3.5 sm:p-4 shadow-[0_0_0_1px_rgba(56,189,248,0.08)]">
         <div className="flex gap-2.5">
