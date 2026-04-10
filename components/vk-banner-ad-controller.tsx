@@ -1,25 +1,14 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { useGame, type GameScreen } from "@/lib/game-context"
+import { useGame } from "@/lib/game-context"
 import { getBridgeReady, isVKEnvironment, tryHideVkBannerAd, tryShowVkBannerAd } from "@/lib/vk-bridge"
 
-/** Экраны, где допустим баннер ВК (не мешает бою и полноэкранным сценам). */
-const SCREENS_WITH_VK_BANNER: GameScreen[] = [
-  "menu",
-  "bet-select",
-  "leaderboard",
-  "shop",
-  "profile",
-  "levels",
-  "bets",
-  "referral",
-  "friends-ingame",
-]
-
 /**
- * Показ/скрытие VKWebAppShowBannerAd при смене экрана (мини-приложение ВК).
- * По умолчанию стиль `side` — вертикальный баннер у края, как в zeroplus-vk (`lib/vk-bridge.ts`).
+ * Постоянный показ баннера ВК на всех экранах после входа (мини-приложение ВК).
+ * При смене экрана снова запрашиваем показ — на случай если клиент ВК скрыл баннер.
+ * Скрытие только при выходе / размонтировании приложения.
+ * Параметры баннера: `lib/vk-bridge.ts` (`tryShowVkBannerAd`).
  */
 export function VkBannerAdController() {
   const { screen, vkUser } = useGame()
@@ -47,12 +36,7 @@ export function VkBannerAdController() {
       }
       if (!getBridgeReady()) return
 
-      const wantBanner = SCREENS_WITH_VK_BANNER.includes(screen)
-      if (wantBanner) {
-        await tryShowVkBannerAd()
-      } else {
-        await tryHideVkBannerAd()
-      }
+      await tryShowVkBannerAd()
     })()
 
     return () => {

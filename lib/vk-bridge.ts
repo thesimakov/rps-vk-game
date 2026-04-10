@@ -611,21 +611,16 @@ function resolveVkBannerLocation(): VkBannerLocation {
   return v === "top" ? "top" : "bottom"
 }
 
-/** Как в zeroplus-vk: вертикальный баннер у края экрана (overlay). Иначе — классическая полоса. */
+/** `side` — overlay-баннер с фиксированными параметрами; `classic` — полоса resize сверху/снизу. */
 function resolveVkBannerStyle(): "side" | "classic" {
   const v = process.env.NEXT_PUBLIC_VK_BANNER_STYLE?.trim().toLowerCase()
   return v === "classic" ? "classic" : "side"
 }
 
-function resolveVkBannerSideAlign(): "left" | "right" {
-  const v = process.env.NEXT_PUBLIC_VK_BANNER_SIDE_ALIGN?.trim().toLowerCase()
-  return v === "left" ? "left" : "right"
-}
-
 /**
  * Баннер ВК:
- * - `side` (по умолчанию): как в zeroplus-vk — `orientation: vertical`, `layout_type: overlay`, выравнивание слева/справа.
- * - `classic`: горизонтальная полоса сверху/снизу (`NEXT_PUBLIC_VK_BANNER_LOCATION`).
+ * - `side` (по умолчанию): `layout_type: overlay`, `banner_align: left`, `orientation: horizontal` (низ экрана).
+ * - `classic`: горизонтальная полоса сверху/снизу (`NEXT_PUBLIC_VK_BANNER_LOCATION`), `layout_type: resize`.
  * Перед показом вызывается `VKWebAppCheckBannerAd` (рекомендует ВК).
  * @see https://dev.vk.com/ru/mini-apps/monetization/ad/implementation
  */
@@ -660,9 +655,9 @@ export async function tryShowVkBannerAd(): Promise<boolean> {
             if (style === "side") {
               const r = await vkBridge.default.send("VKWebAppShowBannerAd" as never, {
                 banner_location: "bottom",
-                banner_align: resolveVkBannerSideAlign(),
                 layout_type: "overlay",
-                orientation: "vertical",
+                banner_align: "left",
+                orientation: "horizontal",
                 height_type: "regular",
                 can_close: true,
               } as never)
